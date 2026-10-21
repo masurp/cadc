@@ -1,0 +1,296 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tokeniser sandbox — CADC</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&display=swap">
+<style>
+  /* --- tokens (subset of the CADC system; kept inline so the frame works offline) --- */
+  :root{
+    --paper:#faf8f4; --surface:#fff; --strip:#f2f0ea; --hairline:#e7e3d9; --border:#e0dcd0;
+    --ink:#1a1a17; --ink-2:#3a3a34; --ink-3:#5a5a52; --muted:#7a7a70; --faint:#9a9a90;
+    --blue:#0077B3; --blue-tint:#eaf4fa;
+    --font:"Space Grotesk", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --paper:#10243a; --surface:#16304a; --strip:#16304a; --hairline:#2c4560; --border:#2c4560;
+      --ink:#e8eaec; --ink-2:#cfd6de; --ink-3:#a8c0d4; --muted:#7d9bb5; --faint:#6d8ba6;
+      --blue:#4aa8dc; --blue-tint:#12314c;
+    }
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{
+    font-family:var(--font); background:var(--paper); color:var(--ink);
+    font-size:14px; line-height:1.5; padding:18px 20px 22px;
+  }
+  h1{font-size:15px; font-weight:700; margin:0}
+  .sub{font-size:12px; color:var(--ink-3); margin:4px 0 16px; max-width:60ch}
+  .grid{display:grid; grid-template-columns:minmax(0,300px) minmax(0,1fr); gap:20px}
+  @media (max-width:640px){ .grid{grid-template-columns:1fr} }
+
+  textarea{
+    width:100%; min-height:120px; resize:vertical; font:inherit; font-size:13px;
+    color:var(--ink); background:var(--surface);
+    border:1px solid var(--border); border-radius:9px; padding:10px 12px;
+  }
+  textarea:focus{outline:2px solid var(--blue); outline-offset:1px}
+
+  .controls{margin-top:14px; display:flex; flex-direction:column; gap:9px}
+  .ctl{display:flex; align-items:center; gap:7px; font-size:12.5px; color:var(--ink-2); cursor:pointer; flex-wrap:wrap}
+  .ctl input[type=checkbox]{width:15px; height:15px; accent-color:var(--blue); cursor:pointer}
+  .ctl input[type=number]{
+    width:44px; font:inherit; font-size:12px; padding:2px 5px; text-align:center;
+    border:1px solid var(--border); border-radius:5px; background:var(--surface); color:var(--ink);
+  }
+  .ctl input[type=number]:disabled{opacity:.4}
+  .seg{display:flex; gap:0; border:1px solid var(--border); border-radius:7px; overflow:hidden; width:max-content}
+  .seg button{
+    font:inherit; font-size:12px; padding:5px 12px; border:0; cursor:pointer;
+    background:var(--surface); color:var(--ink-2);
+  }
+  .seg button[aria-pressed="true"]{background:var(--blue); color:#fff; font-weight:500}
+  .seg-label{font-size:12.5px; color:var(--ink-2); margin-bottom:5px}
+
+  .panel{margin-bottom:18px}
+  .panel h2{
+    font-size:11px; font-weight:700; letter-spacing:.07em; text-transform:uppercase;
+    color:var(--muted); margin:0 0 8px
+  }
+  .count{color:var(--faint); font-weight:400; letter-spacing:0}
+
+  .tokens{display:flex; flex-wrap:wrap; gap:5px}
+  .tok{
+    font-size:12px; padding:3px 8px; border-radius:6px;
+    background:var(--surface); border:1px solid var(--border); color:var(--ink);
+    white-space:nowrap;
+  }
+  .tok.gram{background:var(--blue-tint); border-color:transparent}
+  .tok.drop{background:transparent; border-color:transparent; color:var(--faint); text-decoration:line-through}
+  .tok.rare{background:transparent; border-color:transparent; color:#9a5a2a; text-decoration:line-through}
+  @media (prefers-color-scheme: dark){ .tok.rare{color:#d69a6a} }
+  .tok .stem{color:var(--blue); font-size:10px; margin-left:4px}
+  .tok.drop .stem, .tok.rare .stem{display:none}
+
+  table{width:100%; border-collapse:collapse; font-size:12.5px}
+  td{padding:4px 0; vertical-align:middle}
+  td.w{color:var(--ink); width:34%; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+  td.bar{width:52%; padding-right:10px}
+  td.n{text-align:right; color:var(--ink-3); width:14%; font-variant-numeric:tabular-nums}
+  .bartrack{background:var(--strip); border-radius:2px; height:9px}
+  .barfill{height:9px; background:var(--blue); border-radius:2px; min-width:2px}
+  .empty{color:var(--faint); font-size:12px}
+
+  .foot{margin-top:8px; font-size:11px; color:var(--faint)}
+  .foot .cut{color:#9a5a2a; font-weight:500}
+  @media (prefers-color-scheme: dark){ .foot .cut{color:#d69a6a} }
+
+  .legend{display:flex; flex-wrap:wrap; gap:5px 14px; margin-top:10px; font-size:11px; color:var(--muted)}
+  .legend span{display:inline-flex; align-items:center; gap:5px}
+  .legend i{width:9px; height:9px; border-radius:3px; display:inline-block; flex:none}
+  .legend i.keep{background:var(--surface); border:1px solid var(--border)}
+  .legend i.gram{background:var(--blue-tint); border:1px solid var(--blue-tint)}
+  .legend i.drop{background:var(--faint)}
+  .legend i.rare{background:#9a5a2a}
+  @media (prefers-color-scheme: dark){ .legend i.rare{background:#d69a6a} }
+</style>
+</head>
+<body>
+
+<h1>Tokeniser sandbox</h1>
+<p class="sub">Turning text into a table is a chain of choices. Flip a switch and watch the tokens — and the counts you would report — change.</p>
+
+<div class="grid">
+  <div>
+    <label class="seg-label" for="src">Your text</label>
+    <textarea id="src" spellcheck="false">The media covers the crisis. Media coverage of a crisis shapes how audiences understand crises, and audiences rarely question the coverage.</textarea>
+
+    <div class="controls">
+      <label class="ctl"><input type="checkbox" id="lower" checked> lowercase everything</label>
+      <label class="ctl"><input type="checkbox" id="punct" checked> strip punctuation</label>
+      <label class="ctl"><input type="checkbox" id="stop"> remove stopwords</label>
+      <label class="ctl"><input type="checkbox" id="stem"> light stemming</label>
+      <label class="ctl"><input type="checkbox" id="rare"> drop terms seen fewer than
+        <input type="number" id="rareN" value="2" min="2" max="9" step="1"> times</label>
+      <div>
+        <div class="seg-label">count as</div>
+        <div class="seg" role="group" aria-label="n-gram size">
+          <button id="g1" aria-pressed="true">unigrams</button>
+          <button id="g2" aria-pressed="false">bigrams</button>
+          <button id="g3" aria-pressed="false">trigrams</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div>
+    <div class="panel">
+      <h2>Tokens <span class="count" id="tcount"></span></h2>
+      <div class="tokens" id="tokens"></div>
+      <div class="legend" id="legend"></div>
+    </div>
+    <div class="panel">
+      <h2>Frequency table <span class="count" id="fcount"></span></h2>
+      <div id="freq"></div>
+      <div class="foot" id="foot"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  var STOP = new Set(("a an and are as at be been being but by can could did do does " +
+    "for from had has have he her hers him his how i if in into is it its me my no nor not " +
+    "of on or our ours out over she should so than that the their theirs them then there " +
+    "these they this those to too was we were what when where which while who whom why will " +
+    "with would you your yours").split(" "));
+
+  // crude demonstration stemmer — enough to show the idea, not Porter
+  function stem(w) {
+    if (w.length <= 3) return w;
+    var suf = ["ingly", "edly", "ing", "edly", "ies", "ed", "ly", "es", "s"];
+    for (var i = 0; i < suf.length; i++) {
+      var s = suf[i];
+      if (w.length - s.length >= 3 && w.slice(-s.length) === s) {
+        var base = w.slice(0, -s.length);
+        if (s === "ies") base += "y";
+        return base;
+      }
+    }
+    return w;
+  }
+
+  var el = function (id) { return document.getElementById(id); };
+  var src = el("src");
+  var opt = { lower: el("lower"), punct: el("punct"), stop: el("stop"), stem: el("stem"), rare: el("rare") };
+  var rareN = el("rareN");
+  var GB = [el("g1"), el("g2"), el("g3")];
+  var NAME = { 1: "unigrams", 2: "bigrams", 3: "trigrams" };
+  var ngram = 1;
+
+  function setGram(n) {
+    ngram = n;
+    GB.forEach(function (b, i) { b.setAttribute("aria-pressed", i + 1 === n); });
+    render();
+  }
+  GB.forEach(function (b, i) { b.onclick = function () { setGram(i + 1); }; });
+
+  src.addEventListener("input", render);
+  Object.keys(opt).forEach(function (k) { opt[k].addEventListener("change", render); });
+  rareN.addEventListener("input", render);
+
+  function render() {
+    var raw = src.value.split(/\s+/).filter(Boolean);
+
+    // per-token processing. The chip shows the token as it stands AFTER the
+    // switches, so the row and the frequency table always tell the same story.
+    var kept = [];               // strings that survive into counting
+    var chips = [];              // {show, stem, dropped}
+    raw.forEach(function (t) {
+      var w = t;
+      if (opt.lower.checked) w = w.toLowerCase();
+      if (opt.punct.checked) w = w.replace(/^[^\p{L}\p{N}]+|[^\p{L}\p{N}]+$/gu, "");
+      var display = w || t;      // if punctuation-only, fall back to the raw token
+      var dropped = false, shownStem = "";
+      if (w === "") dropped = true;
+      else if (opt.stop.checked && STOP.has(w.toLowerCase())) dropped = true;
+      else {
+        if (opt.stem.checked) {
+          var s = stem(w);
+          if (s !== w) shownStem = s;
+          w = s;
+        }
+        kept.push(w);
+      }
+      chips.push({ show: display, stem: shownStem, key: dropped ? null : w, dropped: dropped });
+    });
+
+    // build counting units (n-grams) from the kept stream
+    var n = ngram, units = [];
+    for (var i = 0; i + n <= kept.length; i++) units.push(kept.slice(i, i + n).join(" "));
+
+    // count, then optionally prune terms that appear fewer than `cut` times
+    var freq = new Map();
+    units.forEach(function (u) { freq.set(u, (freq.get(u) || 0) + 1); });
+    rareN.disabled = !opt.rare.checked;
+    var cut = opt.rare.checked ? Math.max(2, parseInt(rareN.value, 10) || 2) : 0;
+    var rareSet = new Set();
+    if (cut) freq.forEach(function (c, term) { if (c < cut) rareSet.add(term); });
+
+    // token chips
+    var tk = el("tokens");
+    tk.innerHTML = "";
+    chips.forEach(function (c) {
+      var rareHere = ngram === 1 && c.key !== null && rareSet.has(c.key);
+      var d = document.createElement("span");
+      d.className = "tok" + (c.dropped ? " drop" : rareHere ? " rare" : "");
+      d.textContent = c.show;
+      if (c.stem) { var s = document.createElement("span"); s.className = "stem"; s.textContent = "→ " + c.stem; d.appendChild(s); }
+      tk.appendChild(d);
+    });
+    if (ngram > 1 && units.length) {
+      var sep = document.createElement("span");
+      sep.className = "tok"; sep.style.borderColor = "transparent"; sep.style.color = "var(--faint)";
+      sep.textContent = NAME[ngram] + " ↓";
+      tk.appendChild(sep);
+      units.forEach(function (u) {
+        var d = document.createElement("span");
+        d.className = "tok " + (rareSet.has(u) ? "rare" : "gram");
+        d.textContent = u;
+        tk.appendChild(d);
+      });
+    }
+
+    // frequency table
+    var rows = Array.from(freq.entries()).sort(function (a, b) {
+      return b[1] - a[1] || a[0].localeCompare(b[0]);
+    });
+    var keptRows = cut ? rows.filter(function (r) { return r[1] >= cut; }) : rows;
+    var max = keptRows.length ? keptRows[0][1] : 1;
+    var keptTotal = keptRows.reduce(function (a, r) { return a + r[1]; }, 0);
+    var shown = keptRows.slice(0, 12);
+
+    el("tcount").textContent = "· " + raw.length + " in → " + keptRows.length + " distinct " + NAME[ngram];
+
+    var box = el("freq");
+    if (!shown.length) {
+      box.innerHTML = '<div class="empty">Nothing left to count. Loosen a switch.</div>';
+    } else {
+      var t = document.createElement("table");
+      shown.forEach(function (r) {
+        var tr = document.createElement("tr");
+        tr.title = r[0] + " — " + r[1] + " of " + keptTotal + " counted " + NAME[ngram];
+        tr.innerHTML =
+          '<td class="w">' + r[0].replace(/</g, "&lt;") + "</td>" +
+          '<td class="bar"><div class="bartrack"><div class="barfill" style="width:' +
+            (r[1] / max * 100).toFixed(1) + '%"></div></div></td>' +
+          '<td class="n">' + r[1] + "</td>";
+        t.appendChild(tr);
+      });
+      box.innerHTML = "";
+      box.appendChild(t);
+    }
+    el("fcount").textContent = "· " + keptRows.length + " kept";
+
+    var notes = [];
+    if (keptRows.length > shown.length) notes.push("showing top " + shown.length + " of " + keptRows.length);
+    if (cut) notes.push('<span class="cut">' + rareSet.size + " term" +
+      (rareSet.size === 1 ? "" : "s") + " below the cutoff removed</span>");
+    el("foot").innerHTML = notes.join(" · ");
+
+    // legend — only the states actually on screen, so it never adds noise
+    var lg = [];
+    lg.push('<span><i class="keep"></i>counted</span>');
+    if (ngram > 1) lg.push('<span><i class="gram"></i>' + NAME[ngram] + '</span>');
+    if (chips.some(function (c) { return c.dropped; })) lg.push('<span><i class="drop"></i>removed by a switch</span>');
+    if (cut && rareSet.size) lg.push('<span><i class="rare"></i>below the cutoff</span>');
+    el("legend").innerHTML = lg.join("");
+  }
+
+  render();
+})();
+</script>
+</body>
+</html>

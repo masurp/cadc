@@ -1,0 +1,67 @@
+/* shared look of the two week 3 network explainers; palette is a local copy
+   of the CADC light theme (an iframe cannot inherit the parent's variables) */
+:root{
+  --ink:#1a1a17; --ink-2:#3a3a34; --ink-3:#5a5a52; --muted:#7a7a70; --faint:#9a9a90;
+  --hair:#e7e3d9; --border:#e0dcd0; --surface:#ffffff; --strip:#f2f0ea; --paper:#faf8f4;
+  --accent:#2a8558; --accent-tint:#e4f2ea;
+  --pos:#2678b0; --pos-tint:#e8f1f8;
+  --neg:#b84a27; --neg-tint:#fbeee8;
+  --font:"Space Grotesk", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono:ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+*{box-sizing:border-box}
+html,body{margin:0; height:100%}
+body{font-family:var(--font); background:transparent; color:var(--ink);
+     display:flex; align-items:center; justify-content:center;
+     overflow:hidden; cursor:pointer; -webkit-tap-highlight-color:transparent}
+svg{width:100%; height:100%; display:block}
+text{font-family:var(--font); fill:var(--ink)}
+.lab{font-size:10.5px; font-weight:700; letter-spacing:.09em; fill:var(--muted)}
+.sm{font-size:12px; fill:var(--ink-3)}
+.sm tspan.k{font-weight:700; fill:var(--ink)}
+.sm tspan.a{font-weight:700; fill:var(--accent)}
+.sm tspan.n{font-weight:700; fill:var(--neg)}
+.sm tspan.p{font-weight:700; fill:var(--pos)}
+.big{font-size:28px; font-weight:700; fill:var(--ink)}
+.big.acc{fill:var(--accent)} .big.neg{fill:var(--neg)}
+.mono{font-family:var(--mono); font-size:11px; fill:var(--ink-2)}
+.step{font-size:10.5px; fill:#b6b2a8; text-anchor:end}
+.fade{transition:opacity .45s ease}
+.hid{opacity:0; pointer-events:none}
+/* the network */
+.edge{stroke:var(--ink-3); stroke-width:.8; stroke-opacity:.3; transition:stroke-width .25s, stroke-opacity .25s, stroke .25s}
+.edge.pos{stroke:var(--pos)} .edge.neg{stroke:var(--neg)}
+.edge.dim{stroke-opacity:.06 !important}
+.edge.grad{stroke-dasharray:5 4; animation:back 1s linear infinite}
+@keyframes back{to{stroke-dashoffset:18}}
+.hid .edge.grad{animation-play-state:paused}
+.node circle{fill:var(--surface); stroke:var(--ink-3); stroke-width:1.2; transition:fill .3s, stroke .3s}
+.node.in.on circle{fill:var(--accent-tint); stroke:var(--accent); stroke-width:1.8}
+.node.in.off circle{stroke:var(--hair)}
+.node.in.off .wlab{fill:var(--faint)}
+.node.hid circle{stroke:var(--ink-2)}
+.node.hid.lit circle{fill:var(--accent-tint); stroke:var(--accent); stroke-width:2.6}
+.node.out circle{stroke:var(--ink); stroke-width:1.6}
+.wlab{font-size:11.5px; fill:var(--ink-2)}
+.cnt{font-size:9.5px; font-weight:700; fill:var(--accent)}
+.act{font-size:9px; fill:var(--ink-3)}
+/* the review list */
+.rev{font-size:11.5px; fill:var(--ink-2)}
+.rev.wrong{fill:var(--ink)}
+.chip rect{rx:4; ry:4; stroke-width:1.2}
+.chip text{font-size:10.5px; font-weight:700; text-anchor:middle}
+.chip.pos rect{fill:var(--pos-tint); stroke:var(--pos)} .chip.pos text{fill:var(--pos)}
+.chip.neg rect{fill:var(--neg-tint); stroke:var(--neg)} .chip.neg text{fill:var(--neg)}
+.tick{font-size:12px; font-weight:700; fill:var(--accent); text-anchor:middle}
+.cross{font-size:12px; font-weight:700; fill:var(--neg); text-anchor:middle}
+/* the loss curve */
+.axis{stroke:var(--hair); stroke-width:1}
+.curve{fill:none; stroke:var(--accent); stroke-width:1.8}
+.marker{fill:var(--accent)}
+/* the neuron */
+.cell{fill:var(--surface); stroke:var(--ink-2); stroke-width:1.6}
+.soma{fill:var(--strip)}
+.over{stroke:var(--accent); stroke-width:1.8; fill:none}
+.over.box{fill:var(--accent-tint)}
+.olab{font-size:12px; font-weight:700; fill:var(--accent)}
+.formula{font-family:var(--mono); font-size:12.5px; fill:var(--ink)}

@@ -1,0 +1,206 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>What did they say?</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&display=swap">
+<style>
+  /* ==========================================================================
+     What did they say? — the week 1 cold open.
+
+     A field of hundreds of small cards, seen from above and at an angle,
+     drifting slowly: fragments of real communication from the course's own
+     corpora (tweets from the week 2 corpus, restaurant and film reviews from
+     the labs, two State of the Union lines), repeated across the field so
+     that only the dozen at the centre are distinct — the ones the camera
+     lands on. Four beats, one click each:
+
+       1  the field drifts, far away                  (hundreds of them)
+       2  a slow zoom to a dozen readable cards        (what they say)
+       3  labels fly in and attach, faster and faster  (what a machine does)
+       4  the camera pushes in on one card whose label is plainly wrong —
+          "862 patients test positive for #COVID19", tagged POSITIVE because of "positive" —
+          and the rest dim. The lecturer asks the question; the figure does not.
+
+     Built in HTML with CSS 3D transforms rather than SVG, because the far
+     view needs real perspective. The camera is one element (#field) whose
+     transform changes per beat with a long transition; transform-origin sits
+     on the focus card, so every zoom keeps that card at the centre.
+
+     `?dark` in the URL switches the tokens (the deck shows it on a dark
+     slide). Click / Enter / space advances; #N in the URL opens at step N.
+     ========================================================================== */
+  :root{
+    --ink:#1a1a17; --ink-2:#3a3a34; --ink-3:#5a5a52; --muted:#7a7a70; --faint:#9a9a90;
+    --hair:#e7e3d9; --border:#e0dcd0; --surface:#ffffff; --strip:#f2f0ea;
+    --pos:#2678b0; --neg:#b84a27; --topic:#2f7f9e;
+    --font:"Space Grotesk", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  }
+  :root.dark{
+    --ink:#e8eaec; --ink-2:#cfd6de; --ink-3:#a8c0d4; --muted:#7d9bb5; --faint:#6d8ba6;
+    --hair:#2c4560; --border:#2c4560; --surface:#16304a; --strip:#1b3550;
+    --pos:#3291d1; --neg:#d26a49; --topic:#5cb0cf;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0; height:100%}
+  body{font-family:var(--font); background:transparent; color:var(--ink);
+       display:flex; align-items:center; justify-content:center;
+       overflow:hidden; cursor:pointer; -webkit-tap-highlight-color:transparent}
+
+  /* a fixed 1000 x 440 stage, scaled to fit whatever box the iframe gives it */
+  #stage{position:relative; width:1000px; height:440px; transform-origin:0 0; overflow:hidden}
+  #camera{position:absolute; inset:0; perspective:1100px; perspective-origin:50% 50%}
+  #drift{position:absolute; inset:0; transform-style:preserve-3d}
+  #field{position:absolute; left:0; top:0; transform-style:preserve-3d;
+         transition:transform 3.4s cubic-bezier(.45,0,.2,1)}
+  #field.far{transition-duration:0s}
+
+  .card{position:absolute; width:300px; height:92px; padding:12px 16px 10px;
+        background:var(--surface); border:1.5px solid var(--border); border-radius:10px;
+        transition:opacity .8s ease, border-color .6s ease; backface-visibility:hidden}
+  .card .src{font-size:9.5px; font-weight:700; letter-spacing:.09em; color:var(--muted); margin-bottom:5px}
+  .card .t{font-size:14px; line-height:1.3; color:var(--ink-2); overflow:hidden;
+           display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical}
+  .card.dim{opacity:.16}
+  .card.wrong{border-color:var(--neg); border-width:2.5px}
+
+  /* the label: waits above the frame, then flies down and lands bottom right */
+  .tag{position:absolute; right:12px; bottom:10px; padding:3px 8px; border-radius:5px;
+       font-size:10px; font-weight:700; letter-spacing:.06em; color:#fff;
+       opacity:0; transform:translate(var(--dx), -320px) rotate(var(--rot));
+       transition:transform .6s cubic-bezier(.3,.9,.4,1.05), opacity .3s ease, background .4s ease, color .4s ease}
+  .tag.pos{background:var(--pos)} .tag.neg{background:var(--neg)} .tag.topic{background:var(--topic)}
+  .tag.in{opacity:1; transform:none}
+  .card.wrong .tag{background:transparent; color:var(--neg); box-shadow:inset 0 0 0 1.8px var(--neg)}
+
+  #step{position:absolute; right:20px; bottom:12px; font-size:10.5px; color:var(--faint)}
+  @media (prefers-reduced-motion: reduce){ #field{transition-duration:.01s} .tag{transition-duration:.01s} }
+</style>
+</head>
+<body>
+<div id="stage" role="img" aria-label="A field of hundreds of small text cards seen from above; the camera zooms to a dozen of them, labels fly in and attach to each, the camera pushes in on one whose label is plainly wrong.">
+  <div id="camera"><div id="drift"><div id="field"></div></div></div>
+  <div id="step"></div>
+</div>
+<noscript><p style="max-width:34em;margin:2em;font-family:sans-serif">Needs JavaScript: a field of
+real texts, labelled by a machine, one of them wrongly.</p></noscript>
+
+<script>
+(function () {
+  "use strict";
+  if (/[?&]dark(&|$)/.test(location.search)) document.documentElement.classList.add("dark");
+
+  var stage = document.getElementById("stage"), drift = document.getElementById("drift"),
+      field = document.getElementById("field"),
+      stepEl = document.getElementById("step");
+
+  /* real fragments; [text, source, tag class, tag label, wrong?] — the first
+     twelve are the ones the camera lands on, the wrong one in the middle */
+  var ITEMS = [
+    ["Wow... Loved this place.", "REVIEW", "pos", "POSITIVE"],
+    ["the Nazi-Fascist reign of terror in Europe", "SPEECH · 1946", "topic", "WAR"],
+    ["Crust is not good.", "REVIEW", "neg", "NEGATIVE"],
+    ["With visual assistance, this is a good source of information on how mRNA vaccines work", "TWEET", "pos", "POSITIVE"],
+    ["Brilliant writing and a superb cast.", "REVIEW", "pos", "POSITIVE"],
+    ["862 patients test positive for #COVID19 in Tamil Nadu today. Here is the update.", "TWEET", "pos", "POSITIVE", true],
+    ["Yesterday four people died and 216 were infected all over Japan", "TWEET", "topic", "CASES"],
+    ["We'll never go again.", "REVIEW", "neg", "NEGATIVE"],
+    ["Slow, but worth it.", "REVIEW", "pos", "POSITIVE"],
+    ["Mind-boggling. #Corona is a criminal conspiracy, just follow the patents.", "TWEET", "neg", "NEGATIVE"],
+    ["years that dawned with terror touching our shores", "SPEECH · 2015", "topic", "TERROR"],
+    ["A great idea, terribly executed.", "REVIEW", "neg", "NEGATIVE"],
+    ["Restaurant is always full but never a wait.", "REVIEW", "pos", "POSITIVE"],
+    ["This free app keeps your prospects up to date on marketing opportunities!", "TWEET", "topic", "SPAM"],
+    ["Muddled and far too long.", "REVIEW", "neg", "NEGATIVE"],
+    ["Superb android app in 2021 guys very helpful app", "TWEET", "pos", "POSITIVE"],
+    ["I turned it off after twenty minutes.", "REVIEW", "neg", "NEGATIVE"],
+    ["Germany 2021 #Corona looks like not a thing anymore.", "TWEET", "topic", "GERMANY"]
+  ];
+
+  /* the field: COLS x ROWS cells; the twelve distinct items fill the 4 x 3
+     window around the focus cell, everything else cycles through the list */
+  var COLS = 26, ROWS = 14, CW = 330, RH = 116;
+  var FC = 12, FR = 6;                      /* focus cell: the wrong tweet */
+  var seed = 7; function rnd() { seed = (seed * 9301 + 49297) % 233280; return seed / 233280; }
+  var cards = [], focus = null, k = 0;
+  var window12 = {};                         /* col,row -> item index for the near window */
+  var wi = 0;
+  for (var r = FR - 1; r <= FR + 1; r++) for (var c = FC - 1; c <= FC + 2; c++) {
+    window12[c + "," + r] = (c === FC && r === FR) ? 5 : [0,1,2,3,4,6,7,8,9,10,11][wi++];
+  }
+  for (var row = 0; row < ROWS; row++) {
+    for (var col = 0; col < COLS; col++) {
+      var key = col + "," + row, idx = key in window12 ? window12[key] : (12 + (k++ % (ITEMS.length - 12)));
+      var it = ITEMS[idx];
+      var d = document.createElement("div"); d.className = "card";
+      var jx = (rnd() - .5) * 14, jy = (rnd() - .5) * 10;
+      d.style.left = (col * CW + jx) + "px"; d.style.top = (row * RH + jy) + "px";
+      d.innerHTML = '<div class="src">' + it[1] + '</div><div class="t">' + it[0] + '</div>' +
+                    '<span class="tag ' + it[2] + '" style="--dx:' + Math.round((rnd() - .5) * 240) + 'px;--rot:' + Math.round((rnd() - .5) * 40) + 'deg">' + it[3] + '</span>';
+      field.appendChild(d);
+      var rec = { el: d, tag: d.querySelector(".tag"), wrong: !!it[4] && col === FC && row === FR,
+                  cx: col * CW + jx + 150, cy: row * RH + jy + 46 };
+      cards.push(rec);
+      if (rec.wrong) focus = rec;
+    }
+  }
+
+  /* the camera: transform-origin on the focus card, translate it to the
+     stage centre, then rotate/scale about it per beat */
+  field.style.transformOrigin = focus.cx + "px " + focus.cy + "px";
+  var toCentre = "translate(" + (500 - focus.cx) + "px, " + (220 - focus.cy) + "px) ";
+  var VIEWS = {
+    far:   toCentre + "translateY(-40px) rotateX(52deg) rotateZ(-6deg) scale(0.13)",
+    near:  toCentre + "rotateX(0deg) rotateZ(0deg) scale(0.92)",
+    close: toCentre + "rotateX(0deg) rotateZ(0deg) scale(2.1)"
+  };
+
+  /* slow drift across the field while far away; a Web Animation so it can pause */
+  var driftAnim = drift.animate([{ transform: "translateX(90px)" }, { transform: "translateX(-90px)" }],
+                                { duration: 26000, iterations: Infinity, direction: "alternate", easing: "ease-in-out" });
+
+  /* labels attach in an accelerating sequence: the first few take a moment, then it is a blur */
+  function tagDelay(i) { var d = 0; for (var j = 0; j < i; j++) d += Math.max(28, 380 * Math.pow(0.8, j)); return d; }
+
+  var MAX = 3;
+  var state = Math.max(0, Math.min(MAX, parseInt((location.hash || "").slice(1), 10) || 0));
+  function render(instant) {
+    if (instant) field.classList.add("far"); else field.classList.remove("far");
+    field.style.transform = state === 0 ? VIEWS.far : state < 3 ? VIEWS.near : VIEWS.close;
+    if (state === 0) driftAnim.play(); else driftAnim.pause();
+    /* labels: the twelve near cards first, in a shuffled order, then the rest */
+    var near = cards.filter(function (c) { return Math.abs(c.cx - focus.cx) < 2 * CW && Math.abs(c.cy - focus.cy) < 1.6 * RH; });
+    var order = near.slice().sort(function () { return rnd() - .5; }).concat(cards.filter(function (c) { return near.indexOf(c) < 0; }));
+    cards.forEach(function (c) {
+      var i = order.indexOf(c);
+      c.tag.style.transitionDelay = (state === 2 && !instant) ? tagDelay(Math.min(i, 40)) + "ms" : "0ms";
+      c.tag.classList.toggle("in", state >= 2);
+      c.el.classList.toggle("wrong", state >= 3 && c.wrong);
+      c.el.classList.toggle("dim", state >= 3 && !c.wrong);
+    });
+    stepEl.textContent = (state + 1) + " / " + (MAX + 1);
+    if (instant) requestAnimationFrame(function () { field.classList.remove("far"); });
+  }
+  function advance() { if (state >= MAX) return; state += 1; render(false); }
+
+  /* scale the fixed stage to the box the iframe gives it */
+  function fit() {
+    var s = Math.min(window.innerWidth / 1000, window.innerHeight / 440);
+    stage.style.transform = "scale(" + s + ")";
+    stage.style.marginLeft = ((window.innerWidth - 1000 * s) / 2) + "px";
+    stage.style.marginTop = ((window.innerHeight - 440 * s) / 2) + "px";
+    document.body.style.display = "block";
+  }
+  fit(); render(true);
+  window.addEventListener("resize", fit);
+  document.addEventListener("visibilitychange", function () { if (document.hidden) driftAnim.pause(); else if (state === 0) driftAnim.play(); });
+  window.addEventListener("hashchange", function () {
+    state = Math.max(0, Math.min(MAX, parseInt((location.hash || "").slice(1), 10) || 0)); render(true);
+  });
+  document.body.addEventListener("click", advance);
+  document.body.addEventListener("keydown", function (e) { if (e.key === "Enter" || e.key === " ") advance(); });
+})();
+</script>
+</body>
+</html>

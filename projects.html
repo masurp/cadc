@@ -1,0 +1,1061 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.10.19">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+
+<title>Projects – CADC</title>
+<style>
+/* Default styles provided by pandoc.
+** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+*/
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: 1.5em;}
+div.column{flex: auto;}
+@media screen {
+div.columns{gap: min(4vw, 1.5em);}
+div.column{overflow-x: auto;}
+}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+</style>
+
+
+<script src="site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="site_libs/clipboard/clipboard.min.js"></script>
+<script src="site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="site_libs/quarto-search/fuse.min.js"></script>
+<script src="site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="./">
+<script src="site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="site_libs/quarto-html/popper.min.js"></script>
+<script src="site_libs/quarto-html/tippy.umd.min.js"></script>
+<link href="site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="site_libs/quarto-html/quarto-syntax-highlighting-bf27225e3a48a9273f3daa8f8e829971.css" rel="stylesheet" class="quarto-color-scheme" id="quarto-text-highlighting-styles">
+<link href="site_libs/quarto-html/quarto-syntax-highlighting-dark-b626d73c4c936ccc3cb08be7d45d1df6.css" rel="stylesheet" class="quarto-color-scheme quarto-color-alternate" id="quarto-text-highlighting-styles">
+<link href="site_libs/quarto-html/quarto-syntax-highlighting-bf27225e3a48a9273f3daa8f8e829971.css" rel="stylesheet" class="quarto-color-scheme-extra" id="quarto-text-highlighting-styles">
+<script src="site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="site_libs/bootstrap/bootstrap-708f368b1b787bdbb5120da4541c3d7b.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme" id="quarto-bootstrap" data-mode="light">
+<link href="site_libs/bootstrap/bootstrap-dark-30c5a01ec59a3d62991f903af197df9e.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme quarto-color-alternate" id="quarto-bootstrap" data-mode="dark">
+<link href="site_libs/bootstrap/bootstrap-708f368b1b787bdbb5120da4541c3d7b.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme-extra" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+<style>html{ scroll-behavior: smooth; }</style>
+
+
+</head>
+
+<body class="nav-fixed quarto-light"><script id="quarto-html-before-body" type="application/javascript">
+    const toggleBodyColorMode = (bsSheetEl) => {
+      const mode = bsSheetEl.getAttribute("data-mode");
+      const bodyEl = window.document.querySelector("body");
+      if (mode === "dark") {
+        bodyEl.classList.add("quarto-dark");
+        bodyEl.classList.remove("quarto-light");
+      } else {
+        bodyEl.classList.add("quarto-light");
+        bodyEl.classList.remove("quarto-dark");
+      }
+    }
+    const toggleBodyColorPrimary = () => {
+      const bsSheetEl = window.document.querySelector("link#quarto-bootstrap:not([rel=disabled-stylesheet])");
+      if (bsSheetEl) {
+        toggleBodyColorMode(bsSheetEl);
+      }
+    }
+    const setColorSchemeToggle = (alternate) => {
+      const toggles = window.document.querySelectorAll('.quarto-color-scheme-toggle');
+      for (let i=0; i < toggles.length; i++) {
+        const toggle = toggles[i];
+        if (toggle) {
+          if (alternate) {
+            toggle.classList.add("alternate");
+          } else {
+            toggle.classList.remove("alternate");
+          }
+        }
+      }
+    };
+    const toggleColorMode = (alternate) => {
+      // Switch the stylesheets
+      const primaryStylesheets = window.document.querySelectorAll('link.quarto-color-scheme:not(.quarto-color-alternate)');
+      const alternateStylesheets = window.document.querySelectorAll('link.quarto-color-scheme.quarto-color-alternate');
+      manageTransitions('#quarto-margin-sidebar .nav-link', false);
+      if (alternate) {
+        // note: dark is layered on light, we don't disable primary!
+        enableStylesheet(alternateStylesheets);
+        for (const sheetNode of alternateStylesheets) {
+          if (sheetNode.id === "quarto-bootstrap") {
+            toggleBodyColorMode(sheetNode);
+          }
+        }
+      } else {
+        disableStylesheet(alternateStylesheets);
+        enableStylesheet(primaryStylesheets)
+        toggleBodyColorPrimary();
+      }
+      manageTransitions('#quarto-margin-sidebar .nav-link', true);
+      // Switch the toggles
+      setColorSchemeToggle(alternate)
+      // Hack to workaround the fact that safari doesn't
+      // properly recolor the scrollbar when toggling (#1455)
+      if (navigator.userAgent.indexOf('Safari') > 0 && navigator.userAgent.indexOf('Chrome') == -1) {
+        manageTransitions("body", false);
+        window.scrollTo(0, 1);
+        setTimeout(() => {
+          window.scrollTo(0, 0);
+          manageTransitions("body", true);
+        }, 40);
+      }
+    }
+    const disableStylesheet = (stylesheets) => {
+      for (let i=0; i < stylesheets.length; i++) {
+        const stylesheet = stylesheets[i];
+        stylesheet.rel = 'disabled-stylesheet';
+      }
+    }
+    const enableStylesheet = (stylesheets) => {
+      for (let i=0; i < stylesheets.length; i++) {
+        const stylesheet = stylesheets[i];
+        if(stylesheet.rel !== 'stylesheet') { // for Chrome, which will still FOUC without this check
+          stylesheet.rel = 'stylesheet';
+        }
+      }
+    }
+    const manageTransitions = (selector, allowTransitions) => {
+      const els = window.document.querySelectorAll(selector);
+      for (let i=0; i < els.length; i++) {
+        const el = els[i];
+        if (allowTransitions) {
+          el.classList.remove('notransition');
+        } else {
+          el.classList.add('notransition');
+        }
+      }
+    }
+    const isFileUrl = () => {
+      return window.location.protocol === 'file:';
+    }
+    const hasAlternateSentinel = () => {
+      let styleSentinel = getColorSchemeSentinel();
+      if (styleSentinel !== null) {
+        return styleSentinel === "alternate";
+      } else {
+        return false;
+      }
+    }
+    const setStyleSentinel = (alternate) => {
+      const value = alternate ? "alternate" : "default";
+      if (!isFileUrl()) {
+        window.localStorage.setItem("quarto-color-scheme", value);
+      } else {
+        localAlternateSentinel = value;
+      }
+    }
+    const getColorSchemeSentinel = () => {
+      if (!isFileUrl()) {
+        const storageValue = window.localStorage.getItem("quarto-color-scheme");
+        return storageValue != null ? storageValue : localAlternateSentinel;
+      } else {
+        return localAlternateSentinel;
+      }
+    }
+    const toggleGiscusIfUsed = (isAlternate, darkModeDefault) => {
+      const baseTheme = document.querySelector('#giscus-base-theme')?.value ?? 'light';
+      const alternateTheme = document.querySelector('#giscus-alt-theme')?.value ?? 'dark';
+      let newTheme = '';
+      if(authorPrefersDark) {
+        newTheme = isAlternate ? baseTheme : alternateTheme;
+      } else {
+        newTheme = isAlternate ? alternateTheme : baseTheme;
+      }
+      const changeGiscusTheme = () => {
+        // From: https://github.com/giscus/giscus/issues/336
+        const sendMessage = (message) => {
+          const iframe = document.querySelector('iframe.giscus-frame');
+          if (!iframe) return;
+          iframe.contentWindow.postMessage({ giscus: message }, 'https://giscus.app');
+        }
+        sendMessage({
+          setConfig: {
+            theme: newTheme
+          }
+        });
+      }
+      const isGiscussLoaded = window.document.querySelector('iframe.giscus-frame') !== null;
+      if (isGiscussLoaded) {
+        changeGiscusTheme();
+      }
+    };
+    const authorPrefersDark = false;
+    const darkModeDefault = authorPrefersDark;
+      document.querySelector('link#quarto-text-highlighting-styles.quarto-color-scheme-extra').rel = 'disabled-stylesheet';
+      document.querySelector('link#quarto-bootstrap.quarto-color-scheme-extra').rel = 'disabled-stylesheet';
+    let localAlternateSentinel = darkModeDefault ? 'alternate' : 'default';
+    // Dark / light mode switch
+    window.quartoToggleColorScheme = () => {
+      // Read the current dark / light value
+      let toAlternate = !hasAlternateSentinel();
+      toggleColorMode(toAlternate);
+      setStyleSentinel(toAlternate);
+      toggleGiscusIfUsed(toAlternate, darkModeDefault);
+      window.dispatchEvent(new Event('resize'));
+    };
+    // Switch to dark mode if need be
+    if (hasAlternateSentinel()) {
+      toggleColorMode(true);
+    } else {
+      toggleColorMode(false);
+    }
+  </script>
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top">
+    <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
+      <div class="navbar-container container-fluid">
+      <div class="navbar-brand-container mx-auto">
+    <a href="./index.html" class="navbar-brand navbar-brand-logo">
+    <img src="./assets/img/vu-logo-white.png" alt="Vrije Universiteit Amsterdam" class="navbar-logo light-content">
+    <img src="./assets/img/vu-logo-white.png" alt="Vrije Universiteit Amsterdam" class="navbar-logo dark-content">
+    </a>
+    <a class="navbar-brand" href="./index.html">
+    <span class="navbar-title">CADC</span>
+    </a>
+  </div>
+            <div id="quarto-search" class="" title="Search"></div>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll ms-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="./weeks/index.html"> 
+<span class="menu-text">Weeks</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="./playground.html"> 
+<span class="menu-text">Playground</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="./homework.html"> 
+<span class="menu-text">Homework</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link active" href="./projects.html" aria-current="page"> 
+<span class="menu-text">Projects</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="./assessment.html"> 
+<span class="menu-text">Assessment</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="./ai.html"> 
+<span class="menu-text">AI use</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="./info.html"> 
+<span class="menu-text">Info</span></a>
+  </li>  
+</ul>
+          </div> <!-- /navcollapse -->
+            <div class="quarto-navbar-tools">
+  <a href="" class="quarto-color-scheme-toggle quarto-navigation-tool  px-1" onclick="window.quartoToggleColorScheme(); return false;" title="Toggle dark mode"><i class="bi"></i></a>
+</div>
+      </div> <!-- /container-fluid -->
+    </nav>
+</header>
+<!-- content -->
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-full page-navbar">
+<!-- sidebar -->
+<!-- margin-sidebar -->
+    
+<!-- main -->
+<main class="content column-page" id="quarto-document-content"><header id="title-block-header" class="quarto-title-block"></header>
+
+
+
+
+
+<div class="cadc-page">
+<div class="cadc-pagehead">
+<div class="cadc-eyebrow">
+<p>Part III · Weeks 6 to 8</p>
+</div>
+<section id="your-own-study" class="level1">
+<h1>Your own study</h1>
+<div class="cadc-lede">
+<p>For three weeks you work in a group on one question you chose. Here you apply the methods to a study of your own: you find real data, measure something with it, show that the measurement is worth reporting, and defend the whole study in front of the class.</p>
+</div>
+<div class="cadc-caption">
+<p>30% of the final grade, one grade per group: see <a href="./assessment.html">Assessment</a>. Dates and rooms are on <a href="./weeks/index.html">Weeks</a>.</p>
+</div>
+</section>
+</div>
+<div class="cadc-block">
+<div class="cadc-section-label">
+<p>THE THREE WEEKS</p>
+</div>
+<div class="cadc-stage" style="--cadc-accent:var(--cadc-play)">
+  <div class="cadc-stage__n">6</div>
+  <div>
+    <div class="cadc-stage__meta">Kickoff · groups, question, data</div>
+    <h3>Get the data</h3>
+    <p>Monday's lecture puts the four weeks back together as one pipeline and
+    covers which data you can obtain in 2026. Then you form groups, pick a
+    question, and go and get data. The one hard rule of week 6: by Thursday you
+    have the data in a file you can open. A plan to obtain it does not count.</p>
+    <ul>
+      <li><strong>Due end of week 6: the data-access plan.</strong> One page: source, how you get it, legal basis, what you will have in hand, and your fallback if it falls over.</li>
+    </ul>
+  </div>
+</div>
+
+<div class="cadc-stage" style="--cadc-accent:var(--cadc-play)">
+  <div class="cadc-stage__n">7</div>
+  <div>
+    <div class="cadc-stage__meta">No lecture · supervision on Tuesday and Thursday</div>
+    <h3>Measure, then check the measurement</h3>
+    <p>You build the measurement, and then do the part that separates this from a
+    data-journalism piece: hand-code a sample, compute agreement, and report how
+    well your automated measure reproduces it. A project without a validation
+    section cannot pass, however interesting the finding.</p>
+  </div>
+</div>
+
+<div class="cadc-stage" style="--cadc-accent:var(--cadc-play)">
+  <div class="cadc-stage__n">8</div>
+  <div>
+    <div class="cadc-stage__meta">The mini conference</div>
+    <h3>Present your study</h3>
+    <p>A conference in miniature: a ten-minute talk per group plus five minutes of
+    questions, and a poster gallery over the break. You present what you found,
+    what you could not find out, and which number you would put in a paper. Both
+    the talk and the poster need a validation section and are in English, and
+    everyone attends the whole session: you are the audience too.</p>
+  </div>
+</div>
+</div>
+<div class="cadc-block">
+<div class="cadc-section-label">
+<p>READING FOR WEEK 6</p>
+</div>
+<div class="cadc-cards cadc-cards--2">
+<div class="cadc-card">
+<div class="cadc-card__label">
+<p>Article · read before Monday of week 6</p>
+</div>
+<section id="computational-research-in-the-post-api-age" class="level3">
+<h3 data-anchor-id="computational-research-in-the-post-api-age">Computational research in the post-API age</h3>
+<p>Why the data you can get for a project is no longer the data you could get ten years ago, and what that means for computational research. Read it together with this page, top to bottom.</p>
+<div class="cadc-card__cite">
+<p>Freelon, D. (2018). Computational research in the post-API age. <em>Political Communication, 35</em>(4), 665–668. <a href="https://doi.org/10.1080/10584609.2018.1477506" class="uri">https://doi.org/10.1080/10584609.2018.1477506</a></p>
+</div>
+<p><a class="cadc-cta" href="https://doi.org/10.1080/10584609.2018.1477506" target="_blank" rel="noopener">Read the article</a></p>
+</section>
+</div>
+</div>
+</div>
+<div class="cadc-block">
+<div class="cadc-section-label">
+<p>GETTING DATA IN 2026</p>
+</div>
+<div class="cadc-lede">
+<p>Getting the data is where many projects fail. The 2015 answer, “use the Twitter API”, no longer exists, and a group that spends two of its three weeks negotiating access has no project.</p>
+</div>
+<div class="cadc-note cadc-note--check">
+<div class="cadc-note__label">
+<p>THE THREE-WEEK TEST</p>
+</div>
+<p>Before you commit to a source, answer three questions. If a source fails any of them, it will not work for a three-week project.</p>
+<ol type="1">
+<li>Can you download a sample today, without filing an application?</li>
+<li>Is there a working R package or a documented endpoint, or are you writing a scraper from scratch?</li>
+<li>If it breaks on Wednesday of week 7, what is your fallback?</li>
+</ol>
+</div>
+<div class="cadc-matrix">
+<table class="caption-top table">
+<colgroup>
+<col style="width: 25%">
+<col style="width: 25%">
+<col style="width: 25%">
+<col style="width: 25%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Source</th>
+<th>Status</th>
+<th>How</th>
+<th>The catch</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><strong>Bluesky</strong></td>
+<td>works today, start here</td>
+<td><code>atrrr</code>, no key</td>
+<td>A smaller, unrepresentative and politically skewed population. Say so in your limitations.</td>
+</tr>
+<tr class="even">
+<td><strong>Mastodon</strong></td>
+<td>works today</td>
+<td><code>rtoot</code></td>
+<td>You sample instances, not “Mastodon”. Choose them on purpose.</td>
+</tr>
+<tr class="odd">
+<td><strong>YouTube</strong> (metadata, comments)</td>
+<td>works today, needs a free key</td>
+<td><code>tuber</code></td>
+<td>The daily quota is real. Budget your calls.</td>
+</tr>
+<tr class="even">
+<td><strong>News archives</strong></td>
+<td>works today</td>
+<td>Media Cloud, GDELT, Nexis Uni via the VU library</td>
+<td>Check the licence before text mining a library database; some forbid bulk export.</td>
+</tr>
+<tr class="odd">
+<td><strong>Political and institutional text</strong></td>
+<td>works today</td>
+<td>ParlaMint, party manifestos, EU documents, court rulings, press releases</td>
+<td>None, really. The safest route to a good project.</td>
+</tr>
+<tr class="even">
+<td><strong>Existing corpora</strong></td>
+<td>works today</td>
+<td>Dataverse, Zenodo, Hugging Face, replication packages</td>
+<td>Read the codebook first: reusing data means inheriting someone else’s decisions.</td>
+</tr>
+<tr class="odd">
+<td><strong>Data donation</strong></td>
+<td>possible, plan it in week 6</td>
+<td>participants donate their own GDPR data export</td>
+<td>Needs ethics approval and real recruitment. Only viable if you commit on day one.</td>
+</tr>
+<tr class="even">
+<td><strong>Browser capture</strong></td>
+<td>possible, ask first</td>
+<td>4CAT and Zeeschuimer</td>
+<td>Needs a 4CAT instance and consent from whoever scrolls. Discuss with your supervisor.</td>
+</tr>
+<tr class="odd">
+<td><strong>X/Twitter, Reddit</strong></td>
+<td>do not build on these</td>
+<td></td>
+<td>Research access is gone or paid.</td>
+</tr>
+<tr class="even">
+<td><strong>DSA Article 40</strong></td>
+<td>do not build on this</td>
+<td></td>
+<td>Real, but vetting takes months, not three weeks.</td>
+</tr>
+<tr class="odd">
+<td><strong>A site that forbids scraping</strong></td>
+<td>no</td>
+<td></td>
+<td>Ruled out for legal reasons.</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="cadc-caption">
+<p>Whatever the source, you still need a <strong>gold standard</strong>: a sample your group hand-coded itself. No project passes without one.</p>
+</div>
+</div>
+<div class="cadc-block">
+<div class="cadc-section-label">
+<p>BEFORE YOU COLLECT ANYTHING</p>
+</div>
+<div class="cadc-cards cadc-cards--3">
+
+  <div class="cadc-card" style="--cadc-accent:var(--cadc-era-4)">
+    <div class="cadc-card__label">Legal basis</div>
+    <h3>Is it personal data?</h3>
+    <p>A public post is still personal data under the GDPR. Ask what you are
+    collecting, why that is the minimum you need, how long you keep it, and where
+    it lives. Pseudonymise on import, not later.</p>
+  </div>
+
+  <div class="cadc-card" style="--cadc-accent:var(--cadc-era-4)">
+    <div class="cadc-card__label">Ethics</div>
+    <h3>Does it need review?</h3>
+    <p>Anything involving participants (data donation, interviews, surveys)
+    needs ethics approval before you start. Public, aggregate, non-sensitive text
+    usually does not. If you are unsure, ask rather than guess.</p>
+  </div>
+
+  <div class="cadc-card" style="--cadc-accent:var(--cadc-era-4)">
+    <div class="cadc-card__label">Hygiene</div>
+    <h3>What never goes in the repo</h3>
+    <p>API keys, tokens, raw personal data, and anything a participant gave you.
+    Keys go in an environment variable; raw data stays local; the repo holds code
+    and a script that fetches. This is graded.</p>
+  </div>
+
+</div>
+</div>
+<div class="cadc-block">
+<div class="cadc-section-label">
+<p>WHAT A GOOD PROJECT LOOKS LIKE</p>
+</div>
+<div class="cadc-cards cadc-cards--2">
+<section id="keep-the-question-narrow" class="level3 cadc-card">
+<h3 data-anchor-id="keep-the-question-narrow">Keep the question narrow</h3>
+<p>A well-measured claim about one construct in one corpus is better than a sweeping question answered badly. Three weeks is less time than it sounds, and week 8 is the conference, so you cannot use it as extra time.</p>
+</section>
+<section id="validate-the-measurement" class="level3 cadc-card">
+<h3 data-anchor-id="validate-the-measurement">Validate the measurement</h3>
+<p>Every group can get a language model to output labels. Your project should show what you did to find out whether those labels are any good, and what you found when you checked.</p>
+</section>
+<section id="report-negative-results" class="level3 cadc-card">
+<h3 data-anchor-id="report-negative-results">Report negative results</h3>
+<p>“The dictionary and the LLM disagree, and here is where and why” is a better project than a headline number nobody checked. You are not graded on the finding being exciting.</p>
+</section>
+<section id="name-the-limitations" class="level3 cadc-card">
+<h3 data-anchor-id="name-the-limitations">Name the limitations</h3>
+<p>Say what your study cannot show: how you sampled, what the data covers, which population your platform represents, and which classes your classifier never sees. Limitations you name precisely gain marks; leaving them out loses marks.</p>
+</section>
+</div>
+</div>
+<div class="cadc-block">
+<div class="cadc-section-label">
+<p>HOW IT IS GRADED</p>
+</div>
+<div class="cadc-matrix cadc-matrix--rubric">
+<table class="caption-top table">
+<colgroup>
+<col style="width: 33%">
+<col style="width: 33%">
+<col style="width: 33%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Criterion</th>
+<th>What we look for</th>
+<th>Weight</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Question &amp; framing</td>
+<td>A communication question that a computational method can actually answer, stated precisely, with the construct defined before the tool is chosen</td>
+<td>20%</td>
+</tr>
+<tr class="even">
+<td>Data &amp; access</td>
+<td>A defensible source, an honest account of what it covers and what it misses, sampling decisions made on purpose and documented</td>
+<td>20%</td>
+</tr>
+<tr class="odd">
+<td>Measurement &amp; validation</td>
+<td>A gold standard you built, agreement reported, the automated measure evaluated against it, and the right metric for the class balance you have</td>
+<td>30%</td>
+</tr>
+<tr class="even">
+<td>Interpretation</td>
+<td>Conclusions that match the evidence, limitations named precisely, and a clear statement of which number you would defend</td>
+<td>20%</td>
+</tr>
+<tr class="odd">
+<td>Presentation &amp; poster</td>
+<td>A clear ten-minute talk, a poster that is legible from two metres, and answers that hold up under questioning</td>
+<td>10%</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="cadc-caption">
+<p><strong>Draft rubric:</strong> the criteria are fixed, the weights may still move. One grade per group; individual adjustment only where a group reports a genuine imbalance to their supervisor <strong>before</strong> week 8. AI use follows the same rules as everywhere else: see <a href="./ai.html">AI use</a>. Posters from previous cohorts will be linked here before week 6.</p>
+</div>
+</div>
+</div>
+
+
+
+</main> <!-- /main -->
+<script>
+// Quarto remembers the dark/light toggle in localStorage only over http(s). On
+// file:// URLs (opening _site/*.html directly) it deliberately forgets it, so
+// every new page starts light again. Persist it there too, under Quarto's own
+// key. This include sits before Quarto's script, so the setTimeout lets Quarto's
+// DOMContentLoaded handler, which defines the toggle, run first.
+(function () {
+  if (window.location.protocol !== "file:") return;
+  var KEY = "quarto-color-scheme";
+  window.document.addEventListener("DOMContentLoaded", function () { setTimeout(function () {
+    var toggle = window.quartoToggleColorScheme;
+    if (!toggle) return;
+    // On file:// Quarto starts every page in the default (light) scheme.
+    var dark = false;
+    try { dark = window.localStorage.getItem(KEY) === "alternate"; } catch (e) {}
+    if (dark) toggle();
+    window.quartoToggleColorScheme = function () {
+      toggle();
+      dark = !dark;
+      try { window.localStorage.setItem(KEY, dark ? "alternate" : "default"); } catch (e) {}
+    };
+  }, 0); });
+})();
+</script>
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    // Ensure there is a toggle, if there isn't float one in the top right
+    if (window.document.querySelector('.quarto-color-scheme-toggle') === null) {
+      const a = window.document.createElement('a');
+      a.classList.add('top-right');
+      a.classList.add('quarto-color-scheme-toggle');
+      a.href = "";
+      a.onclick = function() { try { window.quartoToggleColorScheme(); } catch {} return false; };
+      const i = window.document.createElement("i");
+      i.classList.add('bi');
+      a.appendChild(i);
+      window.document.body.appendChild(a);
+    }
+    setColorSchemeToggle(hasAlternateSentinel())
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+      const outerScaffold = trigger.parentElement.cloneNode(true);
+      const codeEl = outerScaffold.querySelector('code');
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp("https:\/\/masurp\.github\.io\/cadc\/");
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+</div> <!-- /content -->
+<footer class="footer">
+  <div class="nav-footer">
+    <div class="nav-footer-left">
+<p>Monday lecture · Tuesday &amp; Thursday labs · Dr.&nbsp;Philipp K. Masur</p>
+</div>   
+    <div class="nav-footer-center">
+<p><a href="./setup.html">Setup help</a> · <a href="./license.html">License &amp; data sources</a> · <a href="./privacy.html">Privacy</a></p>
+</div>
+    <div class="nav-footer-right">
+<p>Vrije Universiteit Amsterdam · CC BY 4.0</p>
+</div>
+  </div>
+</footer>
+
+
+
+
+<script src="site_libs/quarto-html/zenscroll-min.js"></script>
+</body></html>

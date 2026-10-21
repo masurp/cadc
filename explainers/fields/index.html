@@ -1,0 +1,157 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Where this course sits</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&display=swap">
+<style>
+  /* ==========================================================================
+     Where this course sits — a lecture explainer.
+
+     A course-tailored answer to the familiar "text mining" Venn (data mining /
+     AI / statistics / computational linguistics / databases / library science).
+     That figure describes a research area; this one describes THIS COURSE, so
+     the circles are the four things a student has to borrow from, and the
+     middle names the four weeks rather than a field.
+
+     THE CIRCLES ARRIVE. Each starts pushed out along its diagonal and slides
+     into place, so the overlap is something the audience watches being made
+     rather than a shape that was always there. The motion is a transform on
+     the <g>, not on cx/cy, so the label travels with its circle and lands in
+     the lobe the containment check was run against.
+
+     THE MIDDLE IS DARK BY CONSTRUCTION. Four fills at .24 alpha composite to
+     1 - 0.76^4 = 0.67 where all four meet, so the deepest patch is the centre
+     without anything being drawn there. That is why the core label is white.
+
+     LABELS MUST STAY IN THEIR OWN LOBE. Keep the type small and the lines
+     short; a name over ~15 characters at 13px will cross into a neighbour.
+
+     Click / Enter / space advances; #N in the URL opens at step N.
+     ========================================================================== */
+  :root{
+    --ink:#1a1a17; --ink-2:#3a3a34; --ink-3:#5a5a52; --muted:#7a7a70;
+    --blue:#0077B3; --deep:#005A88;
+    --font:"Space Grotesk", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0; height:100%}
+  body{font-family:var(--font); background:transparent; color:var(--ink);
+       display:flex; align-items:center; justify-content:center;
+       overflow:hidden; cursor:pointer; -webkit-tap-highlight-color:transparent}
+  svg{width:100%; height:100%; display:block}
+  text{font-family:var(--font); fill:var(--ink)}
+  .field{transition:transform .8s cubic-bezier(.32,.72,.26,1)}
+  .ring{fill-opacity:.26; stroke-opacity:.45; stroke-width:1.4;
+        transition:fill-opacity .45s ease, stroke-opacity .45s ease, stroke-width .45s ease}
+  .on .ring{fill-opacity:.33; stroke-opacity:1; stroke-width:2.6}
+  .name{font-size:13px; font-weight:700; fill:var(--ink-3); text-anchor:middle; transition:fill .45s ease}
+  .on .name{fill:var(--deep)}
+  .sub{font-size:9.5px; fill:var(--muted); text-anchor:middle; transition:fill .45s ease}
+  .on .sub{fill:var(--ink-3)}
+  .corebg{fill:#12405c; fill-opacity:.92}
+  .core{font-size:15px; font-weight:700; fill:#fff; text-anchor:middle}
+  .coresub{font-size:9.5px; fill:#dfeef7; text-anchor:middle}
+  .step{font-size:10.5px; fill:#b6b2a8; text-anchor:end}
+  .fade{transition:opacity .5s ease}
+  .hid{opacity:0}
+</style>
+</head>
+<body>
+<svg id="chart" viewBox="0 0 560 560" preserveAspectRatio="xMidYMid meet" role="img"
+     aria-label="Four circles — communication science, linguistics, computer science and statistics — sliding together so that this course sits in the overlap at the centre.">
+  <defs id="defs"></defs>
+  <g id="rings"></g>
+  <g id="core" class="fade hid"></g>
+  <g id="hud"></g>
+</svg>
+<noscript><p style="max-width:32em;margin:2em;font-family:sans-serif">Needs JavaScript: an animated
+diagram of the four fields this course draws on.</p></noscript>
+
+<script>
+(function () {
+  "use strict";
+  var NS = "http://www.w3.org/2000/svg";
+  function el(t, a) { var e = document.createElementNS(NS, t); for (var k in a) if (a[k] != null) e.setAttribute(k, a[k]); return e; }
+  function txt(p, s, a) { var t = el("text", a || {}); t.textContent = s; p.appendChild(t); return t; }
+  function g(p, a) { var e = el("g", a || {}); p.appendChild(e); return e; }
+
+  var CX = 280, CY = 268, RX = 162, RY = 140, OFF = 68;
+  /* lx/ly = centre of the lobe this circle keeps to itself once converged.
+     ox/oy = where it waits before it slides in. THESE ARE CAPPED BY THE BOX:
+     a circle sits at CX +/- OFF +/- o, so |ox| <= CX - OFF - RX = 50 and
+     |oy| <= CY - OFF - RY = 60, or the spread state is clipped by the viewBox
+     — which is exactly what 62 did. */
+  var FIELDS = [
+    { cx: CX - OFF, cy: CY - OFF, lx: 130, ly: 152, ox: -48, oy: -52, fill: "#2A6E96",
+      name: ["Communication", "science"], sub: ["the question"] },
+    { cx: CX + OFF, cy: CY - OFF, lx: 430, ly: 152, ox:  48, oy: -52, fill: "#6FB6DC",
+      name: ["Linguistics"],              sub: ["how language works"] },
+    { cx: CX - OFF, cy: CY + OFF, lx: 132, ly: 378, ox: -48, oy:  52, fill: "#4A97C6",
+      name: ["Computer", "science"],      sub: ["learning from data"] },
+    { cx: CX + OFF, cy: CY + OFF, lx: 428, ly: 378, ox:  48, oy:  52, fill: "#A0D3EC",
+      name: ["Statistics"],               sub: ["is it any good?"] }
+  ];
+
+  var gRings = document.getElementById("rings"), gCore = document.getElementById("core"),
+      gHud = document.getElementById("hud");
+
+  var nodes = FIELDS.map(function (f) {
+    var k = g(gRings, { "class": "field" });
+    k.appendChild(el("ellipse", { "class": "ring", cx: f.cx, cy: f.cy, rx: RX, ry: RY,
+                                  fill: f.fill, stroke: f.fill }));
+    var n = f.name.length, m = f.sub.length, top = f.ly - ((n * 17 + m * 12) / 2) + 12;
+    f.name.forEach(function (s, i) { txt(k, s, { x: f.lx, y: top + i * 17, "class": "name" }); });
+    f.sub.forEach(function (s, i) { txt(k, s, { x: f.lx, y: top + n * 17 + 3 + i * 12, "class": "sub" }); });
+    return k;
+  });
+
+  /* THE EXACT OVERLAP, not a stand-in. SVG has no intersect operator, but a
+     <clipPath> may itself be clipped, so chaining four of them leaves only the
+     region inside all four ellipses. A rect painted through the last clip is
+     therefore precisely the four-way intersection, and it re-fits itself if the
+     ellipse geometry above ever changes. Uses the converged coordinates, which
+     is correct because the core is only ever shown once every circle has
+     arrived. */
+  var defs = document.getElementById("defs");
+  FIELDS.forEach(function (f, i) {
+    var cp = el("clipPath", { id: "cx" + i });
+    if (i) cp.setAttribute("clip-path", "url(#cx" + (i - 1) + ")");
+    cp.appendChild(el("ellipse", { cx: f.cx, cy: f.cy, rx: RX, ry: RY }));
+    defs.appendChild(cp);
+  });
+  gCore.appendChild(el("rect", { "class": "corebg", x: 0, y: 0, width: 560, height: 560,
+                                 "clip-path": "url(#cx" + (FIELDS.length - 1) + ")" }));
+
+  txt(gCore, "This course", { x: CX, y: CY - 8, "class": "core" });
+  txt(gCore, "turning text into evidence", { x: CX, y: CY + 8, "class": "coresub" });
+
+  var counter = txt(gHud, "", { x: 549, y: 548, "class": "step", "text-anchor": "end", "font-size": "9.5", fill: "var(--faint)" });
+
+  // #N in the URL opens at step N (a lecturer's bookmark, and how it is screenshotted)
+  var state = Math.max(0, Math.min(5, parseInt((location.hash || "").slice(1), 10) || 0));
+  function render() {
+    nodes.forEach(function (n, i) {
+      var arrived = state > i;                      // circle i slides in on step i+1
+      var f = FIELDS[i];
+      n.style.transform = arrived ? "translate(0,0)" : "translate(" + f.ox + "px," + f.oy + "px)";
+      n.setAttribute("class", "field" + ((state === 5 || i + 1 === state) ? " on" : ""));
+    });
+    gCore.setAttribute("class", "fade" + (state === 5 ? "" : " hid"));
+    counter.textContent = (state + 1) + " / 6";
+  }
+  function advance() { if (state >= 5) return; state += 1; render(); }
+  render();
+  window.addEventListener("hashchange", function () {
+    state = Math.max(0, Math.min(5, parseInt((location.hash || "").slice(1), 10) || 0)); render();
+  });
+  document.body.addEventListener("click", advance);
+  document.body.addEventListener("keydown", function (e) {
+    if (e.key === "Enter" || e.key === " " || e.key === "ArrowRight") { e.preventDefault(); advance(); }
+    if (e.key === "ArrowLeft" && state > 0) { state -= 1; render(); }
+  });
+})();
+</script>
+</body>
+</html>

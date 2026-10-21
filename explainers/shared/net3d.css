@@ -1,0 +1,44 @@
+/* shared look of the dark canvas explainers (learning, network, descent):
+   a local copy of the CADC dark palette — an iframe cannot inherit the parent's variables */
+:root{
+  --bg:#10243a; --ink:#e8eaec; --ink-2:#cfd6de; --ink-3:#a8c0d4; --muted:#7d9bb5; --faint:#4e6a86;
+  --accent:#4fc08d; --amber:#f0b250;
+  --pos:#4aa8dc; --pos-tint:rgba(74,168,220,.16); --neg:#e07a52; --neg-tint:rgba(224,122,82,.16);
+  --font:"Space Grotesk", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono:ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+*{box-sizing:border-box}
+html,body{margin:0; height:100%}
+body{font-family:var(--font); background:transparent; color:var(--ink);
+     display:flex; align-items:center; justify-content:center;
+     overflow:hidden; cursor:pointer; -webkit-tap-highlight-color:transparent}
+.stage{position:relative; width:min(100%, calc(100vh * 1000 / 440)); aspect-ratio:1000/440}
+canvas,svg{position:absolute; inset:0; width:100%; height:100%; display:block}
+text{font-family:var(--font); fill:var(--ink)}
+.lab{font-size:9.5px; font-weight:700; letter-spacing:.09em; fill:var(--muted)}
+.sm{font-size:11px; fill:var(--ink-3)}
+.sm tspan.k{font-weight:700; fill:var(--ink)}
+.sm tspan.a{font-weight:700; fill:var(--accent)}
+.sm tspan.n{font-weight:700; fill:var(--neg)}
+.sm tspan.p{font-weight:700; fill:var(--pos)}
+.sm tspan.m{font-weight:700; fill:var(--amber)}
+.big{font-size:24px; font-weight:700; fill:var(--accent)}
+.big.neg{fill:var(--neg)} .big.ink{fill:var(--ink)}
+.rev{font-size:10.5px; fill:var(--ink-3)}
+.rev.wrong{fill:var(--ink); font-weight:500}
+.chip rect{rx:3.5; ry:3.5; stroke-width:1}
+.chip text{font-size:9.5px; font-weight:700; text-anchor:middle}
+.chip.pos rect{fill:var(--pos-tint); stroke:var(--pos)} .chip.pos text{fill:var(--pos)}
+.chip.neg rect{fill:var(--neg-tint); stroke:var(--neg)} .chip.neg text{fill:var(--neg)}
+.tick{font-size:11px; font-weight:700; fill:var(--accent); text-anchor:middle}
+.cross{font-size:11px; font-weight:700; fill:var(--neg); text-anchor:middle}
+.tickl{font-size:8.5px; fill:var(--muted)}
+.axis{stroke:var(--muted); stroke-width:1}
+.curve{fill:none; stroke:var(--accent); stroke-width:1.8}
+.marker{fill:var(--accent)}
+.over{fill:rgba(16,36,58,.55); stroke:var(--accent); stroke-width:1.6}
+.olab{font-size:11.5px; font-weight:700; fill:var(--accent)}
+.formula{font-family:var(--mono); font-size:11.5px; fill:var(--ink-2)}
+.step{font-size:10.5px; fill:var(--faint); text-anchor:end}
+.fade{transition:opacity .5s ease}
+.hid{opacity:0; pointer-events:none}

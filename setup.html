@@ -1,0 +1,1384 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.10.19">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+
+<title>Before the first lab – CADC</title>
+<style>
+/* Default styles provided by pandoc.
+** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+*/
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: 1.5em;}
+div.column{flex: auto;}
+@media screen {
+div.columns{gap: min(4vw, 1.5em);}
+div.column{overflow-x: auto;}
+}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="site_libs/clipboard/clipboard.min.js"></script>
+<script src="site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="site_libs/quarto-search/fuse.min.js"></script>
+<script src="site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="./">
+<script src="site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="site_libs/quarto-html/popper.min.js"></script>
+<script src="site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="site_libs/quarto-html/anchor.min.js"></script>
+<link href="site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="site_libs/quarto-html/quarto-syntax-highlighting-bf27225e3a48a9273f3daa8f8e829971.css" rel="stylesheet" class="quarto-color-scheme" id="quarto-text-highlighting-styles">
+<link href="site_libs/quarto-html/quarto-syntax-highlighting-dark-b626d73c4c936ccc3cb08be7d45d1df6.css" rel="stylesheet" class="quarto-color-scheme quarto-color-alternate" id="quarto-text-highlighting-styles">
+<link href="site_libs/quarto-html/quarto-syntax-highlighting-bf27225e3a48a9273f3daa8f8e829971.css" rel="stylesheet" class="quarto-color-scheme-extra" id="quarto-text-highlighting-styles">
+<script src="site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="site_libs/bootstrap/bootstrap-708f368b1b787bdbb5120da4541c3d7b.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme" id="quarto-bootstrap" data-mode="light">
+<link href="site_libs/bootstrap/bootstrap-dark-30c5a01ec59a3d62991f903af197df9e.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme quarto-color-alternate" id="quarto-bootstrap" data-mode="dark">
+<link href="site_libs/bootstrap/bootstrap-708f368b1b787bdbb5120da4541c3d7b.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme-extra" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+<style>html{ scroll-behavior: smooth; }</style>
+
+
+</head>
+
+<body class="nav-fixed quarto-light"><script id="quarto-html-before-body" type="application/javascript">
+    const toggleBodyColorMode = (bsSheetEl) => {
+      const mode = bsSheetEl.getAttribute("data-mode");
+      const bodyEl = window.document.querySelector("body");
+      if (mode === "dark") {
+        bodyEl.classList.add("quarto-dark");
+        bodyEl.classList.remove("quarto-light");
+      } else {
+        bodyEl.classList.add("quarto-light");
+        bodyEl.classList.remove("quarto-dark");
+      }
+    }
+    const toggleBodyColorPrimary = () => {
+      const bsSheetEl = window.document.querySelector("link#quarto-bootstrap:not([rel=disabled-stylesheet])");
+      if (bsSheetEl) {
+        toggleBodyColorMode(bsSheetEl);
+      }
+    }
+    const setColorSchemeToggle = (alternate) => {
+      const toggles = window.document.querySelectorAll('.quarto-color-scheme-toggle');
+      for (let i=0; i < toggles.length; i++) {
+        const toggle = toggles[i];
+        if (toggle) {
+          if (alternate) {
+            toggle.classList.add("alternate");
+          } else {
+            toggle.classList.remove("alternate");
+          }
+        }
+      }
+    };
+    const toggleColorMode = (alternate) => {
+      // Switch the stylesheets
+      const primaryStylesheets = window.document.querySelectorAll('link.quarto-color-scheme:not(.quarto-color-alternate)');
+      const alternateStylesheets = window.document.querySelectorAll('link.quarto-color-scheme.quarto-color-alternate');
+      manageTransitions('#quarto-margin-sidebar .nav-link', false);
+      if (alternate) {
+        // note: dark is layered on light, we don't disable primary!
+        enableStylesheet(alternateStylesheets);
+        for (const sheetNode of alternateStylesheets) {
+          if (sheetNode.id === "quarto-bootstrap") {
+            toggleBodyColorMode(sheetNode);
+          }
+        }
+      } else {
+        disableStylesheet(alternateStylesheets);
+        enableStylesheet(primaryStylesheets)
+        toggleBodyColorPrimary();
+      }
+      manageTransitions('#quarto-margin-sidebar .nav-link', true);
+      // Switch the toggles
+      setColorSchemeToggle(alternate)
+      // Hack to workaround the fact that safari doesn't
+      // properly recolor the scrollbar when toggling (#1455)
+      if (navigator.userAgent.indexOf('Safari') > 0 && navigator.userAgent.indexOf('Chrome') == -1) {
+        manageTransitions("body", false);
+        window.scrollTo(0, 1);
+        setTimeout(() => {
+          window.scrollTo(0, 0);
+          manageTransitions("body", true);
+        }, 40);
+      }
+    }
+    const disableStylesheet = (stylesheets) => {
+      for (let i=0; i < stylesheets.length; i++) {
+        const stylesheet = stylesheets[i];
+        stylesheet.rel = 'disabled-stylesheet';
+      }
+    }
+    const enableStylesheet = (stylesheets) => {
+      for (let i=0; i < stylesheets.length; i++) {
+        const stylesheet = stylesheets[i];
+        if(stylesheet.rel !== 'stylesheet') { // for Chrome, which will still FOUC without this check
+          stylesheet.rel = 'stylesheet';
+        }
+      }
+    }
+    const manageTransitions = (selector, allowTransitions) => {
+      const els = window.document.querySelectorAll(selector);
+      for (let i=0; i < els.length; i++) {
+        const el = els[i];
+        if (allowTransitions) {
+          el.classList.remove('notransition');
+        } else {
+          el.classList.add('notransition');
+        }
+      }
+    }
+    const isFileUrl = () => {
+      return window.location.protocol === 'file:';
+    }
+    const hasAlternateSentinel = () => {
+      let styleSentinel = getColorSchemeSentinel();
+      if (styleSentinel !== null) {
+        return styleSentinel === "alternate";
+      } else {
+        return false;
+      }
+    }
+    const setStyleSentinel = (alternate) => {
+      const value = alternate ? "alternate" : "default";
+      if (!isFileUrl()) {
+        window.localStorage.setItem("quarto-color-scheme", value);
+      } else {
+        localAlternateSentinel = value;
+      }
+    }
+    const getColorSchemeSentinel = () => {
+      if (!isFileUrl()) {
+        const storageValue = window.localStorage.getItem("quarto-color-scheme");
+        return storageValue != null ? storageValue : localAlternateSentinel;
+      } else {
+        return localAlternateSentinel;
+      }
+    }
+    const toggleGiscusIfUsed = (isAlternate, darkModeDefault) => {
+      const baseTheme = document.querySelector('#giscus-base-theme')?.value ?? 'light';
+      const alternateTheme = document.querySelector('#giscus-alt-theme')?.value ?? 'dark';
+      let newTheme = '';
+      if(authorPrefersDark) {
+        newTheme = isAlternate ? baseTheme : alternateTheme;
+      } else {
+        newTheme = isAlternate ? alternateTheme : baseTheme;
+      }
+      const changeGiscusTheme = () => {
+        // From: https://github.com/giscus/giscus/issues/336
+        const sendMessage = (message) => {
+          const iframe = document.querySelector('iframe.giscus-frame');
+          if (!iframe) return;
+          iframe.contentWindow.postMessage({ giscus: message }, 'https://giscus.app');
+        }
+        sendMessage({
+          setConfig: {
+            theme: newTheme
+          }
+        });
+      }
+      const isGiscussLoaded = window.document.querySelector('iframe.giscus-frame') !== null;
+      if (isGiscussLoaded) {
+        changeGiscusTheme();
+      }
+    };
+    const authorPrefersDark = false;
+    const darkModeDefault = authorPrefersDark;
+      document.querySelector('link#quarto-text-highlighting-styles.quarto-color-scheme-extra').rel = 'disabled-stylesheet';
+      document.querySelector('link#quarto-bootstrap.quarto-color-scheme-extra').rel = 'disabled-stylesheet';
+    let localAlternateSentinel = darkModeDefault ? 'alternate' : 'default';
+    // Dark / light mode switch
+    window.quartoToggleColorScheme = () => {
+      // Read the current dark / light value
+      let toAlternate = !hasAlternateSentinel();
+      toggleColorMode(toAlternate);
+      setStyleSentinel(toAlternate);
+      toggleGiscusIfUsed(toAlternate, darkModeDefault);
+      window.dispatchEvent(new Event('resize'));
+    };
+    // Switch to dark mode if need be
+    if (hasAlternateSentinel()) {
+      toggleColorMode(true);
+    } else {
+      toggleColorMode(false);
+    }
+  </script>
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top">
+    <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
+      <div class="navbar-container container-fluid">
+      <div class="navbar-brand-container mx-auto">
+    <a href="./index.html" class="navbar-brand navbar-brand-logo">
+    <img src="./assets/img/vu-logo-white.png" alt="Vrije Universiteit Amsterdam" class="navbar-logo light-content">
+    <img src="./assets/img/vu-logo-white.png" alt="Vrije Universiteit Amsterdam" class="navbar-logo dark-content">
+    </a>
+    <a class="navbar-brand" href="./index.html">
+    <span class="navbar-title">CADC</span>
+    </a>
+  </div>
+            <div id="quarto-search" class="" title="Search"></div>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll ms-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="./weeks/index.html"> 
+<span class="menu-text">Weeks</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="./playground.html"> 
+<span class="menu-text">Playground</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="./homework.html"> 
+<span class="menu-text">Homework</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="./projects.html"> 
+<span class="menu-text">Projects</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="./assessment.html"> 
+<span class="menu-text">Assessment</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="./ai.html"> 
+<span class="menu-text">AI use</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="./info.html"> 
+<span class="menu-text">Info</span></a>
+  </li>  
+</ul>
+          </div> <!-- /navcollapse -->
+            <div class="quarto-navbar-tools">
+  <a href="" class="quarto-color-scheme-toggle quarto-navigation-tool  px-1" onclick="window.quartoToggleColorScheme(); return false;" title="Toggle dark mode"><i class="bi"></i></a>
+</div>
+      </div> <!-- /container-fluid -->
+    </nav>
+</header>
+<!-- content -->
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul class="collapse">
+  <li><a href="#checklist" id="toc-checklist" class="nav-link active" data-scroll-target="#checklist">Before Tuesday of week 1</a></li>
+  <li><a href="#downloads" id="toc-downloads" class="nav-link" data-scroll-target="#downloads">Downloads</a></li>
+  <li><a href="#zip" id="toc-zip" class="nav-link" data-scroll-target="#zip">Zip files</a></li>
+  <li><a href="#extensions" id="toc-extensions" class="nav-link" data-scroll-target="#extensions">File extensions</a></li>
+  <li><a href="#folders" id="toc-folders" class="nav-link" data-scroll-target="#folders">Where your files live</a></li>
+  <li><a href="#paths" id="toc-paths" class="nav-link" data-scroll-target="#paths">Paths</a></li>
+  <li><a href="#working-directory" id="toc-working-directory" class="nav-link" data-scroll-target="#working-directory">R and your folders</a></li>
+  <li><a href="#installing" id="toc-installing" class="nav-link" data-scroll-target="#installing">Installing software</a></li>
+  <li><a href="#rstudio" id="toc-rstudio" class="nav-link" data-scroll-target="#rstudio">RStudio in five minutes</a></li>
+  <li><a href="#keyboard" id="toc-keyboard" class="nav-link" data-scroll-target="#keyboard">Keyboard</a></li>
+  <li><a href="#stuck" id="toc-stuck" class="nav-link" data-scroll-target="#stuck">When something goes wrong</a></li>
+  <li><a href="#week3" id="toc-week3" class="nav-link" data-scroll-target="#week3">Before week 3: a language model on your laptop</a></li>
+  </ul>
+</nav>
+    </div>
+<!-- main -->
+<main class="content" id="quarto-document-content">
+
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">Before the first lab</h1>
+<p class="subtitle lead">Setup, and the computer basics around R</p>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<p>Every lab runs on your own laptop, in R and RStudio. The first half of this page is a checklist to work through at home before Tuesday of week 1. The second half is a reference for the moments when the computer gets in the way instead of R: a download you cannot find, a zip that will not open, a file R says does not exist, a key you cannot type.</p>
+<section id="checklist" class="level2">
+<h2 class="anchored" data-anchor-id="checklist">Before Tuesday of week 1</h2>
+<div class="cadc-stage" style="--cadc-accent:var(--cadc-era-1)">
+<div class="cadc-stage__n">
+<p>1</p>
+</div>
+<div class="cadc-stage__body">
+<div class="cadc-stage__meta">
+<p>Two minutes</p>
+</div>
+<section id="check-your-laptop" class="level3">
+<h3 class="anchored" data-anchor-id="check-your-laptop">Check your laptop</h3>
+<p>A Windows laptop (Windows 10 or 11) or a Mac works. A Chromebook, an iPad, or a work laptop on which you are not allowed to install software will not run RStudio. If that is your situation, send us a message on Canvas before week 1 and we will find a solution together.</p>
+</section>
+</div>
+</div>
+<div class="cadc-stage" style="--cadc-accent:var(--cadc-era-1)">
+<div class="cadc-stage__n">
+<p>2</p>
+</div>
+<div class="cadc-stage__body">
+<div class="cadc-stage__meta">
+<p>About twenty minutes</p>
+</div>
+<section id="install-r-then-rstudio" class="level3">
+<h3 class="anchored" data-anchor-id="install-r-then-rstudio">Install R, then RStudio</h3>
+<p><strong>R</strong> is the program that runs your code. <strong>RStudio</strong> is the program you work in; it starts R for you. Both are free. Install R first.</p>
+<div class="tabset-margin-container"></div><div class="panel-tabset" data-group="os">
+<ul class="nav nav-tabs" role="tablist"><li class="nav-item" role="presentation"><a class="nav-link active" id="tabset-1-1-tab" data-bs-toggle="tab" data-bs-target="#tabset-1-1" role="tab" aria-controls="tabset-1-1" aria-selected="true" href="">Windows</a></li><li class="nav-item" role="presentation"><a class="nav-link" id="tabset-1-2-tab" data-bs-toggle="tab" data-bs-target="#tabset-1-2" role="tab" aria-controls="tabset-1-2" aria-selected="false" href="">macOS</a></li></ul>
+<div class="tab-content" data-group="os">
+<div id="tabset-1-1" class="tab-pane active" role="tabpanel" aria-labelledby="tabset-1-1-tab">
+<ol type="1">
+<li>Go to <a href="https://cran.r-project.org">cran.r-project.org</a>, click <em>Download R for Windows</em>, then <em>base</em>, then the download link at the top.</li>
+<li>Open the downloaded <code>.exe</code> file and click through, keeping every default. If Windows asks whether the app may make changes to your device, click <em>Yes</em>.</li>
+<li>Go to <a href="https://posit.co/download/rstudio-desktop/">posit.co/download/rstudio-desktop</a> and download RStudio Desktop for Windows. Open it and keep every default.</li>
+<li>Open RStudio from the Start menu: press <kbd>Win</kbd>, type <em>RStudio</em>, press <kbd>Enter</kbd>.</li>
+</ol>
+</div>
+<div id="tabset-1-2" class="tab-pane" role="tabpanel" aria-labelledby="tabset-1-2-tab">
+<ol type="1">
+<li>Check which chip your Mac has: the Apple menu (top left) &gt; <em>About This Mac</em>. It says either <em>Chip: Apple M…</em> or <em>Processor: … Intel</em>.</li>
+<li>Go to <a href="https://cran.r-project.org">cran.r-project.org</a> and click <em>Download R for macOS</em>. With an Apple chip, take the installer whose name ends in <strong>arm64.pkg</strong>; with Intel, the one ending in <strong>x86_64.pkg</strong>. The wrong one installs fine and then causes trouble later, so check twice.</li>
+<li>Open the <code>.pkg</code> file and click through.</li>
+<li>Go to <a href="https://posit.co/download/rstudio-desktop/">posit.co/download/rstudio-desktop</a> and download RStudio Desktop for macOS. Open the <code>.dmg</code> file and <strong>drag the RStudio icon into the Applications folder</strong> in that window. Then eject the <em>RStudio</em> disk in the Finder sidebar.</li>
+<li>Open RStudio from Applications, or press <kbd>Cmd</kbd> + <kbd>Space</kbd>, type <em>RStudio</em>, press <kbd>Enter</kbd>. If macOS asks whether you are sure you want to open an app downloaded from the internet, click <em>Open</em>.</li>
+</ol>
+</div>
+</div>
+</div>
+<p><strong>Done when</strong> the console (the pane at the bottom left) shows a line starting with <em>R version 4.</em>, and typing <code>1 + 1</code> there and pressing <kbd>Enter</kbd> prints <code>[1] 2</code>.</p>
+</section>
+</div>
+</div>
+<div class="cadc-stage" style="--cadc-accent:var(--cadc-era-1)">
+<div class="cadc-stage__n">
+<p>3</p>
+</div>
+<div class="cadc-stage__body">
+<div class="cadc-stage__meta">
+<p>Two minutes</p>
+</div>
+<section id="change-three-settings-in-rstudio" class="level3">
+<h3 class="anchored" data-anchor-id="change-three-settings-in-rstudio">Change three settings in RStudio</h3>
+<p>Open <em>Tools &gt; Global Options</em>.</p>
+<ul>
+<li>Under <em>General</em>, untick <em>Restore .RData into workspace at startup</em>, and set <em>Save workspace to .RData on exit</em> to <em>Never</em>. Every session then starts empty, so your code has to work from top to bottom on its own, which is what happens when someone else runs it.</li>
+<li>Under <em>Code</em>, tick <em>Use native pipe operator, |&gt;</em>. The shortcut <kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>M</kbd> (<kbd>Cmd</kbd> + <kbd>Shift</kbd> + <kbd>M</kbd> on a Mac) then types the pipe the labs use.</li>
+</ul>
+<p>Click <em>OK</em>.</p>
+</section>
+</div>
+</div>
+<div class="cadc-stage" style="--cadc-accent:var(--cadc-era-1)">
+<div class="cadc-stage__n">
+<p>4</p>
+</div>
+<div class="cadc-stage__body">
+<div class="cadc-stage__meta">
+<p>Ten to twenty minutes, on a good connection</p>
+</div>
+<section id="install-the-course-packages" class="level3">
+<h3 class="anchored" data-anchor-id="install-the-course-packages">Install the course packages</h3>
+<p>Packages add functions to R. This installs every package the labs use, so no lab has to start with a download. Copy the command (the button at the top right of the box does that) into the RStudio console and press <kbd>Enter</kbd>:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">install.packages</span>(<span class="fu">c</span>(<span class="st">"tidyverse"</span>, <span class="st">"tidytext"</span>, <span class="st">"sotu"</span>, <span class="st">"textstem"</span>,</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>                   <span class="st">"tidymodels"</span>, <span class="st">"textrecipes"</span>, <span class="st">"glmnet"</span>, <span class="st">"discrim"</span>,</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>                   <span class="st">"naivebayes"</span>, <span class="st">"LiblineaR"</span>, <span class="st">"stopwords"</span>, <span class="st">"tidyllm"</span>,</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>                   <span class="st">"rmarkdown"</span>))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>A lot of red text scrolls past. That is normal: R prints its progress in red. It is finished when the <code>&gt;</code> prompt is back at the bottom of the console.</p>
+<p>If R asks <em>Do you want to install from sources the packages which need compilation?</em>, type <code>no</code> and press <kbd>Enter</kbd>. If it asks whether to use a <em>personal library</em>, answer <code>yes</code> both times. <a href="#installing">What these questions mean</a>.</p>
+</section>
+</div>
+</div>
+<div class="cadc-stage" style="--cadc-accent:var(--cadc-era-1)">
+<div class="cadc-stage__n">
+<p>5</p>
+</div>
+<div class="cadc-stage__body">
+<div class="cadc-stage__meta">
+<p>Five minutes · this is also a rehearsal of every lab</p>
+</div>
+<section id="make-a-course-folder-and-run-the-setup-check" class="level3">
+<h3 class="anchored" data-anchor-id="make-a-course-folder-and-run-the-setup-check">Make a course folder and run the setup check</h3>
+<p>Make one folder for the course, for example <code>cadc</code> inside <em>Documents</em>. Every lab comes as a zip file, and every zip gets extracted into this folder.</p>
+<ol type="1">
+<li>Download the setup check (button below) and extract it into your course folder. On Windows: right-click the zip &gt; <em>Extract All</em>. On a Mac: double-click it, then move the folder that appears into your course folder. <a href="#zip">More on zip files</a>.</li>
+<li>In the extracted folder, open <code>setup-check.qmd</code> in RStudio. If a double-click opens it in another program, use <em>File &gt; Open File</em> in RStudio instead.</li>
+<li>Click the green ▶ at the top right of the grey code box.</li>
+</ol>
+<p>The check looks at your R version, your packages and the folder you are working in, and says <code>[ok]</code>, <code>[note]</code> or <code>[fix]</code> for each. A <code>[fix]</code> line also says what to do. <strong>Done when</strong> nothing says <code>[fix]</code>, and clicking <em>Render</em> at the top of the editor opens a web page with the same report.</p>
+<p>If you get stuck, bring the check’s output to the first lab, or paste it into your message when you ask for help. It tells us most of what we need to know.</p>
+<p><a class="cadc-cta" href="labs/files/setup-check.zip">Download the setup check</a></p>
+</section>
+</div>
+</div>
+<div class="cadc-stage" style="--cadc-accent:var(--cadc-era-1)">
+<div class="cadc-stage__n">
+<p>6</p>
+</div>
+<div class="cadc-stage__body">
+<div class="cadc-stage__meta">
+<p>A few hours, spread over the week before</p>
+</div>
+<section id="meet-the-console-before-the-first-lab" class="level3">
+<h3 class="anchored" data-anchor-id="meet-the-console-before-the-first-lab">Meet the console before the first lab</h3>
+<p>Work through chapters 2 to 5 of <em>R for Computational Social Science</em>. It runs in the browser, so this step works even before step 2. The first lab assumes you can open RStudio and run a line of code.</p>
+<p><a class="cadc-cta" href="https://r4css.vanatteveldt.com/" target="_blank" rel="noopener">Open r4css</a></p>
+</section>
+</div>
+</div>
+<div class="cadc-stage" style="--cadc-accent:var(--cadc-era-1)">
+<div class="cadc-stage__n">
+<p>7</p>
+</div>
+<div class="cadc-stage__body">
+<div class="cadc-stage__meta">
+<p>Five minutes</p>
+</div>
+<section id="can-you-do-these-ten-things" class="level3">
+<h3 class="anchored" data-anchor-id="can-you-do-these-ten-things">Can you do these ten things?</h3>
+<p>In the first labs, most time is lost on things around R: a file in the wrong folder, a zip that was never extracted, or a key nobody can find. If you hesitate on any of these, read the section it links to.</p>
+<ol type="1">
+<li>Find a file you just downloaded, without searching the whole computer. (<a href="#downloads">Downloads</a>)</li>
+<li>Extract a zip file into a folder you chose. (<a href="#zip">Zip files</a>)</li>
+<li>See whether a file ends in <code>.csv</code>, <code>.qmd</code> or <code>.zip</code>. (<a href="#extensions">File extensions</a>)</li>
+<li>Say which folder your course files are in, and whether it syncs to the cloud. (<a href="#folders">Where your files live</a>)</li>
+<li>Copy the full path of a file. (<a href="#paths">Paths</a>)</li>
+<li>Explain why <code>read_csv("data.csv")</code> works in one place and not in another. (<a href="#working-directory">R and your folders</a>)</li>
+<li>Run one code chunk of a <code>.qmd</code> file, then one single line. (<a href="#rstudio">RStudio in five minutes</a>)</li>
+<li>Type <code>|</code>, <code>~</code>, <code>{</code>, <code>[</code> and <code>"</code> on your own keyboard. (<a href="#keyboard">Keyboard</a>)</li>
+<li>Switch from your browser to RStudio without the mouse, and take a screenshot of part of the screen. (<a href="#keyboard">Keyboard</a>)</li>
+<li>Stop R when it seems stuck, and tell what a <code>+</code> in the console means. (<a href="#stuck">When something goes wrong</a>)</li>
+</ol>
+</section>
+</div>
+</div>
+</section>
+<section id="downloads" class="level2">
+<h2 class="anchored" data-anchor-id="downloads">Downloads</h2>
+<p>Your browser saves files to the <em>Downloads</em> folder unless you told it otherwise. To find the file you just downloaded, click the download icon (an arrow) at the top right of the browser, then <em>Show in folder</em> (Windows) or the magnifying glass (Mac). On Windows, <kbd>Ctrl</kbd> + <kbd>J</kbd> opens that list in most browsers.</p>
+<ul>
+<li>Downloading the same file twice gives <code>week01-lab-a (1).zip</code>. Delete the old one, or you will not know which one you extracted.</li>
+<li>Downloads is a place files pass through. Do not work in it: move what you need into your course folder.</li>
+</ul>
+</section>
+<section id="zip" class="level2">
+<h2 class="anchored" data-anchor-id="zip">Zip files</h2>
+<p>A zip file packs several files into one, so a lab can be one download. Before you can use the files, they have to be <strong>extracted</strong>.</p>
+<div class="tabset-margin-container"></div><div class="panel-tabset" data-group="os">
+<ul class="nav nav-tabs" role="tablist"><li class="nav-item" role="presentation"><a class="nav-link active" id="tabset-2-1-tab" data-bs-toggle="tab" data-bs-target="#tabset-2-1" role="tab" aria-controls="tabset-2-1" aria-selected="true" href="">Windows</a></li><li class="nav-item" role="presentation"><a class="nav-link" id="tabset-2-2-tab" data-bs-toggle="tab" data-bs-target="#tabset-2-2" role="tab" aria-controls="tabset-2-2" aria-selected="false" href="">macOS</a></li></ul>
+<div class="tab-content" data-group="os">
+<div id="tabset-2-1" class="tab-pane active" role="tabpanel" aria-labelledby="tabset-2-1-tab">
+<p>Double-clicking a zip <em>shows</em> what is inside, but extracts nothing. Code you open from there cannot find its data, and whatever you save is lost (the explainer under <a href="#paths">Paths</a> shows why). Instead:</p>
+<ol type="1">
+<li>Right-click the zip &gt; <em>Extract All…</em></li>
+<li>Click <em>Browse</em> and choose your course folder, then <em>Extract</em>.</li>
+</ol>
+<p>It worked when you see an ordinary folder, without a zipper on its icon.</p>
+</div>
+<div id="tabset-2-2" class="tab-pane" role="tabpanel" aria-labelledby="tabset-2-2-tab">
+<p>Double-click the zip in Finder. It is extracted into a folder of the same name, next to the zip. Move that folder into your course folder.</p>
+<p>Safari extracts zips by itself after downloading, so you may find a folder in Downloads rather than a zip. That folder is what you need.</p>
+</div>
+</div>
+</div>
+</section>
+<section id="extensions" class="level2">
+<h2 class="anchored" data-anchor-id="extensions">File extensions</h2>
+<p>The last part of a file name, after the dot, says what kind of file it is: <code>.csv</code> is a table, <code>.qmd</code> a Quarto document, <code>.zip</code> a packed folder. Windows and macOS hide it by default, which makes <code>ess-news.csv</code> and <code>ess-news.zip</code> look alike. Make them visible:</p>
+<div class="tabset-margin-container"></div><div class="panel-tabset" data-group="os">
+<ul class="nav nav-tabs" role="tablist"><li class="nav-item" role="presentation"><a class="nav-link active" id="tabset-3-1-tab" data-bs-toggle="tab" data-bs-target="#tabset-3-1" role="tab" aria-controls="tabset-3-1" aria-selected="true" href="">Windows</a></li><li class="nav-item" role="presentation"><a class="nav-link" id="tabset-3-2-tab" data-bs-toggle="tab" data-bs-target="#tabset-3-2" role="tab" aria-controls="tabset-3-2" aria-selected="false" href="">macOS</a></li></ul>
+<div class="tab-content" data-group="os">
+<div id="tabset-3-1" class="tab-pane active" role="tabpanel" aria-labelledby="tabset-3-1-tab">
+<p>In File Explorer, open <em>View &gt; Show</em> and tick <em>File name extensions</em> (Windows 11). On Windows 10, open the <em>View</em> tab and tick <em>File name extensions</em>.</p>
+</div>
+<div id="tabset-3-2" class="tab-pane" role="tabpanel" aria-labelledby="tabset-3-2-tab">
+<p>In Finder, open <em>Finder &gt; Settings &gt; Advanced</em> and tick <em>Show all filename extensions</em>.</p>
+</div>
+</div>
+</div>
+<p>Two traps this prevents:</p>
+<ul>
+<li><strong>Renaming without seeing the extension</strong> turns <code>data</code> into <code>data.csv.csv</code>, and R cannot find <code>data.csv</code>.</li>
+<li><strong>Saving a <code>.csv</code> from Excel.</strong> Opening one in Excel to look at it is fine. Saving it is not: on a Dutch or German computer Excel writes semicolons instead of commas and decimal commas instead of points, and it can change dates and long numbers. Look at data in RStudio instead (<code>View(ess)</code>, or click the table in the <em>Environment</em> pane).</li>
+</ul>
+<p>If double-clicking a <code>.qmd</code> opens the wrong program, open it from RStudio with <em>File &gt; Open File</em>. To make RStudio the default: on Windows, right-click the file &gt; <em>Open with &gt; Choose another app</em> &gt; RStudio, <em>Always</em>; on a Mac, select the file, press <kbd>Cmd</kbd> + <kbd>I</kbd>, choose RStudio under <em>Open with</em> and click <em>Change All</em>.</p>
+</section>
+<section id="folders" class="level2">
+<h2 class="anchored" data-anchor-id="folders">Where your files live</h2>
+<p>Keep one folder for the course, for example <code>Documents/cadc</code>, and extract every lab into it. After two weeks it looks like this:</p>
+<pre><code>cadc/
+├── setup-check/
+├── week01-lab-a/
+│   ├── week01-lab-a-part1.qmd
+│   ├── week01-lab-a-part2.qmd
+│   ├── ess-news.csv
+│   └── guns-polls.csv
+├── week01-lab-b/
+└── week02-lab-a/</code></pre>
+<ul>
+<li><strong>Cloud folders.</strong> On many laptops <em>Documents</em> and <em>Desktop</em> are synced to OneDrive (Windows) or iCloud Drive (Mac). That is fine, with one setting: synced files can live only in the cloud until you open them, and R cannot always read those. Right-click your course folder and choose <em>Always keep on this device</em> (OneDrive) or <em>Keep Downloaded</em> (iCloud).</li>
+<li><strong>Names.</strong> File and folder names without spaces and special characters save typing and mistakes: <code>week01_notes.qmd</code>, not <code>Week 1 notes (final!).qmd</code>.</li>
+</ul>
+</section>
+<section id="paths" class="level2">
+<h2 class="anchored" data-anchor-id="paths">Paths</h2>
+<p>A path is the address of a file: the route through the folders to get to it. Click through the six steps below; it is the one idea on this page that most “file not found” errors come down to.</p>
+<figure class="cadc-explainer figure"><iframe src="explainers/paths/index.html" title="Interactive explainer: paths" loading="lazy" style="width:100%;height:500px;border:1px solid var(--cadc-hairline);border-radius:var(--cadc-r-lg);background:var(--cadc-surface)"></iframe><noscript><img src="explainers/paths/fallback.png" alt="Interactive explainer: paths" style="width:100%;border:1px solid var(--cadc-hairline);border-radius:var(--cadc-r-lg)" class="figure-img"></noscript><figcaption class="cadc-explainer__cap">Click through, or use the arrow keys. <a href="explainers/paths/index.html" target="_blank" rel="noopener">Open full screen</a></figcaption></figure>
+<p><strong>Copying the path of a file:</strong></p>
+<div class="tabset-margin-container"></div><div class="panel-tabset" data-group="os">
+<ul class="nav nav-tabs" role="tablist"><li class="nav-item" role="presentation"><a class="nav-link active" id="tabset-4-1-tab" data-bs-toggle="tab" data-bs-target="#tabset-4-1" role="tab" aria-controls="tabset-4-1" aria-selected="true" href="">Windows</a></li><li class="nav-item" role="presentation"><a class="nav-link" id="tabset-4-2-tab" data-bs-toggle="tab" data-bs-target="#tabset-4-2" role="tab" aria-controls="tabset-4-2" aria-selected="false" href="">macOS</a></li></ul>
+<div class="tab-content" data-group="os">
+<div id="tabset-4-1" class="tab-pane active" role="tabpanel" aria-labelledby="tabset-4-1-tab">
+<p>Select the file in File Explorer and press <kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>C</kbd> (Windows 11), or hold <kbd>Shift</kbd>, right-click the file and choose <em>Copy as path</em>. You get something like:</p>
+<pre><code>"C:\Users\sam\Documents\cadc\week01-lab-a\ess-news.csv"</code></pre>
+<p>R reads a <code>\</code> as the start of a special character, so pasting that gives <code>Error: '\U' used without hex digits in character string</code>. Replace every <code>\</code> with <code>/</code>:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="fu">read_csv</span>(<span class="st">"C:/Users/sam/Documents/cadc/week01-lab-a/ess-news.csv"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<div id="tabset-4-2" class="tab-pane" role="tabpanel" aria-labelledby="tabset-4-2-tab">
+<p>Select the file in Finder and press <kbd>Option</kbd> + <kbd>Cmd</kbd> + <kbd>C</kbd>. Or right-click it, hold <kbd>Option</kbd>, and choose <em>Copy … as Pathname</em>. You get something like:</p>
+<pre><code>/Users/sam/Documents/cadc/week01-lab-a/ess-news.csv</code></pre>
+</div>
+</div>
+</div>
+<p>In the labs you will rarely need a full path, and you should not hand one in: a line with <code>C:/Users/sam/...</code> in it runs on Sam’s laptop and nowhere else. Keep the data next to the <code>.qmd</code> and use the file name alone. A data file in a subfolder is <code>data/ess-news.csv</code>; <code>..</code> means one folder up.</p>
+</section>
+<section id="working-directory" class="level2">
+<h2 class="anchored" data-anchor-id="working-directory">R and your folders</h2>
+<p>R looks for files in one folder at a time, the <strong>working directory</strong>.</p>
+<ul>
+<li>In a <code>.qmd</code> file, the working directory is the folder the <code>.qmd</code> is in, both when you run a chunk and when you click <em>Render</em>.</li>
+<li>In the console, it is a separate folder, usually your home folder. A line you type in the console therefore looks somewhere else than the same line in a chunk.</li>
+<li>To check: <code>getwd()</code> prints the working directory, <code>list.files()</code> the files in it.</li>
+<li>Avoid <code>setwd("C:/Users/...")</code>. It works on one computer only, and inside a <code>.qmd</code> it lasts for one chunk. Move the files instead.</li>
+</ul>
+<p><strong>Try it once.</strong> Open <code>setup-check.qmd</code>, add a chunk at the end (<kbd>Ctrl</kbd> + <kbd>Alt</kbd> + <kbd>I</kbd>, on a Mac <kbd>Cmd</kbd> + <kbd>Option</kbd> + <kbd>I</kbd>), and run:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="fu">writeLines</span>(<span class="st">"Hello from R"</span>, <span class="st">"hello.txt"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>Find <code>hello.txt</code> in File Explorer or Finder, and in RStudio’s <em>Files</em> pane at the bottom right. Then type the same line into the console, press <kbd>Enter</kbd>, and find out where that copy went (<code>getwd()</code> tells you). Delete both files afterwards.</p>
+<p><strong>A shortcut that prevents typos:</strong> type <code>read_csv("</code> and press <kbd>Tab</kbd>. RStudio lists the files in the working directory; type the first letters and press <kbd>Tab</kbd> again. If the file is not in the list, R will not find it either.</p>
+</section>
+<section id="installing" class="level2">
+<h2 class="anchored" data-anchor-id="installing">Installing software</h2>
+<p>What you might see, and what to do.</p>
+<p><strong>R asks <em>Do you want to install from sources the packages which need compilation? (Yes/no/cancel)</em></strong>. Answer <code>no</code>. The newest version of a package is sometimes not yet prepared (“compiled”) for your system. <em>Yes</em> means your computer has to compile it, which needs extra tools you probably do not have. <em>No</em> gives you the previous, ready-made version, which is fine.</p>
+<p><strong>R asks <em>Would you like to use a personal library instead?</em></strong>. Answer <code>yes</code>, and <code>yes</code> again when it offers to create one. Packages then go into a folder of your own.</p>
+<p><strong>R warns <em>Rtools is required to build R packages</em> (Windows).</strong> Ignore it. You only need Rtools to compile packages, see above.</p>
+<p><strong>Error: <em>there is no package called ‘tidytext’</em>.</strong> The package is not installed. Run <code>install.packages("tidytext")</code> once.</p>
+<p><strong>Error: <em>could not find function “read_csv”</em>.</strong> The package is installed but not loaded in this session, or the name has a typo. Run the <code>library(...)</code> line at the top of the file. Installing happens once per computer; <code>library()</code> once per session.</p>
+<p><strong>Mac: RStudio is gone after a restart, or there is an <em>RStudio</em> disk in the Finder sidebar.</strong> You ran it from the download instead of installing it. Drag RStudio into Applications, then eject the disk.</p>
+<p><strong>Mac: the setup check says you have the Intel version of R.</strong> Download the installer ending in <code>arm64.pkg</code> from CRAN, install it over the old one, restart RStudio and install the course packages again.</p>
+<p><strong>Your R is more than a year old.</strong> Install the current version the same way as the first time, then run the package line from step 4 again: packages belong to one R version. RStudio updates itself through <em>Help &gt; Check for Updates</em>.</p>
+</section>
+<section id="rstudio" class="level2">
+<h2 class="anchored" data-anchor-id="rstudio">RStudio in five minutes</h2>
+<p>RStudio has four panes. Top left is the <strong>editor</strong>, where your <code>.qmd</code> file is open. Bottom left is the <strong>console</strong>, where R runs things and prints the results. Top right, <em>Environment</em> lists the objects you have made. Bottom right, <em>Files</em> shows the working directory, and <em>Plots</em> and <em>Help</em> appear there too.</p>
+<p>A <code>.qmd</code> file mixes text with grey <strong>code chunks</strong>. Three ways to run code:</p>
+<ul>
+<li><strong>One line:</strong> put the cursor on it and press <kbd>Ctrl</kbd> + <kbd>Enter</kbd> (<kbd>Cmd</kbd> + <kbd>Enter</kbd> on a Mac). The cursor moves to the next line, so you can step through a chunk.</li>
+<li><strong>One chunk:</strong> click the green ▶ at its top right.</li>
+<li><strong>Everything above:</strong> the small grey ▼ next to the ▶ runs all chunks before this one. Use it when R says an object does not exist because you skipped a chunk.</li>
+</ul>
+<p><em>Render</em> runs the whole file from the top in a fresh session and makes a web page of it. If a file renders with an error but worked when you ran it chunk by chunk, it depended on something you did in the console.</p>
+<p><strong>What the console is telling you:</strong></p>
+<ul>
+<li><code>&gt;</code> means R is ready.</li>
+<li><code>+</code> means R is waiting for you to finish a command, usually a missing <code>)</code> or <code>"</code>. Press <kbd>Esc</kbd> to start over.</li>
+<li>A small red stop sign at the top right of the console means R is busy. Wait, or press <kbd>Esc</kbd> to interrupt it.</li>
+</ul>
+<p>When things behave oddly, restart R (<em>Session &gt; Restart R</em>) and run the file again from the top.</p>
+</section>
+<section id="keyboard" class="level2">
+<h2 class="anchored" data-anchor-id="keyboard">Keyboard</h2>
+<p>The shortcuts that save the most time in this course. The first rows of each table matter most.</p>
+<p><strong>Everywhere</strong></p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 33%">
+<col style="width: 33%">
+<col style="width: 33%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>What it does</th>
+<th>Windows</th>
+<th>macOS</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Switch between programs</td>
+<td><kbd>Alt</kbd> + <kbd>Tab</kbd></td>
+<td><kbd>Cmd</kbd> + <kbd>Tab</kbd></td>
+</tr>
+<tr class="even">
+<td>Open a program or find a file</td>
+<td><kbd>Win</kbd>, then type</td>
+<td><kbd>Cmd</kbd> + <kbd>Space</kbd>, then type</td>
+</tr>
+<tr class="odd">
+<td>Screenshot of part of the screen</td>
+<td><kbd>Win</kbd> + <kbd>Shift</kbd> + <kbd>S</kbd></td>
+<td><kbd>Cmd</kbd> + <kbd>Shift</kbd> + <kbd>4</kbd> (then <kbd>Space</kbd> for one window)</td>
+</tr>
+<tr class="even">
+<td>Copy, cut, paste</td>
+<td><kbd>Ctrl</kbd> + <kbd>C</kbd>, <kbd>X</kbd>, <kbd>V</kbd></td>
+<td><kbd>Cmd</kbd> + <kbd>C</kbd>, <kbd>X</kbd>, <kbd>V</kbd></td>
+</tr>
+<tr class="odd">
+<td>Undo</td>
+<td><kbd>Ctrl</kbd> + <kbd>Z</kbd></td>
+<td><kbd>Cmd</kbd> + <kbd>Z</kbd></td>
+</tr>
+<tr class="even">
+<td>Select all</td>
+<td><kbd>Ctrl</kbd> + <kbd>A</kbd></td>
+<td><kbd>Cmd</kbd> + <kbd>A</kbd></td>
+</tr>
+<tr class="odd">
+<td>Find</td>
+<td><kbd>Ctrl</kbd> + <kbd>F</kbd></td>
+<td><kbd>Cmd</kbd> + <kbd>F</kbd></td>
+</tr>
+<tr class="even">
+<td>Select text</td>
+<td><kbd>Shift</kbd> + arrow keys</td>
+<td><kbd>Shift</kbd> + arrow keys</td>
+</tr>
+<tr class="odd">
+<td>Jump one word</td>
+<td><kbd>Ctrl</kbd> + <kbd>←</kbd> / <kbd>→</kbd></td>
+<td><kbd>Option</kbd> + <kbd>←</kbd> / <kbd>→</kbd></td>
+</tr>
+<tr class="even">
+<td>Start or end of the line</td>
+<td><kbd>Home</kbd> / <kbd>End</kbd></td>
+<td><kbd>Cmd</kbd> + <kbd>←</kbd> / <kbd>→</kbd></td>
+</tr>
+<tr class="odd">
+<td>Close a tab or window</td>
+<td><kbd>Ctrl</kbd> + <kbd>W</kbd></td>
+<td><kbd>Cmd</kbd> + <kbd>W</kbd></td>
+</tr>
+<tr class="even">
+<td>Quit a frozen program</td>
+<td><kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>Esc</kbd></td>
+<td><kbd>Cmd</kbd> + <kbd>Option</kbd> + <kbd>Esc</kbd></td>
+</tr>
+</tbody>
+</table>
+<p><strong>In RStudio</strong></p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 33%">
+<col style="width: 33%">
+<col style="width: 33%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>What it does</th>
+<th>Windows</th>
+<th>macOS</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Run the line (or the selection)</td>
+<td><kbd>Ctrl</kbd> + <kbd>Enter</kbd></td>
+<td><kbd>Cmd</kbd> + <kbd>Enter</kbd></td>
+</tr>
+<tr class="even">
+<td>Run the chunk</td>
+<td><kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>Enter</kbd></td>
+<td><kbd>Cmd</kbd> + <kbd>Shift</kbd> + <kbd>Enter</kbd></td>
+</tr>
+<tr class="odd">
+<td>Complete a name or file name</td>
+<td><kbd>Tab</kbd></td>
+<td><kbd>Tab</kbd></td>
+</tr>
+<tr class="even">
+<td>Previous command (in the console)</td>
+<td><kbd>↑</kbd></td>
+<td><kbd>↑</kbd></td>
+</tr>
+<tr class="odd">
+<td>Cancel a half-typed command</td>
+<td><kbd>Esc</kbd></td>
+<td><kbd>Esc</kbd></td>
+</tr>
+<tr class="even">
+<td>Insert a code chunk</td>
+<td><kbd>Ctrl</kbd> + <kbd>Alt</kbd> + <kbd>I</kbd></td>
+<td><kbd>Cmd</kbd> + <kbd>Option</kbd> + <kbd>I</kbd></td>
+</tr>
+<tr class="odd">
+<td>Type the pipe <code>|&gt;</code></td>
+<td><kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>M</kbd></td>
+<td><kbd>Cmd</kbd> + <kbd>Shift</kbd> + <kbd>M</kbd></td>
+</tr>
+<tr class="even">
+<td>Type <code>&lt;-</code></td>
+<td><kbd>Alt</kbd> + <kbd>-</kbd></td>
+<td><kbd>Option</kbd> + <kbd>-</kbd></td>
+</tr>
+<tr class="odd">
+<td>Comment lines in or out</td>
+<td><kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>C</kbd></td>
+<td><kbd>Cmd</kbd> + <kbd>Shift</kbd> + <kbd>C</kbd></td>
+</tr>
+<tr class="even">
+<td>Save</td>
+<td><kbd>Ctrl</kbd> + <kbd>S</kbd></td>
+<td><kbd>Cmd</kbd> + <kbd>S</kbd></td>
+</tr>
+<tr class="odd">
+<td>Render</td>
+<td><kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>K</kbd></td>
+<td><kbd>Cmd</kbd> + <kbd>Shift</kbd> + <kbd>K</kbd></td>
+</tr>
+<tr class="even">
+<td>Restart R</td>
+<td><kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>F10</kbd></td>
+<td><kbd>Cmd</kbd> + <kbd>Shift</kbd> + <kbd>0</kbd></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Characters R needs that your keyboard may hide</strong></p>
+<p>On a US or UK keyboard, <code>|</code>, <code>~</code>, <code>{</code>, <code>[</code> and <code>\</code> are printed on the keys. On other layouts they sit behind a modifier key:</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 33%">
+<col style="width: 33%">
+<col style="width: 33%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Character</th>
+<th>German, Windows</th>
+<th>German, Mac</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>|</code></td>
+<td><kbd>AltGr</kbd> + <kbd>&lt;</kbd></td>
+<td><kbd>Option</kbd> + <kbd>7</kbd></td>
+</tr>
+<tr class="even">
+<td><code>~</code></td>
+<td><kbd>AltGr</kbd> + <kbd>+</kbd></td>
+<td><kbd>Option</kbd> + <kbd>N</kbd>, then <kbd>Space</kbd></td>
+</tr>
+<tr class="odd">
+<td><code>{</code> <code>}</code></td>
+<td><kbd>AltGr</kbd> + <kbd>7</kbd> / <kbd>0</kbd></td>
+<td><kbd>Option</kbd> + <kbd>8</kbd> / <kbd>9</kbd></td>
+</tr>
+<tr class="even">
+<td><code>[</code> <code>]</code></td>
+<td><kbd>AltGr</kbd> + <kbd>8</kbd> / <kbd>9</kbd></td>
+<td><kbd>Option</kbd> + <kbd>5</kbd> / <kbd>6</kbd></td>
+</tr>
+<tr class="odd">
+<td><code>\</code></td>
+<td><kbd>AltGr</kbd> + <kbd>ß</kbd></td>
+<td><kbd>Option</kbd> + <kbd>Shift</kbd> + <kbd>7</kbd></td>
+</tr>
+</tbody>
+</table>
+<p>For any other layout: on Windows, open the <em>On-Screen Keyboard</em> (press <kbd>Win</kbd>, type it) and hold <kbd>AltGr</kbd> to see what appears; on a Mac, turn on <em>Show Input menu in menu bar</em> under <em>System Settings &gt; Keyboard &gt; Text Input</em>, choose <em>Show Keyboard Viewer</em> from that menu, and hold <kbd>Option</kbd>.</p>
+<p><strong>The US-International trap.</strong> Many laptops in the Netherlands use the <em>US-International</em> layout. On it, <code>"</code>, <code>'</code>, <code>`</code>, <code>~</code> and <code>^</code> wait for the next key to make é or ë, so typing <code>read_csv("ess</code> can give <code>read_csv(ëss</code>. Press <kbd>Space</kbd> after the quote to get the quote itself, or switch to the plain <em>US</em> layout (<em>ABC</em> or <em>U.S.</em> on a Mac), which has no such keys.</p>
+</section>
+<section id="stuck" class="level2">
+<h2 class="anchored" data-anchor-id="stuck">When something goes wrong</h2>
+<p><strong>Read the last line of the error first.</strong> It usually names the problem:</p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>R says</th>
+<th>What it usually means</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>object 'ess' not found</code></td>
+<td>The line that makes <code>ess</code> has not run yet in this session, or the name has a typo. Run the chunks above (the grey ▼).</td>
+</tr>
+<tr class="even">
+<td><code>could not find function "..."</code></td>
+<td>The package is not loaded: run the <code>library()</code> line. Or a typo.</td>
+</tr>
+<tr class="odd">
+<td><code>'ess-news.csv' does not exist in current working directory</code></td>
+<td>R is looking in another folder than the file is in. See <a href="#paths">Paths</a>.</td>
+</tr>
+<tr class="even">
+<td><code>there is no package called '...'</code></td>
+<td>Not installed yet. See <a href="#installing">Installing software</a>.</td>
+</tr>
+<tr class="odd">
+<td><code>unexpected symbol</code>, <code>unexpected ')'</code></td>
+<td>A typo: often a missing comma or bracket on that line or the one before.</td>
+</tr>
+<tr class="even">
+<td><code>unexpected input</code></td>
+<td>Often curly quotes, see below.</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Curly quotes.</strong> Code copied from a PDF, Word or slides often turns <code>"</code> into <code>“</code> and <code>”</code>, which R does not accept. Retype the quotes in RStudio, or copy code from the course website with the copy button at the top right of each code box.</p>
+<p><strong>Restart and run again.</strong> <em>Session &gt; Restart R</em>, then run the file from the top. Many puzzling errors come from leftovers of an earlier attempt.</p>
+<p><strong>Asking for help.</strong> Say what you ran, what you expected, and paste the error as text, not a photo of your screen. For a screenshot, use <kbd>Win</kbd> + <kbd>Shift</kbd> + <kbd>S</kbd> or <kbd>Cmd</kbd> + <kbd>Shift</kbd> + <kbd>4</kbd>, then <kbd>Space</kbd>. If it is about installing, add the output of the <a href="#checklist">setup check</a>.</p>
+</section>
+<section id="week3" class="level2">
+<h2 class="anchored" data-anchor-id="week3">Before week 3: a language model on your laptop</h2>
+<p>The later weeks run a small language model on your own laptop and use a course API key. The instructions and a second check will appear here before week 3. There is nothing to install for it now.</p>
+
+
+</section>
+
+</main> <!-- /main -->
+<script>
+// Quarto remembers the dark/light toggle in localStorage only over http(s). On
+// file:// URLs (opening _site/*.html directly) it deliberately forgets it, so
+// every new page starts light again. Persist it there too, under Quarto's own
+// key. This include sits before Quarto's script, so the setTimeout lets Quarto's
+// DOMContentLoaded handler, which defines the toggle, run first.
+(function () {
+  if (window.location.protocol !== "file:") return;
+  var KEY = "quarto-color-scheme";
+  window.document.addEventListener("DOMContentLoaded", function () { setTimeout(function () {
+    var toggle = window.quartoToggleColorScheme;
+    if (!toggle) return;
+    // On file:// Quarto starts every page in the default (light) scheme.
+    var dark = false;
+    try { dark = window.localStorage.getItem(KEY) === "alternate"; } catch (e) {}
+    if (dark) toggle();
+    window.quartoToggleColorScheme = function () {
+      toggle();
+      dark = !dark;
+      try { window.localStorage.setItem(KEY, dark ? "alternate" : "default"); } catch (e) {}
+    };
+  }, 0); });
+})();
+</script>
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    // Ensure there is a toggle, if there isn't float one in the top right
+    if (window.document.querySelector('.quarto-color-scheme-toggle') === null) {
+      const a = window.document.createElement('a');
+      a.classList.add('top-right');
+      a.classList.add('quarto-color-scheme-toggle');
+      a.href = "";
+      a.onclick = function() { try { window.quartoToggleColorScheme(); } catch {} return false; };
+      const i = window.document.createElement("i");
+      i.classList.add('bi');
+      a.appendChild(i);
+      window.document.body.appendChild(a);
+    }
+    setColorSchemeToggle(hasAlternateSentinel())
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+      const outerScaffold = trigger.parentElement.cloneNode(true);
+      const codeEl = outerScaffold.querySelector('code');
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp("https:\/\/masurp\.github\.io\/cadc\/");
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+</div> <!-- /content -->
+<footer class="footer">
+  <div class="nav-footer">
+    <div class="nav-footer-left">
+<p>Monday lecture · Tuesday &amp; Thursday labs · Dr.&nbsp;Philipp K. Masur</p>
+</div>   
+    <div class="nav-footer-center">
+<p><a href="./setup.html">Setup help</a> · <a href="./license.html">License &amp; data sources</a> · <a href="./privacy.html">Privacy</a></p>
+</div>
+    <div class="nav-footer-right">
+<p>Vrije Universiteit Amsterdam · CC BY 4.0</p>
+</div>
+  </div>
+</footer>
+
+
+
+
+<script src="site_libs/quarto-html/zenscroll-min.js"></script>
+</body></html>

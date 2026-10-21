@@ -1,0 +1,336 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>A timeline of natural language processing, 1763–2026</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=IBM+Plex+Sans:wght@400;500&display=swap">
+<style>
+  /* ==========================================================================
+     A timeline of NLP — a lecture explainer.
+
+     A rebuild of the three PowerPoint timeline slides from the 2021–2024 deck
+     (VU_CADC_2026/slides/img/timeline/Slide1–3.png, source timeline.pptx) in
+     the same form: one axis, open nodes, bold years, an event title with
+     bullets above or below the axis, an image beside the text where there is
+     one. Nothing else — no era bands, no captions; the lecturer narrates.
+     Six screens of four events, one generation per screen, one per click;
+     #N in the URL opens screen N. Each screen takes the era colour of the
+     strip at the top of the deck: foundations and the birth of the field in
+     era 1, symbolic NLP in era 2, the statistical turn in era 3, embeddings
+     and Transformers in era 4, language models in era 5.
+
+     What changed against the original: two dates corrected (Lovelace's Note G
+     is 1843, not 1842; the universal machine is 1936 and the learning machine
+     1950, not 1934), "2012: first unsupervised neural network by Google"
+     replaced by the milestones the field actually cites (Bengio 2003, AlexNet
+     2012), and the gaps filled: Shannon 1948, the Turing test, the perceptron,
+     the General Inquirer as its own 1966 node (the first dictionary, so the
+     dictionary lineage starts where it did and not at LIWC), backpropagation,
+     LIWC/LDA, GloVe/attention, the scaling years, and 2023–2026.
+
+     Typography follows slides/theme.scss: Space Grotesk for titles and
+     numerals, IBM Plex Sans for the words that are read, the square bullet
+     marker of the deck. Every block is measured after the fonts load and its
+     type stepped down (13 → 11 px) only where the text would otherwise run
+     past its box.
+
+     Images, all in img/: twelve are the ones the original slides used
+     (extracted from timeline.pptx). Four are new, from Wikimedia Commons:
+       shannon.jpg     Konrad Jacobs, MFO, CC BY-SA 2.0 de
+       weaver.jpg      Donald Cooksey, public domain
+       chomsky.jpg     "Noam Chomsky portrait 2017", CC BY-SA 4.0
+       rosenblatt.jpg  "Frank Rosenblatt", CC BY-SA 4.0
+     Colours are a local copy of the CADC light palette (an iframe cannot
+     inherit the parent's custom properties).
+     ========================================================================== */
+  :root{
+    --ink:#1a1a17; --ink-2:#3a3a34; --ink-3:#5a5a52; --muted:#7a7a70; --faint:#9a9a90;
+    --hair:#e7e3d9; --border:#e0dcd0; --surface:#ffffff;
+    --blue:#0077B3;
+    --era1:#0077B3; --era2:oklch(0.55 0.10 210); --era3:oklch(0.55 0.11 158);
+    --era4:oklch(0.58 0.12 75); --era5:oklch(0.55 0.15 38);
+    --accent:var(--blue);
+    --head:"Space Grotesk", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+    --body:"IBM Plex Sans", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0; height:100%}
+  body{font-family:var(--body); background:transparent; color:var(--ink);
+       display:flex; align-items:center; justify-content:center;
+       overflow:hidden; cursor:pointer; -webkit-tap-highlight-color:transparent}
+  svg{width:100%; height:100%; display:block}
+  text{font-family:var(--head); fill:var(--ink)}
+  .axis{stroke:var(--accent); stroke-width:2.6; stroke-linecap:round}
+  .head{fill:var(--accent)}
+  .node{fill:var(--surface); stroke:var(--accent); stroke-width:2.4}
+  .stem{stroke:var(--accent); stroke-width:1.6}
+  .dot{fill:var(--accent)}
+  .yr{font-size:22px; font-weight:700; text-anchor:middle; fill:var(--accent); letter-spacing:-.01em}
+  .step{font-size:10.5px; fill:#b6b2a8; text-anchor:end}
+  .screen{transition:opacity .4s ease}
+  .hid{opacity:0; pointer-events:none}
+
+  /* the event blocks are HTML inside foreignObject so the bullets wrap.
+     --k is the fit factor: 1 by default, stepped down per block if needed. */
+  .blk{--k:1; font-family:var(--body); display:flex; gap:14px; align-items:flex-start;
+       height:100%; padding:0 0 0 12px; overflow:hidden}
+  .txt{flex:1 1 auto; min-width:0}
+  .h{font-family:var(--head); font-size:calc(16px * var(--k)); font-weight:700; letter-spacing:-.01em;
+     line-height:1.2; margin:0 0 6px; color:var(--ink)}
+  .blk ul{list-style:none; margin:0; padding:0}
+  .blk b{font-weight:600; color:var(--ink)}
+  .blk li{position:relative; font-size:calc(13px * var(--k)); line-height:1.34; color:var(--ink-2);
+          padding-left:1.15em; margin:0 0 .35em}
+  .blk li::before{content:""; position:absolute; left:.1em; top:.52em; width:.38em; height:.38em;
+                  border-radius:2px; background:var(--accent)}
+  .fig{flex:0 0 auto}
+  .fig img{display:block; max-width:100%; object-fit:contain}
+  .fig svg{display:block}
+  @media (prefers-reduced-motion: reduce){ .screen{transition:none} }
+</style>
+</head>
+<body>
+<svg id="chart" viewBox="0 0 1136 516" preserveAspectRatio="xMidYMid meet" role="img"
+     aria-label="A timeline of natural language processing from Bayes in 1763 to reasoning models in 2026, in six screens. Click or press the arrow keys to move between screens.">
+  <g id="screens"></g>
+  <g id="hud"></g>
+</svg>
+<noscript><p style="max-width:34em;margin:2em;font-family:sans-serif">Needs JavaScript: a timeline of
+natural language processing, 1763–2026, in six screens.</p></noscript>
+
+<script>
+(function () {
+  "use strict";
+  var svgns = "http://www.w3.org/2000/svg", xhtml = "http://www.w3.org/1999/xhtml";
+  function el(tag, attrs) { var e = document.createElementNS(svgns, tag); for (var k in attrs) e.setAttribute(k, attrs[k]); return e; }
+  function txt(parent, s, attrs) { var t = el("text", attrs); t.textContent = s; parent.appendChild(t); return t; }
+  function g(parent, attrs) { var e = el("g", attrs || {}); parent.appendChild(e); return e; }
+  function clear(n) { while (n.firstChild) n.removeChild(n.firstChild); }
+
+  // ---- geometry ----------------------------------------------------------------
+  var W = 1136, H = 516, X0 = 60, AY = 258, RIGHT = 1128, XEND = 1112;
+  var UP = { y: 8, h: AY - 44 - 8 }, DOWN = { y: AY + 44, h: 512 - (AY + 44) };
+
+  // ---- two small drawings that have no image to borrow -------------------------
+  function attention() {
+    var toks = ["The", "cat", "sat", "on", "mat"], n = toks.length, c = 21, ox = 32, oy = 24;
+    var w = [[.6,.2,.1,.05,.05],[.15,.55,.2,.05,.05],[.05,.35,.4,.1,.1],[.05,.05,.25,.4,.25],[.1,.15,.1,.25,.4]];
+    var s = '<svg xmlns="http://www.w3.org/2000/svg" width="' + (ox + n * c + 4) + '" height="' + (oy + n * c + 4) + '" style="font-family:var(--head)">';
+    for (var i = 0; i < n; i++) {
+      s += '<text x="' + (ox - 5) + '" y="' + (oy + i * c + 14) + '" font-size="9.5" text-anchor="end" fill="#5a5a52">' + toks[i] + '</text>';
+      s += '<text x="' + (ox + i * c + c / 2) + '" y="' + (oy - 7) + '" font-size="9.5" text-anchor="middle" fill="#5a5a52">' + toks[i] + '</text>';
+      for (var j = 0; j < n; j++)
+        s += '<rect x="' + (ox + j * c) + '" y="' + (oy + i * c) + '" width="' + (c - 1) + '" height="' + (c - 1) + '" rx="1.5" style="fill:var(--accent)" fill-opacity="' + (0.08 + w[i][j] * 1.4) + '"/>';
+    }
+    return s + "</svg>";
+  }
+  function scaling() {
+    var rows = [["GPT-1", 0.117, "117M"], ["GPT-2", 1.5, "1.5B"], ["GPT-3", 175, "175B"]];
+    var s = '<svg xmlns="http://www.w3.org/2000/svg" width="190" height="100" style="font-family:var(--head)">';
+    rows.forEach(function (r, i) {
+      var y = 8 + i * 28, w = 18 + (Math.log10(r[1]) + 1) * 40;
+      s += '<text x="44" y="' + (y + 13) + '" font-size="10.5" text-anchor="end" fill="#3a3a34">' + r[0] + '</text>';
+      s += '<rect x="50" y="' + y + '" width="' + w + '" height="18" rx="2" style="fill:var(--accent)" fill-opacity="' + (0.35 + i * 0.3) + '"/>';
+      s += '<text x="' + (54 + w) + '" y="' + (y + 13) + '" font-size="10.5" fill="#5a5a52">' + r[2] + '</text>';
+    });
+    return s + '<text x="50" y="98" font-size="8.5" fill="#9a9a90">parameters, log scale</text></svg>';
+  }
+
+  // ---- content: six screens, four events each, left to right -------------------
+  // [year label, title, bullets, image]; image is {src, w} or {svg} or null
+  var SCREENS = [
+    { era: 1, events: [
+      ["1763", "Bayes’ theorem",
+        ["Published two years after Thomas Bayes’s death, edited by Richard Price",
+         "How to update a probability given evidence — the basis of <b>Naive Bayes</b> classifiers"],
+        { src: "img/bayes-formula.png", w: 150 }],
+      ["1843", "The first algorithm",
+        ["Ada Lovelace’s “Note G”: a program for Babbage’s Analytical Engine",
+         "She foresees machines that operate on symbols of any kind, not only numbers"],
+        { src: "img/lovelace.png", w: 104 }],
+      ["1854", "Boolean logic",
+        ["George Boole’s “Laws of Thought” turns reasoning into algebra: AND, OR, NOT",
+         "The basis of digital circuits, programming languages and keyword search"],
+        { src: "img/boole-venn.png", w: 165 }],
+      ["1936", "The universal machine",
+        ["Alan Turing’s abstract machine: a limitless tape, a head that reads and writes one symbol at a time",
+         "Anything computable can be computed by it — the blueprint of the computer"],
+        { src: "img/turing.png", w: 108 }]
+    ]},
+    { era: 1, events: [
+      ["1948", "Information theory",
+        ["Claude Shannon: information measured in bits, uncertainty as entropy",
+         "English modelled as letter and word probabilities (<b>n-grams</b>) — the first statistical language model"],
+        { src: "img/shannon.jpg", w: 100 }],
+      ["1949", "Weaver’s memorandum",
+        ["Warren Weaver frames machine translation as code-breaking and statistics",
+         "1954: the Georgetown–IBM demo translates 60 Russian sentences; MT is declared three to five years away"],
+        { src: "img/weaver.jpg", w: 118 }],
+      ["1950", "Can machines think?",
+        ["Turing’s “Computing Machinery and Intelligence” proposes the imitation game — the <b>Turing test</b>",
+         "A “child machine” that learns from experience instead of being programmed"],
+        null],
+      ["1957", "Grammar theories",
+        ["Noam Chomsky’s “Syntactic Structures”: a finite set of rules generates infinitely many sentences",
+         "Three decades of symbolic NLP follow: hand-written grammars and parsers"],
+        { src: "img/chomsky.jpg", w: 100 }]
+    ]},
+    { era: 2, events: [
+      ["1958", "The perceptron",
+        ["Frank Rosenblatt’s first trainable <b>neural network</b>: weighted inputs, a threshold, a learning rule",
+         "Minsky &amp; Papert (1969) show what one layer cannot learn; neural nets go out of fashion"],
+        { src: "img/rosenblatt.jpg", w: 100 }],
+      ["1966", "The first dictionary: the General Inquirer",
+        ["Stone, Dunphy, Smith &amp; Ogilvie (Harvard): word lists per category, applied to texts by a mainframe — the first computer <b>content analysis</b>, and the <b>dictionary approach</b> of week 2",
+         "Same year: Weizenbaum’s ELIZA imitates a therapist by pattern matching; the ALPAC report ends US funding for machine translation"],
+        null],
+      ["1970s–80s", "Knowledge-based NLP",
+        ["SHRDLU (1970) follows commands in a blocks world; expert systems",
+         "Meaning is encoded by hand in ontologies: concepts, properties, relations",
+         "Works in toy worlds, does not scale to real text"],
+        null],
+      ["1986", "Backpropagation",
+        ["Rumelhart, Hinton &amp; Williams: multi-layer networks can be trained",
+         "Neural nets return — but data and compute are still too scarce for language"],
+        { src: "img/neural-net.png", w: 118 }]
+    ]},
+    { era: 3, events: [
+      ["1990s", "The statistical turn",
+        ["IBM (Brown et al., 1990): translation learned from parallel text, not from rules",
+         "Hidden Markov models, Naive Bayes spam filters, SVMs (1995), LSTMs (1997)",
+         "Corpora replace grammars; evaluation on held-out data becomes the norm"],
+        { src: "img/svm.png", w: 110 }],
+      ["2001–2003", "LIWC &amp; topic models",
+        ["<b>LIWC</b> (Pennebaker, 2001): the 1966 dictionary idea goes mainstream in psychology — word lists that count emotional and cognitive categories",
+         "<b>LDA</b> (Blei et al., 2003): topics as distributions over words",
+         "Bengio et al. (2003): the first neural language model"],
+        null],
+      ["2012", "Deep learning takes off",
+        ["AlexNet wins ImageNet by a wide margin, trained on GPUs",
+         "Learned features beat hand-crafted ones; big data and GPUs make the decade possible"],
+        null],
+      ["2013", "word2vec",
+        ["Mikolov et al. learn <b>word embeddings</b> efficiently from raw text",
+         "Vector arithmetic captures meaning: king − man + woman ≈ queen",
+         "GloVe (2014) follows; pre-trained embeddings lift every downstream task"],
+        { src: "img/word2vec-king.png", w: 150 }]
+    ]},
+    { era: 4, events: [
+      ["2014–2016", "Sequence models",
+        ["Sequence-to-sequence learning with LSTMs: an encoder compresses the input, a decoder generates the output (Sutskever et al., 2014)",
+         "Bahdanau et al. (2014) add <b>attention</b>: the decoder looks back at every input word"],
+        { src: "img/rnn.jpg", w: 165 }],
+      ["2017", "Attention &amp; Transformers",
+        ["Vaswani et al., “Attention Is All You Need”: self-attention only, no recurrence",
+         "Trains in parallel on huge corpora — the architecture behind every model since"],
+        { svg: attention() }],
+      ["2018", "BERT &amp; GPT",
+        ["GPT (OpenAI) predicts the next word; BERT (Google) fills in masked words",
+         "Pre-train once on the web, fine-tune for any task: <b>transfer learning</b> becomes the recipe"],
+        { src: "img/bert.png", w: 170 }],
+      ["2019–2020", "Scaling",
+        ["GPT-2 (1.5B parameters) writes coherent paragraphs; GPT-3 (175B) learns new tasks from a few examples in the prompt",
+         "<b>In-context learning</b>: no fine-tuning, just instructions"],
+        { svg: scaling() }]
+    ]},
+    { era: 5, events: [
+      ["2022", "ChatGPT",
+        ["InstructGPT: models aligned with human feedback (<b>RLHF</b>) to follow instructions",
+         "30 November: ChatGPT reaches 100 million users within two months"],
+        { src: "img/chatgpt.png", w: 92 }],
+      ["2023", "The LLM year",
+        ["GPT-4 (March); Meta’s Llama makes open-weight models mainstream",
+         "Gilardi et al.: ChatGPT outperforms crowd workers at text <b>annotation</b>"],
+        null],
+      ["2024", "Multimodal",
+        ["GPT-4o, Gemini 1.5, Claude 3: one model reads text, images, audio and video",
+         "Context windows reach a million tokens; small open models run on a laptop"],
+        null],
+      ["2025–2026", "Reasoning &amp; agents",
+        ["Reasoning models (OpenAI o1, late 2024; DeepSeek-R1, 2025) “think” before they answer",
+         "Models use tools, browse and act — agents. What can be delegated to them?"],
+        null]
+    ]}
+  ];
+
+  // ---- build --------------------------------------------------------------------
+  var gScreens = document.getElementById("screens"), gHud = document.getElementById("hud");
+  var blocks = [];   // {div, h} for the fit pass
+
+  function block(parent, ev, x, up, bw) {
+    var box = up ? UP : DOWN, left = x - 6;
+    var fo = el("foreignObject", { x: left, y: box.y, width: bw, height: box.h });
+    var div = document.createElementNS(xhtml, "div");
+    div.setAttribute("class", "blk");
+    var h = '<div class="txt"><div class="h">' + ev[1] + '</div><ul>' +
+            ev[2].map(function (b) { return "<li>" + b + "</li>"; }).join("") + "</ul></div>";
+    var im = ev[3];
+    if (im) {
+      h += '<div class="fig" style="width:' + (im.w || "auto") + 'px">' +
+           (im.svg ? im.svg : '<img src="' + im.src + '" alt="" style="max-height:' + (box.h - 4) + 'px">') + "</div>";
+    }
+    div.innerHTML = h;
+    fo.appendChild(div);
+    parent.appendChild(fo);
+    blocks.push({ div: div, h: box.h });
+    // stem from the node to the TOP of the block on either side, ending in a
+    // dot beside the title. The title always sits at the top of its box, so an
+    // upper block's stem runs up the 12px gutter past the bullets to reach it;
+    // stopping at the box's lower edge left it short and hanging in empty space.
+    var edge = box.y;
+    parent.appendChild(el("line", { class: "stem", x1: x, x2: x, y1: up ? AY - 9 : AY + 9, y2: edge }));
+    parent.appendChild(el("circle", { class: "dot", cx: left + 6, cy: edge, r: 3.2 }));
+  }
+
+  var screenNodes = SCREENS.map(function (sc) {
+    var k = g(gScreens, { class: "screen hid", style: "--accent:var(--era" + sc.era + ")" });
+    k.appendChild(el("line", { class: "axis", x1: 16, x2: XEND, y1: AY, y2: AY }));
+    k.appendChild(el("path", { class: "head", d: "M" + (XEND - 2) + "," + (AY - 6) + " L" + (XEND + 9) + "," + AY + " L" + (XEND - 2) + "," + (AY + 6) + " z" }));
+    // the slot is chosen so the LAST block still ends inside the drawing with
+    // every block left-anchored; same-side blocks are two slots apart and a
+    // block is narrower than that, so blocks on one side cannot overlap
+    var n = sc.events.length, slot = (RIGHT + 32 - X0) / (n + 1.5), bw = 2 * slot - 28;
+    sc.events.forEach(function (ev, i) {
+      var x = X0 + (i + 0.5) * slot, up = i % 2 === 0;
+      block(k, ev, x, up, bw);
+      k.appendChild(el("circle", { class: "node", cx: x, cy: AY, r: 9 }));
+      txt(k, ev[0], { x: x, y: up ? AY + 34 : AY - 20, class: "yr" });
+    });
+    return k;
+  });
+
+  // ---- fit: step a block's type down only if its text would run past the box ----
+  // Measured in the SVG's own units: the foreignObject is laid out at viewBox
+  // scale, so scrollHeight compares directly with the box height.
+  function fit() {
+    blocks.forEach(function (b) {
+      var k = 1;
+      b.div.style.setProperty("--k", k);
+      while (b.div.scrollHeight > b.h + 1 && k > 0.84) { k -= 0.04; b.div.style.setProperty("--k", k.toFixed(2)); }
+    });
+  }
+
+  // #N in the URL opens screen N (1-based); a lecturer's bookmark, and how it is screenshotted
+  var N = SCREENS.length;
+  function fromHash() { var v = parseInt((location.hash || "").slice(1), 10); return isNaN(v) ? 0 : Math.max(0, Math.min(N - 1, v - 1)); }
+  var state = fromHash();
+  function render() {
+    screenNodes.forEach(function (k, i) { k.setAttribute("class", "screen " + (i === state ? "" : "hid")); });
+    clear(gHud);
+    txt(gHud, (state + 1) + " / " + N, { x: W - 20, y: H - 14, class: "step" });
+  }
+  render();
+  fit();
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(fit);
+  window.addEventListener("load", fit);
+  window.addEventListener("hashchange", function () { state = fromHash(); render(); });
+  document.body.addEventListener("click", function () { if (state < N - 1) { state += 1; render(); } });
+  document.body.addEventListener("keydown", function (e) {
+    if (e.key === "Enter" || e.key === " " || e.key === "ArrowRight") { e.preventDefault(); if (state < N - 1) { state += 1; render(); } }
+    if (e.key === "ArrowLeft" && state > 0) { e.preventDefault(); state -= 1; render(); }
+  });
+})();
+</script>
+</body>
+</html>

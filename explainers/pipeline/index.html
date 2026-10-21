@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The text classification pipeline</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&display=swap">
+<link rel="stylesheet" href="../shared/pipeline.css">
+<style>:root{ --accent:var(--era1) }</style>
+</head>
+<!-- ===========================================================================
+  WEEK 1 — the bare pipeline. The figure every earlier edition of this course
+  was built on (text_analysis_fundamentals/Slide01a), redrawn.
+
+      sources → 01 obtain → texts → 02 represent → matrix
+              → 03 classify → labelled texts → 04 validate ⟲
+
+  BUILT TO GROW. The row, the rail and the artefacts are drawn by
+  shared/pipeline.js and are identical in all five variants; the band under
+  the row is empty this week and is what weeks 2, 3 and 4 fill:
+
+      pipeline-dictionary   a word list feeds 03      (old Slide02)
+      pipeline-ml           labels + an algorithm     (old Slide03)
+      pipeline-embeddings   a pre-trained model feeds 02 (old Slide04)
+      pipeline-llm          a prompt feeds 03, 02 goes (old Slide05/06)
+
+  The last click here previews exactly those four, in the site's era colours,
+  so the syllabus and the figure are the same picture.
+=========================================================================== -->
+<body>
+<svg id="chart" viewBox="-8 -10 996 440" preserveAspectRatio="xMidYMid meet" role="img"
+     aria-label="The text classification pipeline: obtain, represent, classify, validate, with validation feeding back into the earlier steps, and a preview of what feeds the classifier in weeks 2 to 4. Click to step through."></svg>
+<noscript><p style="max-width:34em;margin:2em;font-family:sans-serif">Needs JavaScript: an animated
+walk through the four step text classification pipeline.</p></noscript>
+
+<script src="../shared/pipeline.js"></script>
+<script>
+(function () {
+  "use strict";
+  var P = CADCPipeline.build({
+    matrix: { kind: "counts", label: "texts × words" }
+  });
+  var G = P.G;
+
+  /* -- the band under the row: what weeks 2 to 4 will put here -------------- */
+  var FEEDS = [
+    { wk: "WEEK 2", col: "var(--era2)", ic: "book",    t: "A dictionary",   s: "a word list you write yourself" },
+    { wk: "WEEK 3", col: "var(--era3)", ic: "weights", t: "Labels + an algorithm", s: "the list is learned from texts you coded" },
+    { wk: "WEEK 3", col: "var(--era4)", ic: "space",   t: "A pre-trained model", s: "changes step 02, not the classifier" },
+    { wk: "WEEK 4", col: "var(--era5)", ic: "spark",   t: "A prompt", s: "no training at all, and step 02 falls away" }
+  ];
+  var feeds = P.g(P.layer.slot, {});
+  (function () {
+    /* The row stops at x = 855: past that is the hand coded subset under step
+       04 and its label. The connector rises from the middle of the band, not
+       from one card, because all four plug into the same socket. */
+    var w = 194, gap = 16, y = 282, h = 84, x0 = 22, mid = x0 + (4 * w + 3 * gap) / 2;
+    P.elbow(feeds, [[mid, y - 6], [mid, 240], [G.CX[2], 240], [G.CX[2], G.BY + G.BH + 4]], "feed flow");
+    P.txt(feeds, "what feeds the classifier", { x: mid + 12, y: 232, "class": "lbl left" });
+    FEEDS.forEach(function (f, i) {
+      var k = P.card(feeds, { x: x0 + i * (w + gap), y: y, w: w, h: h, icon: f.ic,
+                              chip: f.wk, chipW: 46, title: f.t, sub: f.s });
+      /* the era stripe: this card is that week's colour on the timeline too */
+      k.querySelector("rect.chip").setAttribute("fill", f.col);
+      k.querySelector("svg.ic").style.color = f.col;
+      k.appendChild(P.el("rect", { x: x0 + i * (w + gap), y: y, width: 4, height: h, rx: 2, fill: f.col }));
+    });
+    P.show(feeds, false, true);
+  })();
+
+  /* -- scenes: what each click puts on screen ---------------------------
+     (the lecturer narrates these; nothing is printed under the figure) 
+       0. Where the texts come from.
+       1. 01 · Obtain.
+       2. 02 · Represent.
+       3. 03 · Classify.
+       4. 04 · Validate.
+       5. Weeks 2, 3 and 4 change what feeds step 03 — and once, step 02.
+     -------------------------------------------------------------------- */
+  var SCENES = 6;
+  CADCPipeline.run(P, SCENES, function (s) {
+    P.setSteps([0, 1, 2, 3].map(function (i) {
+      if (s === 5) return i === 2 ? "on accent" : "";
+      if (s === 0 || i + 1 > s) return "dim";
+      return i + 1 === s ? "on" : "";
+    }));
+    P.show(P.art.docs, s >= 1); P.show(P.art.mat, s >= 2); P.show(P.art.lab, s >= 3);
+    P.show(P.art.gold, s >= 4); P.show(P.fb, s >= 4); P.show(feeds, s >= 5, true);
+    /* one document flying out of the sources and into the first bay */
+    if (s === 1) P.travel(90, G.MID, G.ART[0], G.MID - 12);
+  });
+})();
+</script>
+</body>
+</html>

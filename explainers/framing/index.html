@@ -1,0 +1,170 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>From a question to a problem</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&display=swap">
+<style>
+  /* ==========================================================================
+     From a question to a problem — a lecture explainer.
+
+     The bridge between the pipeline (which is machinery) and specification
+     (which is judgement). It takes the housing question from earlier in the
+     deck, pulls it into its three decisions, and shows that only ONE of them
+     is the machine's job. That is the argument: the pipeline consumes
+     "one text in, one label out", and everything either side of it is a
+     choice a researcher has to defend.
+
+     Deliberately stops before input/output/criterion/check — those are the
+     next slide, and repeating them here would spend the punchline early.
+
+     Click / Enter / space advances; #N in the URL opens at step N.
+     ========================================================================== */
+  :root{
+    --ink:#1a1a17; --ink-2:#3a3a34; --ink-3:#5a5a52; --muted:#7a7a70; --faint:#9a9a90;
+    --hair:#e7e3d9; --border:#e0dcd0; --surface:#ffffff; --strip:#f2f0ea;
+    --blue:#0077B3; --deep:#005A88; --blue-bg:#dbeaf4;
+    --font:"Space Grotesk", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0; height:100%}
+  body{font-family:var(--font); background:transparent; color:var(--ink);
+       display:flex; align-items:center; justify-content:center;
+       overflow:hidden; cursor:pointer; -webkit-tap-highlight-color:transparent}
+  svg{width:100%; height:100%; display:block}
+  text{font-family:var(--font); fill:var(--ink)}
+  .q{font-size:21px; fill:var(--ink); text-anchor:middle}
+  .q tspan.mark{fill:var(--deep); font-weight:700}
+  .ul{stroke:var(--blue); stroke-width:2.4; stroke-linecap:round; opacity:.55}
+  .card rect{fill:var(--surface); stroke:var(--border); stroke-width:1.3}
+  .card .h{font-size:13.5px; font-weight:700; fill:var(--ink); text-anchor:middle}
+  .card .s{font-size:11px; fill:var(--ink-3); text-anchor:middle}
+  .card .who{font-size:9.5px; font-weight:700; letter-spacing:.09em; fill:var(--muted); text-anchor:middle}
+  .card.on rect{stroke:var(--blue); stroke-width:2.6; fill:#f2f9fd}
+  .card.on .h{fill:var(--deep)} .card.on .who{fill:var(--blue)}
+  .card.off{opacity:.34}
+  .arm{stroke:var(--border); stroke-width:1.4; fill:none}
+  .arm.on{stroke:var(--blue); stroke-opacity:.9}
+  .chip rect{fill:var(--blue)} .chip text{font-size:12px; font-weight:700; fill:#fff; text-anchor:middle}
+  .io rect{fill:var(--blue-bg); stroke:var(--blue); stroke-width:1.4}
+  .io text{font-size:12.5px; fill:var(--deep); text-anchor:middle; font-weight:500}
+  .arrow{stroke:var(--blue); stroke-width:2; fill:none}
+  .step{font-size:10.5px; fill:#b6b2a8; text-anchor:end}
+  .fade{transition:opacity .45s ease}
+  .hid{opacity:0}
+</style>
+</head>
+<body>
+<svg id="chart" viewBox="0 0 1000 412" preserveAspectRatio="xMidYMid meet" role="img"
+     aria-label="A research question about housing coverage pulled apart into three decisions — which texts, what counts as negative, compared with what — of which only the middle one is the machine's job.">
+  <g id="question"></g>
+  <g id="marks" class="fade hid"></g>
+  <g id="cards"></g>
+  <g id="io" class="fade hid"></g>
+  <g id="hud"></g>
+</svg>
+<noscript><p style="max-width:34em;margin:2em;font-family:sans-serif">Needs JavaScript: an animated
+walk from a research question to the one part of it a machine can do.</p></noscript>
+
+<script>
+(function () {
+  "use strict";
+  var NS = "http://www.w3.org/2000/svg";
+  function el(t, a) { var e = document.createElementNS(NS, t); for (var k in a) if (a[k] != null) e.setAttribute(k, a[k]); return e; }
+  function txt(p, s, a) { var t = el("text", a || {}); t.textContent = s; p.appendChild(t); return t; }
+  function g(p, a) { var e = el("g", a || {}); p.appendChild(e); return e; }
+  function clear(n) { while (n.firstChild) n.removeChild(n.firstChild); }
+
+  var gQ = document.getElementById("question"), gM = document.getElementById("marks"),
+      gC = document.getElementById("cards"), gIO = document.getElementById("io"),
+      gHud = document.getElementById("hud");
+
+  /* the question, built from runs so each phrase can be marked in place */
+  var RUNS = [
+    { s: "Did ", mark: 0 }, { s: "Dutch news coverage", mark: 1 }, { s: " of housing get ", mark: 0 },
+    { s: "more negative", mark: 2 }, { s: " ", mark: 0 }, { s: "between 2015 and 2025", mark: 3 },
+    { s: "?", mark: 0 }
+  ];
+  var qText = txt(gQ, "", { x: 500, y: 66, "class": "q" });
+  var spans = RUNS.map(function (r) {
+    var t = el("tspan", r.mark ? { "class": "mark" } : {});
+    t.textContent = r.s; qText.appendChild(t); return { node: t, mark: r.mark };
+  });
+
+  var CARDS = [
+    { x: 60,  h: "Which texts?",              s: ["every article mentioning", "woningmarkt, four outlets"], who: "YOUR DECISION" },
+    { x: 370, h: "What counts as negative?",  s: ["one label per article,", "defined in a codebook"],       who: "THE MACHINE'S JOB" },
+    { x: 680, h: "Compared with what?",       s: ["year on year, and against", "what baseline"],            who: "YOUR DECISION" }
+  ];
+  var CW = 260, CH = 104, CY = 176;
+
+  var cards = CARDS.map(function (c, i) {
+    var k = g(gC, { "class": "card fade hid" });
+    k.appendChild(el("rect", { x: c.x, y: CY, width: CW, height: CH, rx: 9 }));
+    txt(k, c.who, { x: c.x + CW / 2, y: CY + 22, "class": "who" });
+    txt(k, c.h,   { x: c.x + CW / 2, y: CY + 47, "class": "h" });
+    c.s.forEach(function (s, j) { txt(k, s, { x: c.x + CW / 2, y: CY + 68 + j * 14, "class": "s" }); });
+    var arm = el("path", { "class": "arm", d: "M 500 92 C 500 130, " + (c.x + CW / 2) + " 128, " + (c.x + CW / 2) + " " + (CY - 4) });
+    gC.insertBefore(arm, gC.firstChild);
+    return { card: k, arm: arm };
+  });
+
+  /* what the pipeline actually consumes */
+  (function () {
+    var y = 340, mid = 500;
+    gIO.appendChild(el("path", { "class": "arrow", d: "M 500 " + (CY + CH + 4) + " L 500 " + (y - 6) }));
+    gIO.appendChild(el("polygon", { points: "500," + (y + 2) + " 495," + (y - 8) + " 505," + (y - 8), fill: "var(--blue)" }));
+    var k = g(gIO, { "class": "io" });
+    k.appendChild(el("rect", { x: mid - 250, y: y + 10, width: 210, height: 34, rx: 7 }));
+    txt(k, "one article in", { x: mid - 145, y: y + 32 });
+    k.appendChild(el("rect", { x: mid + 40, y: y + 10, width: 210, height: 34, rx: 7 }));
+    txt(k, "one label out", { x: mid + 145, y: y + 32 });
+    gIO.appendChild(el("path", { "class": "arrow", d: "M " + (mid - 34) + " " + (y + 27) + " L " + (mid + 32) + " " + (y + 27) }));
+    gIO.appendChild(el("polygon", { points: (mid + 40) + "," + (y + 27) + " " + (mid + 30) + "," + (y + 22) + " " + (mid + 30) + "," + (y + 32), fill: "var(--blue)" }));
+  })();
+
+  /* The narration lives in the speaker notes, not on the figure: a caption
+     band would repeat what the lecturer is saying and cost the diagram the
+     height it needs. Only the step counter stays, bottom right, small. */
+  var counter = txt(gHud, "", { x: 980, y: 398, "class": "step" });
+
+  /* the underlines have to be measured, not guessed: a tspan's extent depends
+     on the font, which is not the fallback until the web font has loaded */
+  function drawMarks() {
+    clear(gM);
+    spans.forEach(function (s) {
+      if (!s.mark) return;
+      var b; try { b = s.node.getExtentOfChar ? s.node.getBBox() : null; } catch (e) { return; }
+      if (!b || !b.width) return;
+      gM.appendChild(el("line", { "class": "ul", x1: b.x, x2: b.x + b.width, y1: b.y + b.height + 5, y2: b.y + b.height + 5 }));
+    });
+  }
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(drawMarks);
+
+  // #N in the URL opens at step N (a lecturer's bookmark, and how it is screenshotted)
+  var state = Math.max(0, Math.min(5, parseInt((location.hash || "").slice(1), 10) || 0));
+  function render() {
+    drawMarks();
+    gM.setAttribute("class", "fade" + (state >= 1 ? "" : " hid"));
+    cards.forEach(function (c, i) {
+      var shown = state >= 2;
+      var cls = "card fade" + (shown ? "" : " hid");
+      if (state >= 3) cls += (i === 1 ? " on" : " off");
+      c.card.setAttribute("class", cls);
+      c.arm.setAttribute("class", "arm fade" + (shown ? "" : " hid") + (state >= 3 && i === 1 ? " on" : ""));
+    });
+    gIO.setAttribute("class", "fade" + (state >= 4 ? "" : " hid"));
+    counter.textContent = (state + 1) + " / 6";
+  }
+  function advance() { if (state >= 5) return; state += 1; render(); }
+  render();
+  window.addEventListener("hashchange", function () {
+    state = Math.max(0, Math.min(5, parseInt((location.hash || "").slice(1), 10) || 0)); render();
+  });
+  document.body.addEventListener("click", advance);
+  document.body.addEventListener("keydown", function (e) { if (e.key === "Enter" || e.key === " ") advance(); });
+})();
+</script>
+</body>
+</html>

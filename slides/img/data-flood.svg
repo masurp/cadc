@@ -1,0 +1,615 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 420" width="500" height="420" role="img" aria-label="Streams of news articles, posts, transcripts and logs converging and fanning out into a dense field of ones and zeros.">
+<style>text{font-family:"Space Grotesk",system-ui,sans-serif}.lab{font-size:9.5px;fill:#5a5a52;letter-spacing:.04em}.cap{font-size:9.5px;fill:#7a7a70;letter-spacing:.09em;text-transform:uppercase}.bit{font-family:"IBM Plex Mono",ui-monospace,Menlo,monospace;font-size:9px}</style>
+<text class="lab" x="22" y="102">news articles</text>
+<rect x="22" y="113.4" width="7" height="3.2" rx="1.6" fill="#005A88" opacity="0.97"/>
+<rect x="33" y="113.4" width="7" height="3.2" rx="1.6" fill="#005A88" opacity="0.83"/>
+<rect x="44" y="113.4" width="5" height="3.2" rx="1.6" fill="#005A88" opacity="0.91"/>
+<rect x="53" y="113.4" width="5" height="3.2" rx="1.6" fill="#005A88" opacity="0.68"/>
+<rect x="62" y="113.4" width="5" height="3.2" rx="1.6" fill="#005A88" opacity="0.95"/>
+<rect x="71" y="113.4" width="5" height="3.2" rx="1.6" fill="#005A88" opacity="0.52"/>
+<rect x="80" y="113.4" width="7" height="3.2" rx="1.6" fill="#005A88" opacity="0.71"/>
+<rect x="91" y="113.4" width="5" height="3.2" rx="1.6" fill="#005A88" opacity="0.55"/>
+<rect x="100" y="113.4" width="7" height="3.2" rx="1.6" fill="#005A88" opacity="0.53"/>
+<rect x="111" y="113.4" width="9" height="3.2" rx="1.6" fill="#005A88" opacity="0.56"/>
+<rect x="124" y="113.4" width="5" height="3.2" rx="1.6" fill="#005A88" opacity="0.82"/>
+<rect x="133" y="113.4" width="9" height="3.2" rx="1.6" fill="#005A88" opacity="0.97"/>
+<text class="lab" x="22" y="167">posts &amp; comments</text>
+<rect x="22" y="178.4" width="9" height="3.2" rx="1.6" fill="#0077B3" opacity="0.79"/>
+<rect x="35" y="178.4" width="5" height="3.2" rx="1.6" fill="#0077B3" opacity="0.99"/>
+<rect x="44" y="178.4" width="5" height="3.2" rx="1.6" fill="#0077B3" opacity="0.78"/>
+<rect x="53" y="178.4" width="5" height="3.2" rx="1.6" fill="#0077B3" opacity="0.64"/>
+<rect x="62" y="178.4" width="5" height="3.2" rx="1.6" fill="#0077B3" opacity="0.77"/>
+<rect x="71" y="178.4" width="9" height="3.2" rx="1.6" fill="#0077B3" opacity="0.65"/>
+<rect x="84" y="178.4" width="9" height="3.2" rx="1.6" fill="#0077B3" opacity="0.59"/>
+<rect x="97" y="178.4" width="9" height="3.2" rx="1.6" fill="#0077B3" opacity="0.79"/>
+<rect x="110" y="178.4" width="5" height="3.2" rx="1.6" fill="#0077B3" opacity="0.69"/>
+<rect x="119" y="178.4" width="9" height="3.2" rx="1.6" fill="#0077B3" opacity="0.86"/>
+<rect x="132" y="178.4" width="9" height="3.2" rx="1.6" fill="#0077B3" opacity="0.53"/>
+<text class="lab" x="22" y="232">transcripts</text>
+<rect x="22" y="243.4" width="5" height="3.2" rx="1.6" fill="#3d95c9" opacity="0.75"/>
+<rect x="31" y="243.4" width="9" height="3.2" rx="1.6" fill="#3d95c9" opacity="0.71"/>
+<rect x="44" y="243.4" width="7" height="3.2" rx="1.6" fill="#3d95c9" opacity="0.73"/>
+<rect x="55" y="243.4" width="7" height="3.2" rx="1.6" fill="#3d95c9" opacity="0.68"/>
+<rect x="66" y="243.4" width="5" height="3.2" rx="1.6" fill="#3d95c9" opacity="0.9"/>
+<rect x="75" y="243.4" width="9" height="3.2" rx="1.6" fill="#3d95c9" opacity="0.89"/>
+<rect x="88" y="243.4" width="5" height="3.2" rx="1.6" fill="#3d95c9" opacity="0.79"/>
+<rect x="97" y="243.4" width="9" height="3.2" rx="1.6" fill="#3d95c9" opacity="0.75"/>
+<rect x="110" y="243.4" width="7" height="3.2" rx="1.6" fill="#3d95c9" opacity="0.86"/>
+<rect x="121" y="243.4" width="7" height="3.2" rx="1.6" fill="#3d95c9" opacity="0.8"/>
+<rect x="132" y="243.4" width="5" height="3.2" rx="1.6" fill="#3d95c9" opacity="0.56"/>
+<rect x="141" y="243.4" width="7" height="3.2" rx="1.6" fill="#3d95c9" opacity="0.58"/>
+<text class="lab" x="22" y="297">logs &amp; metadata</text>
+<rect x="22" y="308.4" width="7" height="3.2" rx="1.6" fill="#6fb0d5" opacity="0.58"/>
+<rect x="33" y="308.4" width="7" height="3.2" rx="1.6" fill="#6fb0d5" opacity="0.71"/>
+<rect x="44" y="308.4" width="9" height="3.2" rx="1.6" fill="#6fb0d5" opacity="0.54"/>
+<rect x="57" y="308.4" width="9" height="3.2" rx="1.6" fill="#6fb0d5" opacity="0.79"/>
+<rect x="70" y="308.4" width="7" height="3.2" rx="1.6" fill="#6fb0d5" opacity="0.67"/>
+<rect x="81" y="308.4" width="7" height="3.2" rx="1.6" fill="#6fb0d5" opacity="0.8"/>
+<rect x="92" y="308.4" width="9" height="3.2" rx="1.6" fill="#6fb0d5" opacity="0.9"/>
+<rect x="105" y="308.4" width="5" height="3.2" rx="1.6" fill="#6fb0d5" opacity="0.92"/>
+<rect x="114" y="308.4" width="7" height="3.2" rx="1.6" fill="#6fb0d5" opacity="0.74"/>
+<rect x="125" y="308.4" width="9" height="3.2" rx="1.6" fill="#6fb0d5" opacity="0.53"/>
+<rect x="138" y="308.4" width="9" height="3.2" rx="1.6" fill="#6fb0d5" opacity="0.85"/>
+<path d="M148,115 C192,115 206,78.0 250,78.0" fill="none" stroke="#005A88" stroke-width="1" opacity=".55"/>
+<path d="M148,115 C192,115 206,133.6 250,133.6" fill="none" stroke="#005A88" stroke-width="1" opacity=".55"/>
+<path d="M148,115 C192,115 206,189.2 250,189.2" fill="none" stroke="#005A88" stroke-width="1" opacity=".55"/>
+<path d="M148,115 C192,115 206,244.7 250,244.7" fill="none" stroke="#005A88" stroke-width="1" opacity=".55"/>
+<path d="M148,115 C192,115 206,300.3 250,300.3" fill="none" stroke="#005A88" stroke-width="1" opacity=".55"/>
+<path d="M148,180 C192,180 206,91.9 250,91.9" fill="none" stroke="#0077B3" stroke-width="1" opacity=".55"/>
+<path d="M148,180 C192,180 206,147.5 250,147.5" fill="none" stroke="#0077B3" stroke-width="1" opacity=".55"/>
+<path d="M148,180 C192,180 206,203.1 250,203.1" fill="none" stroke="#0077B3" stroke-width="1" opacity=".55"/>
+<path d="M148,180 C192,180 206,258.6 250,258.6" fill="none" stroke="#0077B3" stroke-width="1" opacity=".55"/>
+<path d="M148,180 C192,180 206,314.2 250,314.2" fill="none" stroke="#0077B3" stroke-width="1" opacity=".55"/>
+<path d="M148,245 C192,245 206,105.8 250,105.8" fill="none" stroke="#3d95c9" stroke-width="1" opacity=".55"/>
+<path d="M148,245 C192,245 206,161.4 250,161.4" fill="none" stroke="#3d95c9" stroke-width="1" opacity=".55"/>
+<path d="M148,245 C192,245 206,216.9 250,216.9" fill="none" stroke="#3d95c9" stroke-width="1" opacity=".55"/>
+<path d="M148,245 C192,245 206,272.5 250,272.5" fill="none" stroke="#3d95c9" stroke-width="1" opacity=".55"/>
+<path d="M148,245 C192,245 206,328.1 250,328.1" fill="none" stroke="#3d95c9" stroke-width="1" opacity=".55"/>
+<path d="M148,310 C192,310 206,119.7 250,119.7" fill="none" stroke="#6fb0d5" stroke-width="1" opacity=".55"/>
+<path d="M148,310 C192,310 206,175.3 250,175.3" fill="none" stroke="#6fb0d5" stroke-width="1" opacity=".55"/>
+<path d="M148,310 C192,310 206,230.8 250,230.8" fill="none" stroke="#6fb0d5" stroke-width="1" opacity=".55"/>
+<path d="M148,310 C192,310 206,286.4 250,286.4" fill="none" stroke="#6fb0d5" stroke-width="1" opacity=".55"/>
+<path d="M148,310 C192,310 206,342.0 250,342.0" fill="none" stroke="#6fb0d5" stroke-width="1" opacity=".55"/>
+<circle cx="250" cy="78.0" r="2.4" fill="#005A88" opacity=".95"/>
+<rect x="262" y="75.6" width="4" height="4.8" rx="1" fill="#0077B3" opacity=".85"/>
+<circle cx="250" cy="91.9" r="2.4" fill="#005A88" opacity=".95"/>
+<rect x="262" y="89.5" width="4" height="4.8" rx="1" fill="#0077B3" opacity=".85"/>
+<circle cx="250" cy="105.8" r="2.4" fill="#005A88" opacity=".95"/>
+<rect x="262" y="103.4" width="4" height="4.8" rx="1" fill="#0077B3" opacity=".85"/>
+<circle cx="250" cy="119.7" r="2.4" fill="#005A88" opacity=".95"/>
+<rect x="262" y="117.3" width="4" height="4.8" rx="1" fill="#0077B3" opacity=".85"/>
+<circle cx="250" cy="133.6" r="2.4" fill="#005A88" opacity=".95"/>
+<rect x="262" y="131.2" width="4" height="4.8" rx="1" fill="#0077B3" opacity=".85"/>
+<circle cx="250" cy="147.5" r="2.4" fill="#005A88" opacity=".95"/>
+<rect x="262" y="145.1" width="4" height="4.8" rx="1" fill="#0077B3" opacity=".85"/>
+<circle cx="250" cy="161.4" r="2.4" fill="#005A88" opacity=".95"/>
+<rect x="262" y="159.0" width="4" height="4.8" rx="1" fill="#0077B3" opacity=".85"/>
+<circle cx="250" cy="175.3" r="2.4" fill="#005A88" opacity=".95"/>
+<rect x="262" y="172.9" width="4" height="4.8" rx="1" fill="#0077B3" opacity=".85"/>
+<circle cx="250" cy="189.2" r="2.4" fill="#005A88" opacity=".95"/>
+<rect x="262" y="186.8" width="4" height="4.8" rx="1" fill="#0077B3" opacity=".85"/>
+<circle cx="250" cy="203.1" r="2.4" fill="#005A88" opacity=".95"/>
+<rect x="262" y="200.7" width="4" height="4.8" rx="1" fill="#0077B3" opacity=".85"/>
+<circle cx="250" cy="216.9" r="2.4" fill="#005A88" opacity=".95"/>
+<rect x="262" y="214.5" width="4" height="4.8" rx="1" fill="#0077B3" opacity=".85"/>
+<circle cx="250" cy="230.8" r="2.4" fill="#005A88" opacity=".95"/>
+<rect x="262" y="228.4" width="4" height="4.8" rx="1" fill="#0077B3" opacity=".85"/>
+<circle cx="250" cy="244.7" r="2.4" fill="#005A88" opacity=".95"/>
+<rect x="262" y="242.3" width="4" height="4.8" rx="1" fill="#0077B3" opacity=".85"/>
+<circle cx="250" cy="258.6" r="2.4" fill="#005A88" opacity=".95"/>
+<rect x="262" y="256.2" width="4" height="4.8" rx="1" fill="#0077B3" opacity=".85"/>
+<circle cx="250" cy="272.5" r="2.4" fill="#005A88" opacity=".95"/>
+<rect x="262" y="270.1" width="4" height="4.8" rx="1" fill="#0077B3" opacity=".85"/>
+<circle cx="250" cy="286.4" r="2.4" fill="#005A88" opacity=".95"/>
+<rect x="262" y="284.0" width="4" height="4.8" rx="1" fill="#0077B3" opacity=".85"/>
+<circle cx="250" cy="300.3" r="2.4" fill="#005A88" opacity=".95"/>
+<rect x="262" y="297.9" width="4" height="4.8" rx="1" fill="#0077B3" opacity=".85"/>
+<circle cx="250" cy="314.2" r="2.4" fill="#005A88" opacity=".95"/>
+<rect x="262" y="311.8" width="4" height="4.8" rx="1" fill="#0077B3" opacity=".85"/>
+<circle cx="250" cy="328.1" r="2.4" fill="#005A88" opacity=".95"/>
+<rect x="262" y="325.7" width="4" height="4.8" rx="1" fill="#0077B3" opacity=".85"/>
+<circle cx="250" cy="342.0" r="2.4" fill="#005A88" opacity=".95"/>
+<rect x="262" y="339.6" width="4" height="4.8" rx="1" fill="#0077B3" opacity=".85"/>
+<text class="bit" x="280.0" y="74.0" fill="#0077B3" opacity="0.92">1</text>
+<text class="bit" x="280.0" y="85.1" fill="#0077B3" opacity="0.68">1</text>
+<text class="bit" x="280.0" y="96.2" fill="#0077B3" opacity="0.51">0</text>
+<text class="bit" x="280.0" y="107.3" fill="#0077B3" opacity="0.90">0</text>
+<text class="bit" x="280.0" y="118.4" fill="#0077B3" opacity="1.00">0</text>
+<text class="bit" x="280.0" y="129.5" fill="#0077B3" opacity="0.76">1</text>
+<text class="bit" x="280.0" y="140.6" fill="#0077B3" opacity="0.55">1</text>
+<text class="bit" x="280.0" y="151.7" fill="#0077B3" opacity="1.00">1</text>
+<text class="bit" x="280.0" y="162.8" fill="#0077B3" opacity="0.96">1</text>
+<text class="bit" x="280.0" y="173.9" fill="#0077B3" opacity="1.00">0</text>
+<text class="bit" x="280.0" y="185.0" fill="#0077B3" opacity="0.60">0</text>
+<text class="bit" x="280.0" y="196.1" fill="#0077B3" opacity="0.82">1</text>
+<text class="bit" x="280.0" y="207.2" fill="#0077B3" opacity="0.68">1</text>
+<text class="bit" x="280.0" y="218.3" fill="#0077B3" opacity="0.90">0</text>
+<text class="bit" x="280.0" y="229.4" fill="#0077B3" opacity="0.95">0</text>
+<text class="bit" x="280.0" y="240.5" fill="#0077B3" opacity="0.80">1</text>
+<text class="bit" x="280.0" y="251.6" fill="#0077B3" opacity="0.76">1</text>
+<text class="bit" x="280.0" y="262.7" fill="#005A88" opacity="0.91">0</text>
+<text class="bit" x="280.0" y="273.8" fill="#0077B3" opacity="1.00">0</text>
+<text class="bit" x="280.0" y="284.9" fill="#005A88" opacity="0.72">0</text>
+<text class="bit" x="280.0" y="296.0" fill="#0077B3" opacity="0.87">1</text>
+<text class="bit" x="280.0" y="307.1" fill="#005A88" opacity="0.90">0</text>
+<text class="bit" x="280.0" y="318.2" fill="#0077B3" opacity="0.90">1</text>
+<text class="bit" x="280.0" y="329.3" fill="#0077B3" opacity="1.00">1</text>
+<text class="bit" x="280.0" y="340.4" fill="#0077B3" opacity="0.58">1</text>
+<text class="bit" x="290.2" y="74.0" fill="#0077B3" opacity="0.80">0</text>
+<text class="bit" x="290.2" y="85.1" fill="#0077B3" opacity="0.56">1</text>
+<text class="bit" x="290.2" y="96.2" fill="#0077B3" opacity="0.80">0</text>
+<text class="bit" x="290.2" y="107.3" fill="#0077B3" opacity="0.62">1</text>
+<text class="bit" x="290.2" y="118.4" fill="#0077B3" opacity="0.58">0</text>
+<text class="bit" x="290.2" y="129.5" fill="#0077B3" opacity="0.98">0</text>
+<text class="bit" x="290.2" y="140.6" fill="#0077B3" opacity="0.94">1</text>
+<text class="bit" x="290.2" y="151.7" fill="#0077B3" opacity="1.00">0</text>
+<text class="bit" x="290.2" y="162.8" fill="#0077B3" opacity="0.83">1</text>
+<text class="bit" x="290.2" y="173.9" fill="#0077B3" opacity="0.90">0</text>
+<text class="bit" x="290.2" y="185.0" fill="#0077B3" opacity="1.00">0</text>
+<text class="bit" x="290.2" y="196.1" fill="#0077B3" opacity="0.62">0</text>
+<text class="bit" x="290.2" y="207.2" fill="#0077B3" opacity="1.00">1</text>
+<text class="bit" x="290.2" y="218.3" fill="#0077B3" opacity="0.66">1</text>
+<text class="bit" x="290.2" y="229.4" fill="#0077B3" opacity="0.78">1</text>
+<text class="bit" x="290.2" y="240.5" fill="#0077B3" opacity="1.00">0</text>
+<text class="bit" x="290.2" y="251.6" fill="#0077B3" opacity="0.56">1</text>
+<text class="bit" x="290.2" y="262.7" fill="#0077B3" opacity="0.62">0</text>
+<text class="bit" x="290.2" y="273.8" fill="#0077B3" opacity="0.80">0</text>
+<text class="bit" x="290.2" y="284.9" fill="#005A88" opacity="1.00">1</text>
+<text class="bit" x="290.2" y="296.0" fill="#0077B3" opacity="0.99">1</text>
+<text class="bit" x="290.2" y="307.1" fill="#0077B3" opacity="1.00">1</text>
+<text class="bit" x="290.2" y="318.2" fill="#0077B3" opacity="0.55">1</text>
+<text class="bit" x="290.2" y="329.3" fill="#0077B3" opacity="0.79">0</text>
+<text class="bit" x="290.2" y="340.4" fill="#0077B3" opacity="0.95">0</text>
+<text class="bit" x="300.4" y="74.0" fill="#0077B3" opacity="0.49">1</text>
+<text class="bit" x="300.4" y="85.1" fill="#0077B3" opacity="0.98">1</text>
+<text class="bit" x="300.4" y="96.2" fill="#0077B3" opacity="0.89">0</text>
+<text class="bit" x="300.4" y="107.3" fill="#0077B3" opacity="0.49">0</text>
+<text class="bit" x="300.4" y="118.4" fill="#0077B3" opacity="0.80">1</text>
+<text class="bit" x="300.4" y="129.5" fill="#0077B3" opacity="1.00">0</text>
+<text class="bit" x="300.4" y="140.6" fill="#0077B3" opacity="0.50">0</text>
+<text class="bit" x="300.4" y="151.7" fill="#0077B3" opacity="0.95">1</text>
+<text class="bit" x="300.4" y="162.8" fill="#005A88" opacity="1.00">1</text>
+<text class="bit" x="300.4" y="173.9" fill="#0077B3" opacity="1.00">1</text>
+<text class="bit" x="300.4" y="185.0" fill="#0077B3" opacity="0.99">0</text>
+<text class="bit" x="300.4" y="196.1" fill="#0077B3" opacity="0.81">0</text>
+<text class="bit" x="300.4" y="207.2" fill="#0077B3" opacity="1.00">0</text>
+<text class="bit" x="300.4" y="218.3" fill="#0077B3" opacity="0.96">0</text>
+<text class="bit" x="300.4" y="229.4" fill="#0077B3" opacity="0.77">0</text>
+<text class="bit" x="300.4" y="240.5" fill="#0077B3" opacity="0.68">1</text>
+<text class="bit" x="300.4" y="251.6" fill="#005A88" opacity="0.96">0</text>
+<text class="bit" x="300.4" y="262.7" fill="#0077B3" opacity="0.63">0</text>
+<text class="bit" x="300.4" y="273.8" fill="#0077B3" opacity="0.79">0</text>
+<text class="bit" x="300.4" y="284.9" fill="#0077B3" opacity="0.75">0</text>
+<text class="bit" x="300.4" y="296.0" fill="#0077B3" opacity="0.91">1</text>
+<text class="bit" x="300.4" y="307.1" fill="#0077B3" opacity="0.79">1</text>
+<text class="bit" x="300.4" y="318.2" fill="#0077B3" opacity="1.00">0</text>
+<text class="bit" x="300.4" y="329.3" fill="#0077B3" opacity="1.00">0</text>
+<text class="bit" x="300.4" y="340.4" fill="#0077B3" opacity="0.72">0</text>
+<text class="bit" x="310.6" y="74.0" fill="#0077B3" opacity="0.72">1</text>
+<text class="bit" x="310.6" y="85.1" fill="#0077B3" opacity="0.93">0</text>
+<text class="bit" x="310.6" y="96.2" fill="#0077B3" opacity="1.00">1</text>
+<text class="bit" x="310.6" y="107.3" fill="#0077B3" opacity="0.55">1</text>
+<text class="bit" x="310.6" y="118.4" fill="#0077B3" opacity="0.59">1</text>
+<text class="bit" x="310.6" y="129.5" fill="#0077B3" opacity="0.99">0</text>
+<text class="bit" x="310.6" y="140.6" fill="#0077B3" opacity="0.56">1</text>
+<text class="bit" x="310.6" y="151.7" fill="#0077B3" opacity="0.66">1</text>
+<text class="bit" x="310.6" y="162.8" fill="#0077B3" opacity="0.52">1</text>
+<text class="bit" x="310.6" y="173.9" fill="#0077B3" opacity="0.79">0</text>
+<text class="bit" x="310.6" y="185.0" fill="#0077B3" opacity="0.69">1</text>
+<text class="bit" x="310.6" y="196.1" fill="#005A88" opacity="0.77">0</text>
+<text class="bit" x="310.6" y="207.2" fill="#005A88" opacity="1.00">1</text>
+<text class="bit" x="310.6" y="218.3" fill="#0077B3" opacity="0.62">0</text>
+<text class="bit" x="310.6" y="229.4" fill="#0077B3" opacity="0.62">1</text>
+<text class="bit" x="310.6" y="240.5" fill="#0077B3" opacity="0.97">1</text>
+<text class="bit" x="310.6" y="251.6" fill="#0077B3" opacity="0.70">1</text>
+<text class="bit" x="310.6" y="262.7" fill="#005A88" opacity="0.88">0</text>
+<text class="bit" x="310.6" y="273.8" fill="#0077B3" opacity="0.94">0</text>
+<text class="bit" x="310.6" y="284.9" fill="#005A88" opacity="0.62">0</text>
+<text class="bit" x="310.6" y="296.0" fill="#005A88" opacity="0.94">0</text>
+<text class="bit" x="310.6" y="307.1" fill="#0077B3" opacity="0.50">1</text>
+<text class="bit" x="310.6" y="318.2" fill="#0077B3" opacity="0.47">1</text>
+<text class="bit" x="310.6" y="329.3" fill="#0077B3" opacity="1.00">0</text>
+<text class="bit" x="310.6" y="340.4" fill="#0077B3" opacity="0.49">0</text>
+<text class="bit" x="320.8" y="74.0" fill="#0077B3" opacity="1.00">0</text>
+<text class="bit" x="320.8" y="85.1" fill="#0077B3" opacity="0.56">1</text>
+<text class="bit" x="320.8" y="96.2" fill="#0077B3" opacity="0.75">1</text>
+<text class="bit" x="320.8" y="107.3" fill="#0077B3" opacity="0.73">1</text>
+<text class="bit" x="320.8" y="118.4" fill="#0077B3" opacity="0.91">0</text>
+<text class="bit" x="320.8" y="129.5" fill="#0077B3" opacity="0.45">0</text>
+<text class="bit" x="320.8" y="140.6" fill="#0077B3" opacity="0.74">1</text>
+<text class="bit" x="320.8" y="151.7" fill="#0077B3" opacity="0.50">1</text>
+<text class="bit" x="320.8" y="162.8" fill="#0077B3" opacity="0.82">1</text>
+<text class="bit" x="320.8" y="173.9" fill="#0077B3" opacity="1.00">0</text>
+<text class="bit" x="320.8" y="185.0" fill="#0077B3" opacity="1.00">0</text>
+<text class="bit" x="320.8" y="196.1" fill="#0077B3" opacity="0.68">0</text>
+<text class="bit" x="320.8" y="207.2" fill="#005A88" opacity="0.93">1</text>
+<text class="bit" x="320.8" y="218.3" fill="#005A88" opacity="0.69">1</text>
+<text class="bit" x="320.8" y="229.4" fill="#0077B3" opacity="0.94">1</text>
+<text class="bit" x="320.8" y="240.5" fill="#0077B3" opacity="0.79">0</text>
+<text class="bit" x="320.8" y="251.6" fill="#0077B3" opacity="0.71">1</text>
+<text class="bit" x="320.8" y="262.7" fill="#0077B3" opacity="0.45">1</text>
+<text class="bit" x="320.8" y="273.8" fill="#0077B3" opacity="1.00">0</text>
+<text class="bit" x="320.8" y="284.9" fill="#0077B3" opacity="0.46">0</text>
+<text class="bit" x="320.8" y="296.0" fill="#005A88" opacity="0.65">1</text>
+<text class="bit" x="320.8" y="307.1" fill="#0077B3" opacity="0.49">0</text>
+<text class="bit" x="320.8" y="318.2" fill="#0077B3" opacity="0.59">0</text>
+<text class="bit" x="320.8" y="329.3" fill="#005A88" opacity="0.60">1</text>
+<text class="bit" x="320.8" y="340.4" fill="#0077B3" opacity="0.78">1</text>
+<text class="bit" x="331.0" y="74.0" fill="#0077B3" opacity="0.59">0</text>
+<text class="bit" x="331.0" y="85.1" fill="#0077B3" opacity="0.78">1</text>
+<text class="bit" x="331.0" y="96.2" fill="#0077B3" opacity="0.84">1</text>
+<text class="bit" x="331.0" y="107.3" fill="#0077B3" opacity="0.51">0</text>
+<text class="bit" x="331.0" y="118.4" fill="#0077B3" opacity="0.45">1</text>
+<text class="bit" x="331.0" y="129.5" fill="#0077B3" opacity="0.83">0</text>
+<text class="bit" x="331.0" y="140.6" fill="#0077B3" opacity="0.92">0</text>
+<text class="bit" x="331.0" y="151.7" fill="#0077B3" opacity="0.88">0</text>
+<text class="bit" x="331.0" y="162.8" fill="#005A88" opacity="0.47">1</text>
+<text class="bit" x="331.0" y="173.9" fill="#0077B3" opacity="0.95">1</text>
+<text class="bit" x="331.0" y="185.0" fill="#0077B3" opacity="0.73">0</text>
+<text class="bit" x="331.0" y="196.1" fill="#005A88" opacity="0.69">0</text>
+<text class="bit" x="331.0" y="207.2" fill="#0077B3" opacity="0.83">0</text>
+<text class="bit" x="331.0" y="218.3" fill="#005A88" opacity="0.79">1</text>
+<text class="bit" x="331.0" y="229.4" fill="#005A88" opacity="0.56">1</text>
+<text class="bit" x="331.0" y="240.5" fill="#0077B3" opacity="0.55">0</text>
+<text class="bit" x="331.0" y="251.6" fill="#0077B3" opacity="0.83">1</text>
+<text class="bit" x="331.0" y="262.7" fill="#005A88" opacity="0.89">1</text>
+<text class="bit" x="331.0" y="273.8" fill="#0077B3" opacity="0.84">0</text>
+<text class="bit" x="331.0" y="284.9" fill="#0077B3" opacity="0.47">1</text>
+<text class="bit" x="331.0" y="296.0" fill="#0077B3" opacity="0.78">0</text>
+<text class="bit" x="331.0" y="307.1" fill="#005A88" opacity="0.43">1</text>
+<text class="bit" x="331.0" y="318.2" fill="#005A88" opacity="0.96">0</text>
+<text class="bit" x="331.0" y="329.3" fill="#0077B3" opacity="0.79">1</text>
+<text class="bit" x="331.0" y="340.4" fill="#0077B3" opacity="0.68">0</text>
+<text class="bit" x="341.2" y="74.0" fill="#0077B3" opacity="0.92">1</text>
+<text class="bit" x="341.2" y="85.1" fill="#0077B3" opacity="0.91">0</text>
+<text class="bit" x="341.2" y="96.2" fill="#005A88" opacity="0.55">1</text>
+<text class="bit" x="341.2" y="107.3" fill="#0077B3" opacity="0.92">0</text>
+<text class="bit" x="341.2" y="118.4" fill="#005A88" opacity="0.44">1</text>
+<text class="bit" x="341.2" y="129.5" fill="#0077B3" opacity="0.90">1</text>
+<text class="bit" x="341.2" y="140.6" fill="#0077B3" opacity="0.86">0</text>
+<text class="bit" x="341.2" y="151.7" fill="#0077B3" opacity="0.66">1</text>
+<text class="bit" x="341.2" y="162.8" fill="#005A88" opacity="0.41">1</text>
+<text class="bit" x="341.2" y="173.9" fill="#0077B3" opacity="0.76">0</text>
+<text class="bit" x="341.2" y="185.0" fill="#0077B3" opacity="0.62">0</text>
+<text class="bit" x="341.2" y="196.1" fill="#005A88" opacity="0.84">1</text>
+<text class="bit" x="341.2" y="207.2" fill="#0077B3" opacity="0.84">0</text>
+<text class="bit" x="341.2" y="218.3" fill="#0077B3" opacity="0.77">1</text>
+<text class="bit" x="341.2" y="229.4" fill="#005A88" opacity="0.53">1</text>
+<text class="bit" x="341.2" y="240.5" fill="#0077B3" opacity="0.92">1</text>
+<text class="bit" x="341.2" y="251.6" fill="#0077B3" opacity="0.88">0</text>
+<text class="bit" x="341.2" y="262.7" fill="#005A88" opacity="0.55">1</text>
+<text class="bit" x="341.2" y="273.8" fill="#0077B3" opacity="0.73">1</text>
+<text class="bit" x="341.2" y="284.9" fill="#0077B3" opacity="0.63">1</text>
+<text class="bit" x="341.2" y="296.0" fill="#0077B3" opacity="0.81">0</text>
+<text class="bit" x="341.2" y="307.1" fill="#0077B3" opacity="0.83">0</text>
+<text class="bit" x="341.2" y="318.2" fill="#005A88" opacity="0.78">1</text>
+<text class="bit" x="341.2" y="329.3" fill="#0077B3" opacity="0.64">1</text>
+<text class="bit" x="341.2" y="340.4" fill="#0077B3" opacity="0.66">0</text>
+<text class="bit" x="351.4" y="74.0" fill="#0077B3" opacity="0.46">1</text>
+<text class="bit" x="351.4" y="85.1" fill="#0077B3" opacity="0.53">1</text>
+<text class="bit" x="351.4" y="96.2" fill="#0077B3" opacity="0.58">1</text>
+<text class="bit" x="351.4" y="107.3" fill="#0077B3" opacity="0.65">0</text>
+<text class="bit" x="351.4" y="118.4" fill="#005A88" opacity="0.70">1</text>
+<text class="bit" x="351.4" y="129.5" fill="#0077B3" opacity="0.65">1</text>
+<text class="bit" x="351.4" y="140.6" fill="#0077B3" opacity="0.87">0</text>
+<text class="bit" x="351.4" y="151.7" fill="#0077B3" opacity="0.65">0</text>
+<text class="bit" x="351.4" y="162.8" fill="#005A88" opacity="0.55">0</text>
+<text class="bit" x="351.4" y="173.9" fill="#0077B3" opacity="0.56">0</text>
+<text class="bit" x="351.4" y="185.0" fill="#0077B3" opacity="0.82">1</text>
+<text class="bit" x="351.4" y="196.1" fill="#0077B3" opacity="0.57">0</text>
+<text class="bit" x="351.4" y="207.2" fill="#0077B3" opacity="0.56">0</text>
+<text class="bit" x="351.4" y="218.3" fill="#0077B3" opacity="0.62">1</text>
+<text class="bit" x="351.4" y="229.4" fill="#0077B3" opacity="0.44">0</text>
+<text class="bit" x="351.4" y="240.5" fill="#0077B3" opacity="0.42">1</text>
+<text class="bit" x="351.4" y="251.6" fill="#0077B3" opacity="0.58">1</text>
+<text class="bit" x="351.4" y="262.7" fill="#0077B3" opacity="0.80">0</text>
+<text class="bit" x="351.4" y="273.8" fill="#0077B3" opacity="0.44">1</text>
+<text class="bit" x="351.4" y="284.9" fill="#0077B3" opacity="0.86">0</text>
+<text class="bit" x="351.4" y="296.0" fill="#0077B3" opacity="0.57">1</text>
+<text class="bit" x="351.4" y="307.1" fill="#0077B3" opacity="0.86">0</text>
+<text class="bit" x="351.4" y="318.2" fill="#0077B3" opacity="0.49">0</text>
+<text class="bit" x="351.4" y="329.3" fill="#0077B3" opacity="0.84">1</text>
+<text class="bit" x="351.4" y="340.4" fill="#0077B3" opacity="0.42">0</text>
+<text class="bit" x="361.6" y="74.0" fill="#0077B3" opacity="0.72">0</text>
+<text class="bit" x="361.6" y="85.1" fill="#0077B3" opacity="0.65">0</text>
+<text class="bit" x="361.6" y="96.2" fill="#0077B3" opacity="0.64">1</text>
+<text class="bit" x="361.6" y="107.3" fill="#005A88" opacity="0.68">0</text>
+<text class="bit" x="361.6" y="118.4" fill="#0077B3" opacity="0.49">0</text>
+<text class="bit" x="361.6" y="129.5" fill="#0077B3" opacity="0.53">0</text>
+<text class="bit" x="361.6" y="140.6" fill="#0077B3" opacity="0.36">1</text>
+<text class="bit" x="361.6" y="151.7" fill="#0077B3" opacity="0.48">0</text>
+<text class="bit" x="361.6" y="162.8" fill="#0077B3" opacity="0.57">0</text>
+<text class="bit" x="361.6" y="173.9" fill="#0077B3" opacity="0.37">1</text>
+<text class="bit" x="361.6" y="185.0" fill="#0077B3" opacity="0.38">1</text>
+<text class="bit" x="361.6" y="196.1" fill="#0077B3" opacity="0.39">1</text>
+<text class="bit" x="361.6" y="207.2" fill="#0077B3" opacity="0.78">0</text>
+<text class="bit" x="361.6" y="218.3" fill="#0077B3" opacity="0.68">1</text>
+<text class="bit" x="361.6" y="229.4" fill="#0077B3" opacity="0.67">1</text>
+<text class="bit" x="361.6" y="240.5" fill="#0077B3" opacity="0.70">0</text>
+<text class="bit" x="361.6" y="251.6" fill="#0077B3" opacity="0.58">0</text>
+<text class="bit" x="361.6" y="262.7" fill="#0077B3" opacity="0.46">1</text>
+<text class="bit" x="361.6" y="273.8" fill="#0077B3" opacity="0.41">0</text>
+<text class="bit" x="361.6" y="284.9" fill="#0077B3" opacity="0.77">0</text>
+<text class="bit" x="361.6" y="296.0" fill="#0077B3" opacity="0.79">1</text>
+<text class="bit" x="361.6" y="307.1" fill="#005A88" opacity="0.38">0</text>
+<text class="bit" x="361.6" y="318.2" fill="#0077B3" opacity="0.55">0</text>
+<text class="bit" x="361.6" y="329.3" fill="#0077B3" opacity="0.54">1</text>
+<text class="bit" x="361.6" y="340.4" fill="#0077B3" opacity="0.69">0</text>
+<text class="bit" x="371.8" y="74.0" fill="#0077B3" opacity="0.47">1</text>
+<text class="bit" x="371.8" y="85.1" fill="#0077B3" opacity="0.34">1</text>
+<text class="bit" x="371.8" y="96.2" fill="#0077B3" opacity="0.69">1</text>
+<text class="bit" x="371.8" y="107.3" fill="#005A88" opacity="0.40">1</text>
+<text class="bit" x="371.8" y="118.4" fill="#0077B3" opacity="0.36">0</text>
+<text class="bit" x="371.8" y="129.5" fill="#0077B3" opacity="0.57">1</text>
+<text class="bit" x="371.8" y="140.6" fill="#0077B3" opacity="0.48">1</text>
+<text class="bit" x="371.8" y="151.7" fill="#0077B3" opacity="0.37">0</text>
+<text class="bit" x="371.8" y="162.8" fill="#0077B3" opacity="0.49">0</text>
+<text class="bit" x="371.8" y="173.9" fill="#0077B3" opacity="0.47">1</text>
+<text class="bit" x="371.8" y="185.0" fill="#0077B3" opacity="0.34">1</text>
+<text class="bit" x="371.8" y="196.1" fill="#005A88" opacity="0.35">0</text>
+<text class="bit" x="371.8" y="207.2" fill="#005A88" opacity="0.67">0</text>
+<text class="bit" x="371.8" y="218.3" fill="#0077B3" opacity="0.65">1</text>
+<text class="bit" x="371.8" y="229.4" fill="#0077B3" opacity="0.49">0</text>
+<text class="bit" x="371.8" y="240.5" fill="#0077B3" opacity="0.44">1</text>
+<text class="bit" x="371.8" y="251.6" fill="#0077B3" opacity="0.73">0</text>
+<text class="bit" x="371.8" y="262.7" fill="#0077B3" opacity="0.34">1</text>
+<text class="bit" x="371.8" y="273.8" fill="#0077B3" opacity="0.64">1</text>
+<text class="bit" x="371.8" y="284.9" fill="#0077B3" opacity="0.67">1</text>
+<text class="bit" x="371.8" y="296.0" fill="#0077B3" opacity="0.39">0</text>
+<text class="bit" x="371.8" y="307.1" fill="#0077B3" opacity="0.67">0</text>
+<text class="bit" x="371.8" y="318.2" fill="#0077B3" opacity="0.59">1</text>
+<text class="bit" x="371.8" y="329.3" fill="#0077B3" opacity="0.53">0</text>
+<text class="bit" x="371.8" y="340.4" fill="#0077B3" opacity="0.55">0</text>
+<text class="bit" x="382.0" y="74.0" fill="#005A88" opacity="0.40">0</text>
+<text class="bit" x="382.0" y="85.1" fill="#0077B3" opacity="0.49">0</text>
+<text class="bit" x="382.0" y="96.2" fill="#0077B3" opacity="0.69">0</text>
+<text class="bit" x="382.0" y="107.3" fill="#005A88" opacity="0.41">0</text>
+<text class="bit" x="382.0" y="118.4" fill="#0077B3" opacity="0.47">1</text>
+<text class="bit" x="382.0" y="129.5" fill="#0077B3" opacity="0.37">1</text>
+<text class="bit" x="382.0" y="140.6" fill="#0077B3" opacity="0.55">0</text>
+<text class="bit" x="382.0" y="151.7" fill="#0077B3" opacity="0.61">1</text>
+<text class="bit" x="382.0" y="162.8" fill="#0077B3" opacity="0.53">1</text>
+<text class="bit" x="382.0" y="173.9" fill="#0077B3" opacity="0.38">0</text>
+<text class="bit" x="382.0" y="185.0" fill="#0077B3" opacity="0.40">0</text>
+<text class="bit" x="382.0" y="196.1" fill="#0077B3" opacity="0.43">0</text>
+<text class="bit" x="382.0" y="207.2" fill="#0077B3" opacity="0.50">0</text>
+<text class="bit" x="382.0" y="218.3" fill="#0077B3" opacity="0.56">0</text>
+<text class="bit" x="382.0" y="229.4" fill="#0077B3" opacity="0.31">0</text>
+<text class="bit" x="382.0" y="240.5" fill="#0077B3" opacity="0.64">0</text>
+<text class="bit" x="382.0" y="251.6" fill="#0077B3" opacity="0.65">0</text>
+<text class="bit" x="382.0" y="262.7" fill="#0077B3" opacity="0.38">0</text>
+<text class="bit" x="382.0" y="273.8" fill="#0077B3" opacity="0.67">0</text>
+<text class="bit" x="382.0" y="284.9" fill="#0077B3" opacity="0.48">0</text>
+<text class="bit" x="382.0" y="296.0" fill="#0077B3" opacity="0.35">1</text>
+<text class="bit" x="382.0" y="307.1" fill="#0077B3" opacity="0.39">0</text>
+<text class="bit" x="382.0" y="318.2" fill="#0077B3" opacity="0.32">0</text>
+<text class="bit" x="382.0" y="329.3" fill="#0077B3" opacity="0.54">0</text>
+<text class="bit" x="382.0" y="340.4" fill="#0077B3" opacity="0.63">1</text>
+<text class="bit" x="392.2" y="74.0" fill="#0077B3" opacity="0.52">1</text>
+<text class="bit" x="392.2" y="85.1" fill="#005A88" opacity="0.30">1</text>
+<text class="bit" x="392.2" y="96.2" fill="#005A88" opacity="0.47">0</text>
+<text class="bit" x="392.2" y="107.3" fill="#0077B3" opacity="0.56">0</text>
+<text class="bit" x="392.2" y="118.4" fill="#005A88" opacity="0.51">0</text>
+<text class="bit" x="392.2" y="129.5" fill="#0077B3" opacity="0.42">1</text>
+<text class="bit" x="392.2" y="140.6" fill="#0077B3" opacity="0.52">0</text>
+<text class="bit" x="392.2" y="151.7" fill="#0077B3" opacity="0.39">1</text>
+<text class="bit" x="392.2" y="162.8" fill="#005A88" opacity="0.43">1</text>
+<text class="bit" x="392.2" y="173.9" fill="#0077B3" opacity="0.51">1</text>
+<text class="bit" x="392.2" y="185.0" fill="#005A88" opacity="0.35">0</text>
+<text class="bit" x="392.2" y="196.1" fill="#0077B3" opacity="0.43">1</text>
+<text class="bit" x="392.2" y="207.2" fill="#0077B3" opacity="0.48">0</text>
+<text class="bit" x="392.2" y="218.3" fill="#005A88" opacity="0.32">0</text>
+<text class="bit" x="392.2" y="229.4" fill="#0077B3" opacity="0.51">0</text>
+<text class="bit" x="392.2" y="240.5" fill="#0077B3" opacity="0.48">0</text>
+<text class="bit" x="392.2" y="251.6" fill="#0077B3" opacity="0.33">0</text>
+<text class="bit" x="392.2" y="262.7" fill="#005A88" opacity="0.61">1</text>
+<text class="bit" x="392.2" y="273.8" fill="#0077B3" opacity="0.55">0</text>
+<text class="bit" x="392.2" y="284.9" fill="#0077B3" opacity="0.39">0</text>
+<text class="bit" x="392.2" y="296.0" fill="#0077B3" opacity="0.63">0</text>
+<text class="bit" x="392.2" y="307.1" fill="#0077B3" opacity="0.50">0</text>
+<text class="bit" x="392.2" y="318.2" fill="#0077B3" opacity="0.60">0</text>
+<text class="bit" x="392.2" y="329.3" fill="#0077B3" opacity="0.51">1</text>
+<text class="bit" x="392.2" y="340.4" fill="#0077B3" opacity="0.50">1</text>
+<text class="bit" x="402.4" y="74.0" fill="#0077B3" opacity="0.31">1</text>
+<text class="bit" x="402.4" y="85.1" fill="#0077B3" opacity="0.55">1</text>
+<text class="bit" x="402.4" y="96.2" fill="#0077B3" opacity="0.29">0</text>
+<text class="bit" x="402.4" y="107.3" fill="#0077B3" opacity="0.26">0</text>
+<text class="bit" x="402.4" y="118.4" fill="#0077B3" opacity="0.47">1</text>
+<text class="bit" x="402.4" y="129.5" fill="#0077B3" opacity="0.44">1</text>
+<text class="bit" x="402.4" y="140.6" fill="#0077B3" opacity="0.46">0</text>
+<text class="bit" x="402.4" y="151.7" fill="#0077B3" opacity="0.39">1</text>
+<text class="bit" x="402.4" y="162.8" fill="#0077B3" opacity="0.41">0</text>
+<text class="bit" x="402.4" y="173.9" fill="#0077B3" opacity="0.45">0</text>
+<text class="bit" x="402.4" y="185.0" fill="#0077B3" opacity="0.39">1</text>
+<text class="bit" x="402.4" y="196.1" fill="#0077B3" opacity="0.52">1</text>
+<text class="bit" x="402.4" y="207.2" fill="#0077B3" opacity="0.28">1</text>
+<text class="bit" x="402.4" y="218.3" fill="#0077B3" opacity="0.37">0</text>
+<text class="bit" x="402.4" y="229.4" fill="#0077B3" opacity="0.26">1</text>
+<text class="bit" x="402.4" y="240.5" fill="#0077B3" opacity="0.50">0</text>
+<text class="bit" x="402.4" y="251.6" fill="#0077B3" opacity="0.49">0</text>
+<text class="bit" x="402.4" y="262.7" fill="#005A88" opacity="0.26">0</text>
+<text class="bit" x="402.4" y="273.8" fill="#0077B3" opacity="0.31">1</text>
+<text class="bit" x="402.4" y="284.9" fill="#0077B3" opacity="0.34">0</text>
+<text class="bit" x="402.4" y="296.0" fill="#0077B3" opacity="0.47">0</text>
+<text class="bit" x="402.4" y="307.1" fill="#0077B3" opacity="0.27">1</text>
+<text class="bit" x="402.4" y="318.2" fill="#0077B3" opacity="0.30">1</text>
+<text class="bit" x="402.4" y="329.3" fill="#0077B3" opacity="0.54">1</text>
+<text class="bit" x="402.4" y="340.4" fill="#0077B3" opacity="0.41">0</text>
+<text class="bit" x="412.6" y="74.0" fill="#0077B3" opacity="0.39">0</text>
+<text class="bit" x="412.6" y="85.1" fill="#005A88" opacity="0.31">0</text>
+<text class="bit" x="412.6" y="96.2" fill="#0077B3" opacity="0.34">1</text>
+<text class="bit" x="412.6" y="107.3" fill="#0077B3" opacity="0.42">0</text>
+<text class="bit" x="412.6" y="118.4" fill="#0077B3" opacity="0.45">0</text>
+<text class="bit" x="412.6" y="129.5" fill="#0077B3" opacity="0.40">1</text>
+<text class="bit" x="412.6" y="140.6" fill="#0077B3" opacity="0.38">0</text>
+<text class="bit" x="412.6" y="151.7" fill="#0077B3" opacity="0.29">1</text>
+<text class="bit" x="412.6" y="162.8" fill="#0077B3" opacity="0.43">1</text>
+<text class="bit" x="412.6" y="173.9" fill="#0077B3" opacity="0.50">1</text>
+<text class="bit" x="412.6" y="185.0" fill="#005A88" opacity="0.32">0</text>
+<text class="bit" x="412.6" y="196.1" fill="#0077B3" opacity="0.27">0</text>
+<text class="bit" x="412.6" y="207.2" fill="#0077B3" opacity="0.31">1</text>
+<text class="bit" x="412.6" y="218.3" fill="#0077B3" opacity="0.40">1</text>
+<text class="bit" x="412.6" y="229.4" fill="#0077B3" opacity="0.43">0</text>
+<text class="bit" x="412.6" y="240.5" fill="#0077B3" opacity="0.26">1</text>
+<text class="bit" x="412.6" y="251.6" fill="#0077B3" opacity="0.34">0</text>
+<text class="bit" x="412.6" y="262.7" fill="#0077B3" opacity="0.26">0</text>
+<text class="bit" x="412.6" y="273.8" fill="#005A88" opacity="0.23">1</text>
+<text class="bit" x="412.6" y="284.9" fill="#0077B3" opacity="0.31">0</text>
+<text class="bit" x="412.6" y="296.0" fill="#0077B3" opacity="0.34">0</text>
+<text class="bit" x="412.6" y="307.1" fill="#0077B3" opacity="0.28">1</text>
+<text class="bit" x="412.6" y="318.2" fill="#005A88" opacity="0.27">0</text>
+<text class="bit" x="412.6" y="329.3" fill="#0077B3" opacity="0.42">0</text>
+<text class="bit" x="412.6" y="340.4" fill="#0077B3" opacity="0.40">1</text>
+<text class="bit" x="422.8" y="74.0" fill="#0077B3" opacity="0.29">0</text>
+<text class="bit" x="422.8" y="85.1" fill="#0077B3" opacity="0.21">1</text>
+<text class="bit" x="422.8" y="96.2" fill="#0077B3" opacity="0.34">1</text>
+<text class="bit" x="422.8" y="107.3" fill="#0077B3" opacity="0.25">0</text>
+<text class="bit" x="422.8" y="118.4" fill="#005A88" opacity="0.21">0</text>
+<text class="bit" x="422.8" y="129.5" fill="#005A88" opacity="0.25">0</text>
+<text class="bit" x="422.8" y="140.6" fill="#0077B3" opacity="0.19">0</text>
+<text class="bit" x="422.8" y="151.7" fill="#0077B3" opacity="0.23">1</text>
+<text class="bit" x="422.8" y="162.8" fill="#0077B3" opacity="0.39">1</text>
+<text class="bit" x="422.8" y="173.9" fill="#0077B3" opacity="0.21">1</text>
+<text class="bit" x="422.8" y="185.0" fill="#005A88" opacity="0.37">1</text>
+<text class="bit" x="422.8" y="196.1" fill="#0077B3" opacity="0.38">1</text>
+<text class="bit" x="422.8" y="207.2" fill="#0077B3" opacity="0.23">1</text>
+<text class="bit" x="422.8" y="218.3" fill="#005A88" opacity="0.25">1</text>
+<text class="bit" x="422.8" y="229.4" fill="#0077B3" opacity="0.41">1</text>
+<text class="bit" x="422.8" y="240.5" fill="#0077B3" opacity="0.37">1</text>
+<text class="bit" x="422.8" y="251.6" fill="#0077B3" opacity="0.36">1</text>
+<text class="bit" x="422.8" y="262.7" fill="#0077B3" opacity="0.26">0</text>
+<text class="bit" x="422.8" y="273.8" fill="#0077B3" opacity="0.21">0</text>
+<text class="bit" x="422.8" y="284.9" fill="#0077B3" opacity="0.26">0</text>
+<text class="bit" x="422.8" y="296.0" fill="#0077B3" opacity="0.43">1</text>
+<text class="bit" x="422.8" y="307.1" fill="#0077B3" opacity="0.24">0</text>
+<text class="bit" x="422.8" y="318.2" fill="#0077B3" opacity="0.29">1</text>
+<text class="bit" x="422.8" y="329.3" fill="#0077B3" opacity="0.31">0</text>
+<text class="bit" x="422.8" y="340.4" fill="#0077B3" opacity="0.40">0</text>
+<text class="bit" x="433.0" y="74.0" fill="#0077B3" opacity="0.28">0</text>
+<text class="bit" x="433.0" y="85.1" fill="#0077B3" opacity="0.24">0</text>
+<text class="bit" x="433.0" y="96.2" fill="#005A88" opacity="0.19">0</text>
+<text class="bit" x="433.0" y="107.3" fill="#0077B3" opacity="0.29">0</text>
+<text class="bit" x="433.0" y="118.4" fill="#005A88" opacity="0.31">0</text>
+<text class="bit" x="433.0" y="129.5" fill="#0077B3" opacity="0.31">0</text>
+<text class="bit" x="433.0" y="140.6" fill="#005A88" opacity="0.32">1</text>
+<text class="bit" x="433.0" y="151.7" fill="#0077B3" opacity="0.20">0</text>
+<text class="bit" x="433.0" y="162.8" fill="#0077B3" opacity="0.34">1</text>
+<text class="bit" x="433.0" y="173.9" fill="#0077B3" opacity="0.18">0</text>
+<text class="bit" x="433.0" y="185.0" fill="#0077B3" opacity="0.17">0</text>
+<text class="bit" x="433.0" y="196.1" fill="#0077B3" opacity="0.33">1</text>
+<text class="bit" x="433.0" y="207.2" fill="#0077B3" opacity="0.26">0</text>
+<text class="bit" x="433.0" y="218.3" fill="#0077B3" opacity="0.22">1</text>
+<text class="bit" x="433.0" y="229.4" fill="#0077B3" opacity="0.17">1</text>
+<text class="bit" x="433.0" y="240.5" fill="#0077B3" opacity="0.17">1</text>
+<text class="bit" x="433.0" y="251.6" fill="#0077B3" opacity="0.32">1</text>
+<text class="bit" x="433.0" y="262.7" fill="#0077B3" opacity="0.34">0</text>
+<text class="bit" x="433.0" y="273.8" fill="#005A88" opacity="0.33">0</text>
+<text class="bit" x="433.0" y="284.9" fill="#0077B3" opacity="0.23">0</text>
+<text class="bit" x="433.0" y="296.0" fill="#0077B3" opacity="0.31">1</text>
+<text class="bit" x="433.0" y="307.1" fill="#005A88" opacity="0.20">0</text>
+<text class="bit" x="433.0" y="318.2" fill="#0077B3" opacity="0.22">0</text>
+<text class="bit" x="433.0" y="329.3" fill="#0077B3" opacity="0.16">1</text>
+<text class="bit" x="433.0" y="340.4" fill="#0077B3" opacity="0.31">1</text>
+<text class="bit" x="443.2" y="74.0" fill="#0077B3" opacity="0.23">1</text>
+<text class="bit" x="443.2" y="85.1" fill="#0077B3" opacity="0.23">0</text>
+<text class="bit" x="443.2" y="96.2" fill="#0077B3" opacity="0.29">0</text>
+<text class="bit" x="443.2" y="107.3" fill="#0077B3" opacity="0.15">0</text>
+<text class="bit" x="443.2" y="118.4" fill="#0077B3" opacity="0.21">0</text>
+<text class="bit" x="443.2" y="129.5" fill="#0077B3" opacity="0.24">1</text>
+<text class="bit" x="443.2" y="140.6" fill="#0077B3" opacity="0.29">0</text>
+<text class="bit" x="443.2" y="151.7" fill="#0077B3" opacity="0.20">1</text>
+<text class="bit" x="443.2" y="162.8" fill="#0077B3" opacity="0.16">0</text>
+<text class="bit" x="443.2" y="173.9" fill="#0077B3" opacity="0.19">0</text>
+<text class="bit" x="443.2" y="185.0" fill="#0077B3" opacity="0.29">0</text>
+<text class="bit" x="443.2" y="196.1" fill="#0077B3" opacity="0.19">0</text>
+<text class="bit" x="443.2" y="207.2" fill="#0077B3" opacity="0.28">1</text>
+<text class="bit" x="443.2" y="218.3" fill="#0077B3" opacity="0.16">1</text>
+<text class="bit" x="443.2" y="229.4" fill="#0077B3" opacity="0.23">1</text>
+<text class="bit" x="443.2" y="240.5" fill="#0077B3" opacity="0.24">0</text>
+<text class="bit" x="443.2" y="251.6" fill="#0077B3" opacity="0.18">0</text>
+<text class="bit" x="443.2" y="262.7" fill="#0077B3" opacity="0.25">1</text>
+<text class="bit" x="443.2" y="273.8" fill="#0077B3" opacity="0.23">0</text>
+<text class="bit" x="443.2" y="284.9" fill="#0077B3" opacity="0.19">0</text>
+<text class="bit" x="443.2" y="296.0" fill="#0077B3" opacity="0.16">0</text>
+<text class="bit" x="443.2" y="307.1" fill="#0077B3" opacity="0.20">1</text>
+<text class="bit" x="443.2" y="318.2" fill="#0077B3" opacity="0.25">0</text>
+<text class="bit" x="443.2" y="329.3" fill="#0077B3" opacity="0.15">1</text>
+<text class="bit" x="443.2" y="340.4" fill="#0077B3" opacity="0.16">0</text>
+<text class="bit" x="453.4" y="74.0" fill="#0077B3" opacity="0.10">1</text>
+<text class="bit" x="453.4" y="85.1" fill="#0077B3" opacity="0.19">1</text>
+<text class="bit" x="453.4" y="96.2" fill="#0077B3" opacity="0.16">1</text>
+<text class="bit" x="453.4" y="107.3" fill="#0077B3" opacity="0.10">1</text>
+<text class="bit" x="453.4" y="118.4" fill="#0077B3" opacity="0.19">1</text>
+<text class="bit" x="453.4" y="129.5" fill="#0077B3" opacity="0.21">0</text>
+<text class="bit" x="453.4" y="140.6" fill="#0077B3" opacity="0.19">1</text>
+<text class="bit" x="453.4" y="151.7" fill="#0077B3" opacity="0.15">0</text>
+<text class="bit" x="453.4" y="162.8" fill="#0077B3" opacity="0.21">1</text>
+<text class="bit" x="453.4" y="173.9" fill="#0077B3" opacity="0.19">1</text>
+<text class="bit" x="453.4" y="185.0" fill="#0077B3" opacity="0.21">0</text>
+<text class="bit" x="453.4" y="196.1" fill="#0077B3" opacity="0.18">0</text>
+<text class="bit" x="453.4" y="207.2" fill="#0077B3" opacity="0.21">0</text>
+<text class="bit" x="453.4" y="218.3" fill="#0077B3" opacity="0.15">0</text>
+<text class="bit" x="453.4" y="229.4" fill="#0077B3" opacity="0.10">0</text>
+<text class="bit" x="453.4" y="240.5" fill="#0077B3" opacity="0.19">0</text>
+<text class="bit" x="453.4" y="251.6" fill="#005A88" opacity="0.16">1</text>
+<text class="bit" x="453.4" y="262.7" fill="#0077B3" opacity="0.17">0</text>
+<text class="bit" x="453.4" y="273.8" fill="#0077B3" opacity="0.18">1</text>
+<text class="bit" x="453.4" y="284.9" fill="#0077B3" opacity="0.15">0</text>
+<text class="bit" x="453.4" y="296.0" fill="#0077B3" opacity="0.23">0</text>
+<text class="bit" x="453.4" y="307.1" fill="#0077B3" opacity="0.19">0</text>
+<text class="bit" x="453.4" y="318.2" fill="#0077B3" opacity="0.13">0</text>
+<text class="bit" x="453.4" y="329.3" fill="#0077B3" opacity="0.10">1</text>
+<text class="bit" x="453.4" y="340.4" fill="#0077B3" opacity="0.18">1</text>
+<text class="bit" x="463.6" y="74.0" fill="#0077B3" opacity="0.08">1</text>
+<text class="bit" x="463.6" y="85.1" fill="#0077B3" opacity="0.15">0</text>
+<text class="bit" x="463.6" y="96.2" fill="#0077B3" opacity="0.15">1</text>
+<text class="bit" x="463.6" y="107.3" fill="#0077B3" opacity="0.08">0</text>
+<text class="bit" x="463.6" y="118.4" fill="#0077B3" opacity="0.14">1</text>
+<text class="bit" x="463.6" y="129.5" fill="#0077B3" opacity="0.12">0</text>
+<text class="bit" x="463.6" y="140.6" fill="#0077B3" opacity="0.10">1</text>
+<text class="bit" x="463.6" y="151.7" fill="#0077B3" opacity="0.11">0</text>
+<text class="bit" x="463.6" y="162.8" fill="#0077B3" opacity="0.13">0</text>
+<text class="bit" x="463.6" y="173.9" fill="#0077B3" opacity="0.09">1</text>
+<text class="bit" x="463.6" y="185.0" fill="#0077B3" opacity="0.15">1</text>
+<text class="bit" x="463.6" y="196.1" fill="#0077B3" opacity="0.08">1</text>
+<text class="bit" x="463.6" y="207.2" fill="#0077B3" opacity="0.10">1</text>
+<text class="bit" x="463.6" y="218.3" fill="#0077B3" opacity="0.11">0</text>
+<text class="bit" x="463.6" y="229.4" fill="#0077B3" opacity="0.12">1</text>
+<text class="bit" x="463.6" y="240.5" fill="#005A88" opacity="0.14">1</text>
+<text class="bit" x="463.6" y="251.6" fill="#0077B3" opacity="0.13">1</text>
+<text class="bit" x="463.6" y="262.7" fill="#005A88" opacity="0.12">0</text>
+<text class="bit" x="463.6" y="273.8" fill="#005A88" opacity="0.08">1</text>
+<text class="bit" x="463.6" y="284.9" fill="#005A88" opacity="0.09">0</text>
+<text class="bit" x="463.6" y="296.0" fill="#0077B3" opacity="0.14">1</text>
+<text class="bit" x="463.6" y="307.1" fill="#0077B3" opacity="0.10">1</text>
+<text class="bit" x="463.6" y="318.2" fill="#0077B3" opacity="0.13">0</text>
+<text class="bit" x="463.6" y="329.3" fill="#0077B3" opacity="0.12">1</text>
+<text class="bit" x="463.6" y="340.4" fill="#0077B3" opacity="0.08">0</text>
+<text class="bit" x="473.8" y="74.0" fill="#0077B3" opacity="0.08">0</text>
+<text class="bit" x="473.8" y="85.1" fill="#0077B3" opacity="0.08">0</text>
+<text class="bit" x="473.8" y="96.2" fill="#0077B3" opacity="0.08">0</text>
+<text class="bit" x="473.8" y="107.3" fill="#0077B3" opacity="0.08">1</text>
+<text class="bit" x="473.8" y="118.4" fill="#0077B3" opacity="0.08">0</text>
+<text class="bit" x="473.8" y="129.5" fill="#0077B3" opacity="0.08">1</text>
+<text class="bit" x="473.8" y="140.6" fill="#0077B3" opacity="0.08">1</text>
+<text class="bit" x="473.8" y="151.7" fill="#0077B3" opacity="0.08">0</text>
+<text class="bit" x="473.8" y="162.8" fill="#0077B3" opacity="0.08">0</text>
+<text class="bit" x="473.8" y="173.9" fill="#005A88" opacity="0.08">1</text>
+<text class="bit" x="473.8" y="185.0" fill="#005A88" opacity="0.08">1</text>
+<text class="bit" x="473.8" y="196.1" fill="#0077B3" opacity="0.08">0</text>
+<text class="bit" x="473.8" y="207.2" fill="#0077B3" opacity="0.08">0</text>
+<text class="bit" x="473.8" y="218.3" fill="#0077B3" opacity="0.08">1</text>
+<text class="bit" x="473.8" y="229.4" fill="#0077B3" opacity="0.08">0</text>
+<text class="bit" x="473.8" y="240.5" fill="#0077B3" opacity="0.08">1</text>
+<text class="bit" x="473.8" y="251.6" fill="#0077B3" opacity="0.08">1</text>
+<text class="bit" x="473.8" y="262.7" fill="#0077B3" opacity="0.08">1</text>
+<text class="bit" x="473.8" y="273.8" fill="#0077B3" opacity="0.08">1</text>
+<text class="bit" x="473.8" y="284.9" fill="#0077B3" opacity="0.08">0</text>
+<text class="bit" x="473.8" y="296.0" fill="#0077B3" opacity="0.08">1</text>
+<text class="bit" x="473.8" y="307.1" fill="#0077B3" opacity="0.08">0</text>
+<text class="bit" x="473.8" y="318.2" fill="#005A88" opacity="0.08">1</text>
+<text class="bit" x="473.8" y="329.3" fill="#005A88" opacity="0.08">1</text>
+<text class="bit" x="473.8" y="340.4" fill="#005A88" opacity="0.08">1</text>
+<text class="cap" x="22" y="372">Everything anyone writes</text>
+<text class="cap" x="478" y="372" text-anchor="end">Something we can count</text>
+</svg>

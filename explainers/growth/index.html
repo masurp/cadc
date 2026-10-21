@@ -1,0 +1,465 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Storage and computing capacity, 1986–2025</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&display=swap">
+<style>
+  /* ==========================================================================
+     Two panels from Hilbert & López (2011), "The World's Technological
+     Capacity to Store, Communicate, and Compute Information", Science
+     332(6025), 60–65. One click extends both to the present.
+
+     VERIFIED against the paper itself (pdftotext of the Science PDF), not
+     from memory. Every figure below is quoted or derived from its Table 1
+     and abstract:
+
+     LEFT — installed storage capacity, optimally compressed exabytes,
+     analog vs digital, on a linear axis as they drew it.
+       "grew from 2.6 optimally compressed exabytes in 1986 ... to 295
+        optimally compressed exabytes in 2007"                    [verified]
+       Table 1, "Percent digital": 0.8% · 3% · 25% · 94%
+        for 1986 · 1993 · 2000 · 2007                             [verified]
+       Storage CAGR 23%/yr per capita (25.3%/yr in totals, the difference
+        being population growth — this file interpolates the totals) [verified]
+
+     The 50% crossover is labelled "≈2002": the paper says only "the majority
+     of our technological memory has been in digital format since the early
+     2000s". Interpolating 25% (2000) to 94% (2007) puts it mid-2002, which
+     is where the marker sits — an interpolation, flagged with the ≈.
+
+     Intermediate totals (15.8 EB in 1993, 54.5 EB in 2000) are interpolated
+     geometrically here, not quoted; the paper's Table 1 reports storage per
+     capita, not totals, for those years.
+
+     RIGHT — computing capacity, two series.
+
+     General-purpose (programmable machines):
+       "carry out 6.4 x 10^18 instructions per second on general-purpose
+        computers" in 2007                                        [verified]
+       "General-purpose computing capacity grew at an annual rate of 58%"
+        1986–2007; Table 1 gives 0.06 -> 968 MIPS per capita, a 58.6%/yr
+        CAGR, so the two agree                                    [verified]
+       Earlier years are back-calculated from the 2007 value at that rate.
+       (The paper also reports application-specific computing at 83%/yr,
+        doubling every 14 months vs 18 for general-purpose.)      [verified]
+
+     AI accelerators (Epoch AI, 2026):
+       "Total available computing capacity from AI chips ... has grown by
+        approximately 3.3x per year since 2022 ... doubling every 7 months"
+       ~5.2M operational H100-equivalents through 2025; an H100 is ~989
+       TFLOP/s at FP8 (1,979 TFLOPS spec, halved for sparsity), so roughly
+       5.2e21 FLOP/s installed — the 5,200 figure this file plots.
+
+     CAVEAT worth saying out loud in the lecture: the two right-hand series
+     are not strictly the same unit. General-purpose is instructions/second
+     (MIPS-derived); AI accelerators are 8-bit floating-point operations per
+     second. They share an axis to show shape and order of magnitude, not to
+     claim a like-for-like ratio.
+
+     THE EXTENSIONS (revealed on click) ARE RECONSTRUCTIONS, not their data:
+       storage 2025 ≈ 12,000 EB (12 ZB), ~100% digital — IDC Global
+         DataSphere / StorageSphere tracking
+       compute 2025 — their 58%/yr carried forward unchanged, stated as the
+         assumption it is. Plotted on a LINEAR axis, in units of 10^18
+         instructions per second, to match the storage panel: a log axis
+         flattened the same growth into a straight line and buried the point.
+     No peer-reviewed study has repeated their exact information-theoretic
+     inventory since, so these are benchmarks stitched together, not a
+     replication.
+
+     Colours are a local copy of the CADC light palette — an iframe cannot
+     inherit the parent document's CSS custom properties.
+     ========================================================================== */
+  :root{
+    --ink:#1a1a17; --ink-3:#5a5a52; --muted:#7a7a70; --faint:#9a9a90;
+    --hair:#e7e3d9; --border:#e0dcd0;
+    --digital:#0077B3;
+    --analog:#cbbfa6;
+    --compute:#1f7a5a;
+    --ai:#d4622a;
+    --font:"Space Grotesk", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0; height:100%}
+  body{
+    font-family:var(--font); background:transparent; color:var(--ink);
+    display:flex; align-items:center; justify-content:center;
+    overflow:hidden; cursor:pointer; -webkit-tap-highlight-color:transparent;
+  }
+  svg{width:100%; height:100%; display:block}
+  text{font-family:var(--font); fill:var(--ink)}
+
+  .grid line{stroke:var(--hair); stroke-width:1}
+  .axisline{stroke:var(--border); stroke-width:1.2}
+  .ytick,.xtick{font-size:11px; fill:var(--muted)}
+  .ytick{text-anchor:end}
+  .xtick{text-anchor:middle}
+  .axistitle{font-size:10.5px; fill:var(--ink-3); font-weight:500;
+             letter-spacing:.07em; text-transform:uppercase}
+  .paneltitle{font-size:14px; font-weight:700; fill:var(--ink)}
+  .panelsub{font-size:10.5px; font-weight:400; fill:var(--muted)}
+
+  .legend text{font-size:11.5px; font-weight:500; fill:var(--ink-3)}
+  .share{font-size:12px; font-weight:700}
+  .sharesub{font-size:10px; font-weight:400; fill:var(--muted)}
+
+  .cross line{stroke:var(--digital); stroke-width:1; stroke-dasharray:3 3; opacity:.5}
+  .cross text{font-size:10.5px; fill:var(--digital); font-weight:500}
+
+  .rate{font-size:11px; fill:var(--compute); font-weight:500}
+  .callout{font-size:11px; fill:var(--ink-3)}
+  .callout .big{font-size:15px; font-weight:700; fill:var(--ink)}
+  .fade{transition:opacity .5s ease}
+</style>
+</head>
+<body>
+<svg id="chart" viewBox="0 0 1000 420" preserveAspectRatio="xMidYMid meet" role="img"
+     aria-label="Left: world installed storage capacity, analog versus digital, in exabytes. Right: general-purpose computing capacity in instructions per second. Both 1986 to 2007; click to extend to 2025.">
+  <g id="grid" class="grid"></g>
+  <g id="areas"></g>
+  <g id="cross" class="cross"></g>
+  <g id="axes"></g>
+  <g id="shares"></g>
+  <g id="static"></g>
+  <g id="staticC"></g>
+  <g id="callouts"></g>
+</svg>
+
+<noscript>
+  <p style="max-width:34em;margin:2em;font-family:sans-serif">
+    Needs JavaScript: animated versions of Hilbert &amp; López's (2011) charts of
+    world storage capacity (analog vs digital) and computing capacity,
+    1986–2007, each extended to 2025 from IDC and industry benchmarks.
+  </p>
+</noscript>
+
+<script>
+(function () {
+  "use strict";
+
+  var H = 420;
+  var PT = 68, PB = H - 62;                    // plot top / bottom, both panels
+  var A = { l: 72, r: 330, tOff: 58 };         // storage
+  var B = { l: 424, r: 636, tOff: 50 };        // general-purpose computing
+  var C = { l: 740, r: 962, tOff: 56 };        // AI compute (Epoch AI)
+
+  var Y_START = 1986, Y_PUB = 2007, Y_NOW = 2025;
+
+  // ---- storage: [year, total exabytes, digital share] --------------------
+  var BENCH = [
+    [1986,     2.6, 0.008],
+    [1993,    15.8, 0.03 ],
+    [2000,    54.5, 0.25 ],
+    [2007,   295.0, 0.94 ],
+    [2025, 12000.0, 0.999]   // reconstruction (IDC), not Hilbert & López
+  ];
+  function interp(year) {
+    if (year <= BENCH[0][0]) return { total: BENCH[0][1], share: BENCH[0][2] };
+    for (var i = 1; i < BENCH.length; i++) {
+      if (year <= BENCH[i][0]) {
+        var a = BENCH[i - 1], b = BENCH[i], t = (year - a[0]) / (b[0] - a[0]);
+        return { total: a[1] * Math.pow(b[1] / a[1], t), share: a[2] + (b[2] - a[2]) * t };
+      }
+    }
+    var last = BENCH[BENCH.length - 1];
+    return { total: last[1], share: last[2] };
+  }
+
+  // ---- computing: general-purpose instructions per second ----------------
+  // 2007 ≈ 6.4e18 IPS with 58%/yr growth 1986–2007 (Hilbert & López); earlier
+  // years are back-calculated from that rate, which is how the paper itself
+  // characterises the series.
+  //
+  // After 2007 the SAME rate is carried forward. That is an assumption, and
+  // it is the honest one: a straight line on a log axis says "we assume the
+  // trend held". An earlier version bent this down to 35%/yr, which drew a
+  // decelerating curve off the back of a number nobody published — on a log
+  // axis that reads as compute running out of steam, which is not what the
+  // evidence says. Single-thread gains did collapse after Dennard scaling
+  // ended (~2005), but core counts, device counts and datacentre build-out
+  // kept the AGGREGATE compounding, and AI-specific compute accelerated far
+  // past this line (see the annotation on the extended view).
+  var IPS_2007 = 6.4e18, R_PUB = 0.58;
+
+  // ---- AI accelerators ---------------------------------------------------
+  // Epoch AI: total computing capacity across AI chips has grown ~3.3x a year
+  // since 2022 — a doubling every ~7 months. Their stock estimate is ~5.2M
+  // operational H100-equivalents through 2025; an H100 is ~989 TFLOP/s at FP8
+  // (1,979 TFLOPS spec, halved for sparsity), so ~5.2e21 FLOP/s installed.
+  // Series starts in 2012 (AlexNet) — before that there is nothing to plot.
+  // Epoch AI (2026): AI chip capacity ~3.3x/yr since 2022, doubling every ~7
+  // months; ~5.2M operational H100-equivalents through 2025, an H100 being
+  // ~989 TFLOP/s at FP8 => ~5.2e21 FLOP/s. Units of 1e18 FLOP/s.
+  //
+  // This lives on its OWN axis on purpose. It cannot share one with the MIPS
+  // series: different operation (FP8 FLOP vs instruction), different
+  // precision, and a different population (datacentre AI chips only, vs
+  // Hilbert's billions of consumer devices). Splicing it onto his
+  // application-specific line would manufacture a slowdown that is purely an
+  // artefact of the two categories not matching.
+  var AI_2025 = 5200, AI_RATE = 3.3, AI_FROM = 2017;   // units of 1e18 FLOP/s
+  function aiOps(year) { return AI_2025 * Math.pow(AI_RATE, year - 2025); }
+  function xC(y) { return C.l + (y - AI_FROM) / (2025 - AI_FROM) * (C.r - C.l); }
+  function yC(v) { return PB - Math.min(v / view.yMaxC, 1.06) * (PB - PT); }
+  function ips(year) { return (IPS_2007 / 1e18) * Math.pow(1 + R_PUB, year - Y_PUB); }
+
+  // Animated view state: how far the data has grown, and each axis domain.
+  var view = { frontier: Y_START, xMax: Y_PUB, yMaxA: 320, yMaxB: 7, yMaxC: 6000, aiFrontier: AI_FROM };
+
+  function xA(y) { return A.l + (y - Y_START) / (view.xMax - Y_START) * (A.r - A.l); }
+  function xB(y) { return B.l + (y - Y_START) / (view.xMax - Y_START) * (B.r - B.l); }
+  function yA(eb) { return PB - Math.min(eb / view.yMaxA, 1.06) * (PB - PT); }
+  // EIPS = 10^18 instructions per second, so the axis reads in small numbers
+  function yB(eips) { return PB - Math.min(eips / view.yMaxB, 1.06) * (PB - PT); }
+
+  var svgns = "http://www.w3.org/2000/svg";
+  function el(tag, attrs) {
+    var e = document.createElementNS(svgns, tag);
+    for (var k in attrs) e.setAttribute(k, attrs[k]);
+    return e;
+  }
+  function txt(parent, s, attrs) {
+    var t = el("text", attrs); t.textContent = s; parent.appendChild(t); return t;
+  }
+  function clear(n) { while (n.firstChild) n.removeChild(n.firstChild); }
+
+  var gGrid = document.getElementById("grid"),
+      gAreas = document.getElementById("areas"),
+      gCross = document.getElementById("cross"),
+      gAxes = document.getElementById("axes"),
+      gShares = document.getElementById("shares"),
+      gStatic = document.getElementById("static"),
+      gStaticC = document.getElementById("staticC"),
+      gCallouts = document.getElementById("callouts");
+
+  // nice round ticks at 1/2/2.5/5 x 10^k, aiming for four or five of them
+  function ticksFor(max) {
+    var mag = Math.pow(10, Math.floor(Math.log10(max)) - 1), step = mag;
+    [1, 2, 2.5, 5, 10, 20, 25, 50].some(function (m) {
+      if (max / (mag * m) <= 5) { step = mag * m; return true; }
+      return false;
+    });
+    var out = [];
+    for (var v = 0; v <= max + 1e-9; v += step) out.push(v);
+    return out;
+  }
+  function fmtNum(v) {
+    if (v === 0) return "0";
+    if (v < 1) return String(v);
+    return Math.round(v).toLocaleString();
+  }
+
+  function xTicks() {
+    return view.xMax > 2010 ? [1986, 1993, 2000, 2007, 2016, 2025] : [1986, 1993, 2000, 2007];
+  }
+
+  function draw() {
+    clear(gGrid); clear(gAreas); clear(gAxes); clear(gShares); clear(gCross);
+
+    // ---------- panel A: storage ----------
+    ticksFor(view.yMaxA).forEach(function (v) {
+      var y = yA(v);
+      gGrid.appendChild(el("line", { x1: A.l, x2: A.r, y1: y, y2: y }));
+      txt(gGrid, fmtNum(v), { x: A.l - 10, y: y + 4, class: "ytick" });
+    });
+
+    var step = 0.15, top = [], mid = [];
+    for (var yr = Y_START; yr < view.frontier - 1e-9; yr += step) {
+      var d = interp(yr);
+      top.push([xA(yr), yA(d.total)]);
+      mid.push([xA(yr), yA(d.total * (1 - d.share))]);
+    }
+    var lastD = interp(view.frontier);
+    top.push([xA(view.frontier), yA(lastD.total)]);
+    mid.push([xA(view.frontier), yA(lastD.total * (1 - lastD.share))]);
+
+    function poly(upper, lower) {
+      var s = "M " + upper.map(function (p) { return p[0].toFixed(2) + "," + p[1].toFixed(2); }).join(" L ");
+      for (var i = lower.length - 1; i >= 0; i--) s += " L " + lower[i][0].toFixed(2) + "," + lower[i][1].toFixed(2);
+      return s + " Z";
+    }
+    var base = top.map(function (p) { return [p[0], PB]; });
+    gAreas.appendChild(el("path", { d: poly(mid, base), fill: "var(--analog)" }));
+    gAreas.appendChild(el("path", { d: poly(top, mid), fill: "var(--digital)" }));
+
+    // digital share at their benchmark years — the actual finding
+    if (view.yMaxA < 1200) {
+      [[1986, "0.8%"], [1993, "3%"], [2000, "25%"], [2007, "94%"]].forEach(function (b) {
+        if (b[0] > view.frontier + 0.01) return;
+        var dd = interp(b[0]), x = xA(b[0]), y = yA(dd.total);
+        var anchor = b[0] === 1986 ? "start" : (b[0] === 2007 ? "end" : "middle");
+        txt(gShares, b[1], { x: x, y: y - 13, class: "share", "text-anchor": anchor, fill: "var(--digital)" });
+        txt(gShares, "digital", { x: x, y: y - 28, class: "sharesub", "text-anchor": anchor });
+      });
+    }
+    if (view.frontier >= 2002 && view.yMaxA < 1200) {
+      var cx = xA(2002), cd = interp(2002);
+      gCross.appendChild(el("line", { x1: cx, x2: cx, y1: yA(cd.total) - 30, y2: PT + 30 }));
+      txt(gCross, "≈2002 · half of it", { x: cx - 9, y: PT + 30, "text-anchor": "end" });
+      txt(gCross, "is digital", { x: cx - 9, y: PT + 44, "text-anchor": "end" });
+    }
+
+    // ---------- panel B: computing ----------
+    ticksFor(view.yMaxB).forEach(function (v) {
+      var yy = yB(v);
+      gGrid.appendChild(el("line", { x1: B.l, x2: B.r, y1: yy, y2: yy }));
+      txt(gGrid, fmtNum(v), { x: B.l - 10, y: yy + 4, class: "ytick" });
+    });
+
+    var pts = [];
+    for (var y2 = Y_START; y2 < view.frontier - 1e-9; y2 += step) pts.push([xB(y2), yB(ips(y2))]);
+    pts.push([xB(view.frontier), yB(ips(view.frontier))]);
+    gAreas.appendChild(el("path", {
+      d: "M " + pts.map(function (p) { return p[0].toFixed(2) + "," + p[1].toFixed(2); }).join(" L ")
+         + " L " + pts[pts.length - 1][0].toFixed(2) + "," + PB + " L " + pts[0][0].toFixed(2) + "," + PB + " Z",
+      fill: "var(--compute)", "fill-opacity": ".13"
+    }));
+    gAreas.appendChild(el("path", {
+      d: "M " + pts.map(function (p) { return p[0].toFixed(2) + "," + p[1].toFixed(2); }).join(" L "),
+      fill: "none", stroke: "var(--compute)", "stroke-width": "2.4", "stroke-linejoin": "round"
+    }));
+
+    // ---------- panel C: AI compute, own axis, own unit ----------
+    ticksFor(view.yMaxC).forEach(function (v) {
+      var yy = yC(v);
+      gGrid.appendChild(el("line", { x1: C.l, x2: C.r, y1: yy, y2: yy }));
+      txt(gGrid, fmtNum(v), { x: C.l - 10, y: yy + 4, class: "ytick" });
+    });
+    if (view.aiFrontier > AI_FROM + 1e-9) {
+      var aiPts = [];
+      for (var y3 = AI_FROM; y3 < view.aiFrontier - 1e-9; y3 += 0.1) aiPts.push([xC(y3), yC(aiOps(y3))]);
+      aiPts.push([xC(view.aiFrontier), yC(aiOps(view.aiFrontier))]);
+      var aiLine = aiPts.map(function (p) { return p[0].toFixed(2) + "," + p[1].toFixed(2); }).join(" L ");
+      gAreas.appendChild(el("path", {
+        d: "M " + aiLine + " L " + aiPts[aiPts.length - 1][0].toFixed(2) + "," + PB
+           + " L " + aiPts[0][0].toFixed(2) + "," + PB + " Z",
+        fill: "var(--ai)", "fill-opacity": ".16"
+      }));
+      gAreas.appendChild(el("path", {
+        d: "M " + aiLine, fill: "none", stroke: "var(--ai)",
+        "stroke-width": "2.6", "stroke-linejoin": "round"
+      }));
+    }
+
+    if (view.frontier > 1996) {
+      txt(gShares, "+58% a year", { x: B.l + 14, y: PT + 26, class: "rate" });
+    }
+
+    // ---------- axes for both panels ----------
+    [[A, "Installed capacity (exabytes)"], [B, "Instructions per second (× 10¹⁸)"]].forEach(function (pair) {
+      var P = pair[0];
+      gAxes.appendChild(el("line", { class: "axisline", x1: P.l, x2: P.r, y1: PB, y2: PB }));
+      gAxes.appendChild(el("line", { class: "axisline", x1: P.l, x2: P.l, y1: PT, y2: PB }));
+      var xf = (P === A) ? xA : xB;
+      xTicks().forEach(function (yr) {
+        if (yr > view.xMax + 0.01) return;
+        var x = xf(yr);
+        gAxes.appendChild(el("line", { class: "axisline", x1: x, x2: x, y1: PB, y2: PB + 5 }));
+        txt(gAxes, yr, { x: x, y: PB + 22, class: "xtick" });
+      });
+      txt(gAxes, "Year", { x: (P.l + P.r) / 2, y: PB + 44, class: "axistitle", "text-anchor": "middle" });
+      txt(gAxes, pair[1], {
+        class: "axistitle", "text-anchor": "middle",
+        transform: "translate(" + (P.l - P.tOff) + "," + ((PT + PB) / 2) + ") rotate(-90)"
+      });
+    });
+
+    gAxes.appendChild(el("line", { class: "axisline", x1: C.l, x2: C.r, y1: PB, y2: PB }));
+    gAxes.appendChild(el("line", { class: "axisline", x1: C.l, x2: C.l, y1: PT, y2: PB }));
+    [2017, 2020, 2023, 2025].forEach(function (yr) {
+      var x = xC(yr);
+      gAxes.appendChild(el("line", { class: "axisline", x1: x, x2: x, y1: PB, y2: PB + 5 }));
+      txt(gAxes, yr, { x: x, y: PB + 22, class: "xtick" });
+    });
+    txt(gAxes, "Year", { x: (C.l + C.r) / 2, y: PB + 44, class: "axistitle", "text-anchor": "middle" });
+    txt(gAxes, "FLOP per second (× 10¹⁸)", {
+      class: "axistitle", "text-anchor": "middle",
+      transform: "translate(" + (C.l - C.tOff) + "," + ((PT + PB) / 2) + ") rotate(-90)"
+    });
+  }
+
+  // ---- static furniture ------------------------------------------------
+  txt(gStatic, "What we store", { x: A.l, y: 20, class: "paneltitle" });
+  txt(gStatic, "analog vs digital, optimally compressed", { x: A.l, y: 34, class: "panelsub" });
+  txt(gStatic, "What we can compute", { x: B.l, y: 20, class: "paneltitle" });
+  txt(gStatic, "general-purpose = programmable machines", { x: B.l, y: 34, class: "panelsub" });
+  txt(gStaticC, "What we train AI with", { x: C.l, y: 20, class: "paneltitle" });
+  txt(gStaticC, "AI accelerators only — a different measure", { x: C.l, y: 34, class: "panelsub" });
+
+  (function legend() {
+    var x = A.l + 2;
+    [["var(--digital)", "Digital"], ["var(--analog)", "Analog"]].forEach(function (it) {
+      gStatic.appendChild(el("rect", { x: x, y: 43, width: 10, height: 10, rx: 2, fill: it[0] }));
+      txt(gStatic, it[1], { x: x + 15, y: 52, class: "legend" });
+      x += 15 + it[1].length * 7 + 22;
+    });
+    gStatic.appendChild(el("rect", { x: B.l + 2, y: 43, width: 10, height: 10, rx: 2, fill: "var(--compute)" }));
+    txt(gStatic, "Instructions / second", { x: B.l + 17, y: 52, class: "legend" });
+    gStaticC.appendChild(el("rect", { x: C.l + 2, y: 43, width: 10, height: 10, rx: 2, fill: "var(--ai)" }));
+    txt(gStaticC, "8-bit FLOP / second", { x: C.l + 17, y: 52, class: "legend" });
+  })();
+  // the legend <text> elements need the class to actually take effect
+  Array.prototype.forEach.call(document.querySelectorAll("text.legend"), function (t) {
+    t.setAttribute("font-size", "11.5"); t.setAttribute("fill", "#5a5a52");
+  });
+
+  function ease(t) { return t < .5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2; }
+  function animate(to, dur, done) {
+    var from = {};
+    for (var k in to) from[k] = view[k];
+    var t0 = performance.now();
+    (function frame(now) {
+      var p = Math.min((now - t0) / dur, 1), e2 = ease(p);
+      for (var k2 in to) view[k2] = from[k2] + (to[k2] - from[k2]) * e2;
+      draw();
+      if (p < 1) requestAnimationFrame(frame);
+      else if (done) done();
+    })(t0);
+  }
+
+  draw();
+  animate({ frontier: Y_PUB }, 2800);
+
+  var extended = false;
+  function extend() {
+    if (extended) return;
+    extended = true;
+    animate({ frontier: Y_NOW, xMax: Y_NOW, yMaxA: 13000, yMaxB: 26000, aiFrontier: 2025 }, 3000, function () {
+      var g = el("g", { class: "callout fade" });
+      g.style.opacity = "0";
+
+      var d = interp(Y_NOW), ax = xA(Y_NOW), ay = yA(d.total);
+      txt(g, "≈12 ZB", { x: ax - 8, y: ay + 14, class: "big", "text-anchor": "end" });
+      txt(g, "≈100% digital", { x: ax - 8, y: ay + 33, "text-anchor": "end" });
+
+      var bx = xB(Y_NOW), by = yB(ips(Y_NOW));
+      txt(g, "≈24,000", { x: bx - 8, y: by + 14, class: "big", "text-anchor": "end" });
+      txt(g, "special-purpose chips were", { x: B.l + 6, y: PB - 36, class: "sharesub" });
+      txt(g, "already ≈30× this in 2007", { x: B.l + 6, y: PB - 22, class: "sharesub" });
+
+      var cx2 = xC(2025), cy2 = yC(aiOps(2025));
+      txt(g, "≈5,200", { x: cx2 - 8, y: cy2 + 14, class: "big", "text-anchor": "end" });
+      txt(g, "×3.3 a year", { x: cx2 - 8, y: cy2 + 33, "text-anchor": "end" });
+      txt(g, "doubling every 7 months", { x: cx2 - 8, y: cy2 + 48, "text-anchor": "end", class: "sharesub" });
+
+      gCallouts.appendChild(g);
+      requestAnimationFrame(function () { g.style.opacity = "1"; });
+    });
+  }
+
+  /* Two states only, and the extension animates outward, so there is no
+     sensible way back: forward keys advance, ArrowLeft is deliberately inert. */
+  var tick = txt(document.getElementById("chart"), "1 / 2",
+                 { x: 980, y: 411, "text-anchor": "end", "font-size": "9.5",
+                   fill: "var(--faint)", "letter-spacing": ".08em" });
+  document.body.addEventListener("click", step);
+  document.body.addEventListener("keydown", function (e) {
+    if (e.key === "Enter" || e.key === " " || e.key === "ArrowRight") { e.preventDefault(); step(); }
+  });
+  function step() { if (extended) return; extend(); tick.textContent = "2 / 2"; }
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,427 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>From text to numbers</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&display=swap">
+<style>
+  /* ==========================================================================
+     From text to numbers — a lecture explainer (week 1).
+
+     A TEASER, NOT A LESSON. One sentence, four ways of writing it down as
+     numbers, one click each. Each of the four gets its own week later, so
+     nothing here is explained in full: the student should leave with a
+     picture, not a definition.
+
+     BUILT LIKE THE PIPELINE EXPLAINER, on purpose. Same 1000x500 frame, same
+     WEEK chip and rail, same bottom caption with a bold key, same era colours
+     on the closing cards. The two figures sit in the same deck and must read
+     as one family.
+
+     THE FURNITURE IS DRAWN ONCE AND NEVER REDRAWN:
+
+         hud       WEEK 1 chip, rail title, step counter
+         rail      01 characters / 02 tokens / 03 counts / 04 embeddings
+         source    the sentence, at the same y on every step; a second text
+                   drops into the reserved second line at step 2 and nothing
+                   above or below it moves
+         stage     one box, identical on every step
+         caption   key + one line
+
+     Only the CONTENTS OF THE STAGE change between clicks. That is what makes
+     the steps feel like one thing happening four times rather than four
+     different slides — and it is why the second source line is reserved from
+     the start instead of appearing when it is needed.
+
+     Every step also ends on one short line at the same y inside the stage
+     (the "foot"): the count of what the shape costs. It is the only place a
+     technical term is named.
+
+     STEPS 03 AND 04 SHARE THEIR COLUMNS. The vocabulary sits at the same x in
+     both, so turning counts into embeddings changes only what the ROWS are:
+     texts become dimensions. Move one and you break the whole point.
+
+     Nothing here is computed. The embedding numbers and the map coordinates
+     are illustrative, arranged so the clusters (be/is/was, not/never/no,
+     or/and/but) are visible — the only claim this step makes. Week 3's
+     Playground tool has the real vectors.
+
+     Colours are a local copy of the CADC light palette: an iframe cannot
+     inherit the parent document's custom properties. Text 1 is the accent,
+     text 2 the course's negative hue — the pair every tool here separates.
+     ========================================================================== */
+  :root{
+    --ink:#1a1a17; --ink-2:#3a3a34; --ink-3:#5a5a52; --muted:#7a7a70; --faint:#9a9a90;
+    --hair:#e7e3d9; --border:#e0dcd0; --surface:#ffffff; --strip:#f2f0ea; --sunk:#faf8f4;
+    --era1:#0077B3; --era2:oklch(0.55 0.10 210); --era3:oklch(0.55 0.11 158);
+    --era4:oklch(0.58 0.12 75); --era5:oklch(0.55 0.15 38);
+    --accent:var(--era1);
+    --accent-bg:color-mix(in oklab, var(--accent) 10%, #fff);
+    --neg:#c24a2a;
+    --neg-bg:color-mix(in oklab, var(--neg) 10%, #fff);
+    --font:"Space Grotesk", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+    --mono:ui-monospace, SFMono-Regular, Menlo, monospace;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0; height:100%}
+  body{font-family:var(--font); background:transparent; color:var(--ink);
+       display:flex; align-items:center; justify-content:center;
+       overflow:hidden; cursor:pointer; -webkit-tap-highlight-color:transparent}
+  svg{width:100%; height:100%; display:block}
+  text{font-family:var(--font); fill:var(--ink)}
+
+  /* --- hud: identical to the pipeline explainer --------------------------- */
+  .chip{fill:var(--accent)}
+  .chiptext{font-size:8.5px; font-weight:700; fill:#fff; letter-spacing:.08em}
+  .rail{font-size:10px; fill:var(--ink-2)}
+
+  /* --- rail: which of the four shapes we are on --------------------------- */
+  .rn{font-size:10px; font-weight:700; fill:var(--faint); letter-spacing:.06em}
+  .rt{font-size:12.5px; fill:var(--faint)}
+  .rl{fill:var(--hair)}
+  .st.done .rn,.st.done .rt{fill:var(--ink-3)}
+  .st.done .rl{fill:var(--accent); opacity:.3}
+  .st.on .rn{fill:var(--accent)}
+  .st.on .rt{fill:var(--accent); font-weight:700}
+  .st.on .rl{fill:var(--accent)}
+
+  /* --- the source band ----------------------------------------------------- */
+  .who{font-size:9.5px; font-weight:700; letter-spacing:.09em; fill:var(--accent)}
+  .who.two{fill:var(--neg)}
+  .say{font-size:22px; fill:var(--ink)}
+
+  /* --- the stage ----------------------------------------------------------- */
+  .stage{fill:var(--surface); stroke:var(--border); stroke-width:1.2}
+  .foot{font-size:12px; fill:var(--muted); text-anchor:middle}
+  .lbl{font-size:10px; fill:var(--muted)}
+
+  /* characters */
+  .ch rect{fill:var(--sunk); stroke:var(--hair)}
+  .ch .c{font-size:22px; fill:var(--ink); text-anchor:middle}
+  .ch .code{font-family:var(--mono); font-size:10px; fill:var(--faint); text-anchor:middle}
+
+  /* tokens and vocabulary */
+  .tok rect{fill:var(--accent-bg)}
+  .tok text{font-size:18px; font-weight:500; fill:var(--accent); text-anchor:middle}
+  .voc rect{fill:var(--strip); stroke:var(--border)}
+  .voc text{font-size:14px; fill:var(--ink-2); text-anchor:middle}
+
+  /* counting blocks */
+  .blk{fill:var(--accent); stroke:var(--surface); stroke-width:1}
+  .blk.two{fill:var(--neg)}
+
+  /* cells */
+  .cell{fill:var(--surface); stroke:var(--hair); stroke-width:.9}
+  .cell.hot{fill:color-mix(in oklab, var(--accent) 16%, #fff)}
+  .cell.hot2{fill:color-mix(in oklab, var(--neg) 16%, #fff)}
+  .cv{font-size:13px; fill:var(--ink-3); text-anchor:middle}
+  .cv.on{font-weight:700; fill:var(--accent)}
+  .cv.on2{font-weight:700; fill:var(--neg)}
+  .num{font-family:var(--mono); font-size:11px; fill:var(--ink-2); text-anchor:middle}
+  .rowlab{font-size:9.5px; font-weight:700; letter-spacing:.09em; fill:var(--muted); text-anchor:end}
+
+  /* the embedding map: a coordinate space, not a set of groups. The grid is
+     the whole honesty of it — words sit at positions, and nearness is a
+     matter of degree. Cluster blobs were tried here and drawn back out: they
+     assert boundaries the vectors do not have. */
+  .plane{fill:var(--sunk); stroke:var(--border); stroke-width:1}
+  .planegrid{stroke:var(--hair); stroke-width:1}
+  .pt{fill:var(--ink-3)} .pt.v{fill:var(--accent)}
+  .pl{font-size:11.5px; fill:var(--ink-3)} .pl.v{fill:var(--ink); font-weight:700}
+
+  /* closing cards */
+  .card{fill:var(--surface); stroke:var(--border); stroke-width:1.2}
+  .cardtitle{font-size:16.5px; font-weight:700; fill:var(--ink)}
+  .cardsub{font-size:11.5px; fill:var(--ink-3)}
+
+  .tick{font-size:9.5px; fill:var(--faint); letter-spacing:.08em}
+  .cap{font-size:13px; fill:var(--ink-2)}
+  .cap .k{font-weight:700; fill:var(--ink)}
+
+  .fade{transition:opacity .4s ease, transform .4s cubic-bezier(.22,.9,.3,1)}
+  .hid{opacity:0}
+  .rise{transform:translateY(9px)}
+  @media (prefers-reduced-motion: reduce){ .fade{transition:none} .rise{transform:none} }
+</style>
+</head>
+<body>
+<svg id="chart" viewBox="0 0 1000 500" preserveAspectRatio="xMidYMid meet" role="img"
+     aria-label="One sentence written down as numbers four ways: as character codes, as tokens, as word counts in a document term matrix, and as word embeddings on a map where similar words sit together. Click to step through.">
+  <g id="hud"></g>
+  <g id="rail"></g>
+  <g id="source"></g>
+  <g id="frame"></g>
+  <g id="stage" class="fade"></g>
+  <g id="cap"></g>
+</svg>
+<noscript><p style="max-width:34em;margin:2em;font-family:sans-serif">Needs JavaScript: an animated
+walk from a sentence to character codes, tokens, word counts and embeddings.</p></noscript>
+
+<script>
+(function () {
+  "use strict";
+  var NS = "http://www.w3.org/2000/svg";
+  function el(t, a) { var e = document.createElementNS(NS, t); for (var k in a) if (a[k] != null) e.setAttribute(k, a[k]); return e; }
+  function g(p, a) { var e = el("g", a || {}); p.appendChild(e); return e; }
+  function txt(p, s, a) { var t = el("text", a || {}); t.textContent = s; p.appendChild(t); return t; }
+  function clear(n) { while (n.firstChild) n.removeChild(n.firstChild); }
+
+  /* -- geometry: everything that must not move ----------------------------- */
+  var G = {
+    W: 1000,
+    RAILY: 62, RULEY: 71, RAILX: 22, RAILW: 230, RAILGAP: 12,
+    S1Y: 112, S2Y: 142, SAYX: 104,
+    SX: 22, SY: 162, SW: 956, SH: 248,          /* the stage */
+    IX: 46, IW: 908, MID: 286, FOOT: 382,       /* its inner box, centre, foot */
+    CAPY: 452
+  };
+
+  /* -- content -------------------------------------------------------------- */
+  var S1 = "To be or not to be", S2 = "What does it mean to be";
+  var T1 = ["to", "be", "or", "not", "to", "be"];
+  var T2 = ["what", "does", "it", "mean", "to", "be"];
+  var VOC = ["to", "be", "or", "not", "what", "does", "it", "mean"];
+
+  /* illustrative: three of the three hundred rows, for the first four words.
+     One row per dimension, one column per word — the counts table's columns,
+     with the texts swapped out for dimensions. */
+  var DIMS = [["dim 1", [-0.12, 0.34, 0.21, -0.63]],
+              ["dim 2", [0.48, -0.19, 0.07, 0.55]],
+              ["dim 3", [-0.77, 0.62, -0.15, 0.09]]];
+
+  /* illustrative map, in panel unit space: three tight triples and a pair, so
+     the grouping reads from proximity alone */
+  var MAP = [["be", .21, .24, 1], ["is", .32, .37, 0], ["was", .15, .43, 0],
+             ["not", .71, .19, 1], ["never", .82, .33, 0], ["no", .66, .36, 0],
+             ["or", .23, .77, 1], ["and", .37, .87, 0], ["but", .16, .90, 0],
+             ["to", .70, .74, 1], ["of", .81, .85, 0]];
+
+  /* THE COLUMNS ARE SHARED. Steps 03 and 04 draw the vocabulary at exactly
+     these x positions, so going from counts to embeddings the word columns do
+     not move and only the ROWS change: texts become dimensions. */
+  var COLW = 92, COLGAP = 8, COLX0 = 130, CHIPY = 256, ROWY = 298;
+  function colx(i) { return COLX0 + i * (COLW + COLGAP); }
+  function vocab(words) {
+    words.forEach(function (v, i) {
+      var k = g(gStage, { "class": "voc" });
+      k.appendChild(el("rect", { x: colx(i), y: CHIPY, width: COLW, height: 34, rx: 7 }));
+      txt(k, v, { x: colx(i) + COLW / 2, y: CHIPY + 22 });
+    });
+  }
+
+  var STEPS = [["01", "characters"], ["02", "tokens"], ["03", "counts"], ["04", "embeddings"]];
+  /* one line per click; the second half of each is spoken, not printed */
+  var CAP = [
+    "A text is symbols.",
+    "Cut it into tokens.",
+    "Count the words.",
+    "Or place the words.",
+    "Two shapes carry the whole course.",
+  ];
+
+  var N = CAP.length;
+  var gHud = document.getElementById("hud"), gRail = document.getElementById("rail");
+  var gSrc = document.getElementById("source"), gFrame = document.getElementById("frame");
+  var gStage = document.getElementById("stage"), gCap = document.getElementById("cap");
+
+  /* -- furniture: drawn once ------------------------------------------------ */
+  /* No week chip, no rail title: the lecturer says which week this is. The only
+     affordance is a step count in the bottom right corner. */
+  var counter = txt(gHud, "", { x: 980, y: 486, "class": "tick", "text-anchor": "end" });
+
+  var railNodes = STEPS.map(function (s, i) {
+    var x = G.RAILX + i * (G.RAILW + G.RAILGAP), k = g(gRail, { "class": "st" });
+    txt(k, s[0], { x: x, y: G.RAILY, "class": "rn" });
+    txt(k, s[1], { x: x + 22, y: G.RAILY, "class": "rt" });
+    k.appendChild(el("rect", { "class": "rl", x: x, y: G.RULEY, width: G.RAILW, height: 3, rx: 1.5 }));
+    return k;
+  });
+
+  txt(gSrc, "TEXT 1", { x: 22, y: G.S1Y - 5, "class": "who" });
+  txt(gSrc, S1, { x: G.SAYX, y: G.S1Y, "class": "say" });
+  var src2 = g(gSrc, { "class": "fade hid" });
+  txt(src2, "TEXT 2", { x: 22, y: G.S2Y - 5, "class": "who two" });
+  txt(src2, S2, { x: G.SAYX, y: G.S2Y, "class": "say" });
+
+  gFrame.appendChild(el("rect", { "class": "stage", x: G.SX, y: G.SY, width: G.SW, height: G.SH, rx: 9 }));
+
+  /* -- small parts ---------------------------------------------------------- */
+  /* the one short line every step ends on, at a fixed y. x defaults to the
+     centre of the stage; the embedding step overrides it, because there the
+     stage holds two panels and a centred line would belong to neither. */
+  function foot(s, x) { txt(gStage, s, { x: x == null ? 500 : x, y: G.FOOT, "class": "foot" }); }
+  function cell(p, x, y, w, h, v, hot) {
+    p.appendChild(el("rect", { "class": "cell" + (hot ? (hot === 2 ? " hot2" : " hot") : ""), x: x, y: y, width: w, height: h }));
+    txt(p, v, { x: x + w / 2, y: y + h / 2 + 4.5, "class": "cv" + (hot ? (hot === 2 ? " on2" : " on") : "") });
+  }
+  /* A staggered entrance, used for anything that arrives in a row.
+     It APPENDS to the group's own class and never replaces it: .ch and .tok
+     carry their styling on a descendant selector (.tok rect), so overwriting
+     the class here silently drops the fill back to the initial value — which
+     is black. That is a real bug this file already had once. */
+  function enter(k, i) {
+    var base = k.getAttribute("class") || "";
+    k.setAttribute("class", (base + " fade rise hid").trim());
+    setTimeout(function () { k.setAttribute("class", (base + " fade").trim()); }, 60 + i * 55);
+  }
+  /* a value's tint, mixed down to white here rather than in CSS: var() inside
+     a presentation attribute is not reliably substituted */
+  function tint(v) {
+    var c = v >= 0 ? [0, 119, 179] : [194, 74, 42], t = Math.min(Math.abs(v), 1) * 0.30;
+    return "rgb(" + c.map(function (x) { return Math.round(255 + (x - 255) * t); }).join(",") + ")";
+  }
+
+  /* -- the four shapes, plus the closing ------------------------------------ */
+  function drawChars() {
+    var cs = S1.split(""), w = 42, gap = 4, x0 = 500 - (cs.length * (w + gap) - gap) / 2, y = 248;
+    cs.forEach(function (c, i) {
+      var k = g(gStage, { "class": "ch" }), x = x0 + i * (w + gap), sp = c === " ";
+      k.appendChild(el("rect", { x: x, y: y, width: w, height: 56, rx: 4, "stroke-dasharray": sp ? "3 3" : null }));
+      txt(k, sp ? "␣" : c, { x: x + w / 2, y: y + 37, "class": "c", fill: sp ? "var(--faint)" : null });
+      txt(k, c.charCodeAt(0), { x: x + w / 2, y: y + 74, "class": "code" });
+      enter(k, i * 0.3);
+    });
+    foot("18 characters → 18 numbers");
+  }
+
+  function drawTokens() {
+    var w = 118, gap = 14, x0 = 500 - (T1.length * (w + gap) - gap) / 2, y = 264;
+    T1.forEach(function (t, i) {
+      var k = g(gStage, { "class": "tok" }), x = x0 + i * (w + gap);
+      k.appendChild(el("rect", { x: x, y: y, width: w, height: 44, rx: 8 }));
+      txt(k, t, { x: x + w / 2, y: y + 29 });
+      enter(k, i);
+    });
+    foot("6 tokens · 4 different words");
+  }
+
+  function drawCounts() {
+    var cx = VOC.map(function (_, i) { return colx(i); }), RH = 26;
+
+    /* every token falls into the bin of its word; the stacks are the counts */
+    var stack = VOC.map(function () { return 0; });
+    function drop(tok, two, order) {
+      var i = VOC.indexOf(tok), n = stack[i]++, k = g(gStage, {});
+      k.appendChild(el("rect", { "class": "blk" + (two ? " two" : ""), x: cx[i] + 4, y: CHIPY - 4 - (n + 1) * 16, width: COLW - 8, height: 14, rx: 2 }));
+      k.setAttribute("class", "fade hid");
+      k.style.transform = "translateY(-34px)";
+      setTimeout(function () { k.setAttribute("class", "fade"); k.style.transform = "translateY(0)"; }, 90 + order * 70);
+    }
+    T1.forEach(function (t, i) { drop(t, false, i); });
+    T2.forEach(function (t, i) { drop(t, true, 6 + i); });
+
+    vocab(VOC);
+
+    [["TEXT 1", [2, 2, 1, 1, 0, 0, 0, 0], 1], ["TEXT 2", [1, 1, 0, 0, 1, 1, 1, 1], 2]].forEach(function (r, ri) {
+      var y = ROWY + ri * (RH + 2), k = g(gStage, {});
+      txt(k, r[0], { x: COLX0 - 12, y: y + 17, "class": "rowlab", fill: ri ? "var(--neg)" : "var(--accent)" });
+      r[1].forEach(function (v, ci) { cell(k, cx[ci], y, COLW, RH, v, v ? r[2] : 0); });
+      enter(k, 12 + ri * 2);
+    });
+    foot("2 texts \u00d7 8 words \u2014 a document\u2013term matrix");
+  }
+
+  function drawEmbed() {
+    /* THE SAME TABLE, TURNED. The words stay where they were in step 03 and
+       stay columns; the rows stop being texts and become dimensions. Four of
+       the eight columns, to leave the map its half. */
+    vocab(VOC.slice(0, 4));
+    var RH = 22;
+    DIMS.forEach(function (row, ri) {
+      var k = g(gStage, {}), y = ROWY + ri * (RH + 2);
+      txt(k, row[0], { x: COLX0 - 12, y: y + 15, "class": "rowlab" });
+      row[1].forEach(function (v, ci) {
+        k.appendChild(el("rect", { "class": "cell", x: colx(ci), y: y, width: COLW, height: RH, fill: tint(v) }));
+        txt(k, (v < 0 ? "\u2212" : "") + Math.abs(v).toFixed(2).replace(/^0/, ""), { x: colx(ci) + COLW / 2, y: y + 15, "class": "num" });
+      });
+      enter(k, ri);
+    });
+
+    /* the map: the one claim this step actually makes */
+    var P = { x: 566, y: 206, w: 388, h: 160 };
+    txt(gStage, "words used alike land near each other", { x: P.x, y: P.y - 10, "class": "lbl" });
+    var m = g(gStage, {});
+    m.appendChild(el("rect", { "class": "plane", x: P.x, y: P.y, width: P.w, height: P.h, rx: 6 }));
+    [0.25, 0.5, 0.75].forEach(function (f) {
+      m.appendChild(el("line", { "class": "planegrid", x1: P.x + f * P.w, x2: P.x + f * P.w, y1: P.y, y2: P.y + P.h }));
+      m.appendChild(el("line", { "class": "planegrid", x1: P.x, x2: P.x + P.w, y1: P.y + f * P.h, y2: P.y + f * P.h }));
+    });
+    MAP.forEach(function (q) {
+      var px = P.x + q[1] * P.w, py = P.y + q[2] * P.h, v = q[3];
+      m.appendChild(el("circle", { "class": "pt" + (v ? " v" : ""), cx: px, cy: py, r: v ? 4.5 : 3.5 }));
+      txt(m, q[0], { x: px + 8, y: py + 4, "class": "pl" + (v ? " v" : "") });
+    });
+    enter(m, 4);
+    /* one line under each panel, on the shared foot baseline */
+    foot("300 rows, and not one of them has a name", (COLX0 + colx(3) + COLW) / 2);
+    foot("two of those 300 rows, plotted", P.x + P.w / 2);
+  }
+
+  function drawClose() {
+    var CARDS = [
+      { t: "Counts", s: "one row per text, one column per word", wk: "WEEKS 1–3", col: "var(--era2)", kind: "int" },
+      { t: "Embeddings", s: "one column per word, 300 rows nobody named", wk: "WEEKS 3–4", col: "var(--era4)", kind: "dec" }
+    ];
+    var cw = 430, gap = 48, y = 196, h = 164;
+    CARDS.forEach(function (c, i) {
+      var x = G.IX + i * (cw + gap), k = g(gStage, {});
+      k.appendChild(el("rect", { "class": "card", x: x, y: y, width: cw, height: h, rx: 8 }));
+      k.appendChild(el("rect", { x: x, y: y, width: 4, height: h, rx: 2, fill: c.col }));
+      k.appendChild(el("rect", { x: x + 20, y: y + 16, width: 74, height: 15, rx: 3, fill: c.col }));
+      txt(k, c.wk, { x: x + 26, y: y + 27.5, "class": "chiptext" });
+      txt(k, c.t, { x: x + 20, y: y + 58, "class": "cardtitle" });
+      txt(k, c.s, { x: x + 20, y: y + 77, "class": "cardsub" });
+      /* a preview of the table itself, in the shape the card describes */
+      var vals = c.kind === "int" ? [[2, 2, 1, 1, 0, 0], [1, 1, 0, 0, 1, 1], [0, 3, 1, 0, 2, 0]]
+                                  : [[".21", "−.48", ".77", ".05"], ["−.34", ".19", ".62", "−.41"], [".07", ".55", "−.15", ".66"]];
+      var vw = c.kind === "int" ? 28 : 44, vh = 18, vx = x + 20, vy = y + 100;
+      vals.forEach(function (row, r) {
+        row.forEach(function (v, cc) {
+          var hot = c.kind === "int" && v > 0;
+          k.appendChild(el("rect", { "class": "cell" + (hot ? " hot" : ""), x: vx + cc * vw, y: vy + r * vh, width: vw, height: vh }));
+          txt(k, v, { x: vx + cc * vw + vw / 2, y: vy + r * vh + 12.5, "class": c.kind === "int" ? "cv" : "num", "font-size": "10.5" });
+        });
+      });
+      enter(k, i * 2);
+    });
+    foot("Playground · the tokeniser lets you build the left one yourself");
+  }
+
+  var DRAW = [drawChars, drawTokens, drawCounts, drawEmbed, drawClose];
+
+  /* -- the click machine ---------------------------------------------------- */
+  function paint(state) {
+    clear(gStage);
+    DRAW[state]();
+    railNodes.forEach(function (n, i) {
+      n.setAttribute("class", "st " + (state === i ? "on" : (state > i ? "done" : "")));
+    });
+    src2.setAttribute("class", "fade" + (state >= 2 ? "" : " hid"));
+    clear(gCap);
+    txt(gCap, CAP[state], { x: 22, y: G.CAPY, "class": "cap k" });
+    counter.textContent = (state + 1) + " / " + N;
+  }
+
+  /* #N in the URL opens at step N — a lecturer's bookmark, and how it is screenshotted */
+  function fromHash() {
+    var v = parseInt((location.hash || "").slice(1), 10);
+    return Math.max(0, Math.min(N - 1, isNaN(v) ? 0 : v));
+  }
+  var state = fromHash();
+  function render() {
+    gStage.setAttribute("class", "fade hid");
+    setTimeout(function () { paint(state); gStage.setAttribute("class", "fade"); }, 150);
+  }
+  function advance() { if (state >= N - 1) return; state += 1; render(); }
+  paint(state);
+  window.addEventListener("hashchange", function () { state = fromHash(); render(); });
+  document.body.addEventListener("click", advance);
+  document.body.addEventListener("keydown", function (e) {
+    if (e.key === "Enter" || e.key === " " || e.key === "ArrowRight") { e.preventDefault(); advance(); }
+    if (e.key === "ArrowLeft" && state > 0) { state -= 1; render(); }
+  });
+})();
+</script>
+</body>
+</html>

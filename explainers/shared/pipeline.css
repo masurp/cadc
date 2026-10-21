@@ -1,0 +1,116 @@
+/* ===========================================================================
+   The text classification pipeline — shared stylesheet for the five variants.
+
+   explainers/pipeline/            week 1   the bare pipeline
+   explainers/pipeline-dictionary/ week 2   a word list feeds step 03
+   explainers/pipeline-ml/         week 3   labelled data + an algorithm do
+   explainers/pipeline-embeddings/ week 3   a pre-trained model feeds step 02
+   explainers/pipeline-llm/        week 4   step 02 falls away; a prompt feeds 03
+
+   All five draw the SAME row from shared/pipeline.js, at the same coordinates,
+   so flipping between decks the row does not move by a pixel — that is the
+   whole pedagogical point. Only the band under the row changes.
+
+   Each variant sets --accent on :root (its era colour); everything that lights
+   up reads from that one token. Colours are a local copy of the CADC light
+   palette: an iframe cannot inherit the parent document's custom properties.
+   =========================================================================== */
+:root{
+  --ink:#1a1a17; --ink-2:#3a3a34; --ink-3:#5a5a52; --muted:#7a7a70; --faint:#9a9a90;
+  --hair:#e7e3d9; --border:#e0dcd0; --surface:#ffffff; --strip:#f2f0ea; --sunk:#faf8f4;
+  --blue:#0077B3; --neg:#c24a2a;
+  --era1:#0077B3; --era2:oklch(0.55 0.10 210); --era3:oklch(0.55 0.11 158);
+  --era4:oklch(0.58 0.12 75); --era5:oklch(0.55 0.15 38);
+  --accent:var(--blue);
+  --accent-bg:color-mix(in oklab, var(--accent) 9%, #fff);
+  --font:"Space Grotesk", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+*{box-sizing:border-box}
+html,body{margin:0; height:100%}
+body{font-family:var(--font); background:transparent; color:var(--ink);
+     display:flex; align-items:center; justify-content:center;
+     overflow:hidden; cursor:pointer; -webkit-tap-highlight-color:transparent}
+svg{width:100%; height:100%; display:block}
+text{font-family:var(--font); fill:var(--ink)}
+
+/* --- the four step boxes: the fixed part ---------------------------------- */
+.step rect.box{fill:var(--surface); stroke:var(--border); stroke-width:1.2}
+.step .n{font-size:9.5px; fill:var(--faint); letter-spacing:.10em}
+.step .name{font-size:14px; font-weight:500; fill:var(--ink)}
+.step svg{color:var(--ink-2)}
+.step rect.halo{fill:none; stroke:var(--accent); stroke-width:0; opacity:0}
+.step.on rect.box{stroke:var(--accent); stroke-width:2}
+.step.on svg{color:var(--accent)}
+.step.on .n{fill:var(--accent)}
+.step.on rect.halo{animation:halo 2.4s ease-out infinite}
+.step.accent rect.box{stroke:var(--accent); stroke-width:2.4; fill:var(--accent-bg)}
+.step.accent .name{fill:var(--accent)}
+.step.accent svg{color:var(--accent)}
+.step.accent .n{fill:var(--accent)}
+.step.off rect.box{stroke:var(--faint); stroke-dasharray:5 4; fill:var(--sunk)}
+.step.off .name,.step.off .n{fill:var(--faint)}
+.step.off svg{color:var(--faint)}
+@keyframes halo{0%{stroke-width:1;opacity:.35} 70%{stroke-width:11;opacity:0} 100%{opacity:0}}
+
+/* --- sources, documents, matrices ----------------------------------------- */
+.src rect{fill:var(--strip); stroke:var(--hair)}
+.src text{font-size:10px; fill:var(--ink-3); text-anchor:middle}
+.page{fill:var(--surface); stroke:var(--border); stroke-width:1}
+.page.small{stroke-width:.8}
+.pageline{stroke:var(--hair); stroke-width:1.4}
+.cell{fill:var(--surface); stroke:var(--hair); stroke-width:.8}
+.cell.hot{fill:color-mix(in oklab, var(--accent) 16%, #fff)}
+.celltext{font-size:8.5px; fill:var(--ink-2); text-anchor:middle}
+.tag{font-size:6.5px; font-weight:700; fill:#fff; text-anchor:middle}
+.tagbox{fill:var(--accent)} .tagbox.neg{fill:var(--neg)}
+
+/* --- connectors ------------------------------------------------------------ */
+.arrow{stroke:var(--ink-3); stroke-width:1.6; fill:none}
+.arrowhead{fill:var(--ink-3)}
+.arrow.back{stroke:var(--blue)} .arrowhead.back{fill:var(--blue)}
+.arrow.feed{stroke:var(--accent); stroke-width:2} .arrowhead.feed{fill:var(--accent)}
+.arrow.dashed{stroke-dasharray:4 4}
+.arrow.flow{stroke-dasharray:7 6; animation:flow 1.1s linear infinite}
+@keyframes flow{to{stroke-dashoffset:-13}}
+/* stroke-dashoffset and stroke-width are not compositor properties: every frame
+   of these two animations is a main-thread repaint. So they run only while the
+   element is actually visible; a hidden group (opacity 0) costs nothing. */
+.hid .arrow.flow,.hid rect.halo{animation-play-state:paused}
+
+/* --- band icons: same weight and language as the four step icons ----------- */
+.ic{color:var(--ink-3)}
+.ic.accent{color:var(--accent)}
+.ic.faint{color:var(--faint)}
+.ic.warn{color:var(--era4)}
+
+/* --- labels and cards ------------------------------------------------------ */
+.lbl{font-size:9.5px; fill:var(--muted); text-anchor:middle}
+.lbl.left{text-anchor:start}
+.card{fill:var(--surface); stroke:var(--border); stroke-width:1.2}
+.card.tint{fill:var(--accent-bg); stroke:var(--accent); stroke-width:1.4}
+.card.sunk{fill:var(--sunk); stroke:var(--hair)}
+.cardtitle{font-size:11px; font-weight:700; fill:var(--ink)}
+.cardsub{font-size:9px; fill:var(--ink-3)}
+.chip{fill:var(--accent)}
+.chip.grey{fill:var(--faint)}
+.chiptext{font-size:8px; font-weight:700; fill:#fff; letter-spacing:.08em}
+.word{font-size:9.5px; fill:var(--ink-2)}
+.word.pos{fill:var(--accent)} .word.neg{fill:var(--neg)}
+.mono{font-size:9px; fill:var(--ink-2); font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
+
+/* the only affordance on the page: a step count, bottom right, deliberately quiet */
+.tick{font-size:9.5px; fill:var(--faint); letter-spacing:.08em}
+
+/* --- reveal / hide --------------------------------------------------------- */
+.fade{transition:opacity .5s ease, transform .5s cubic-bezier(.22,.9,.3,1)}
+.dim{opacity:.2}
+.hid{opacity:0}
+.hid.rise{transform:translateY(10px)}
+.mover{transition:transform .85s cubic-bezier(.4,0,.2,1)}
+
+@media (prefers-reduced-motion: reduce){
+  .fade,.mover{transition:none}
+  .arrow.flow{animation:none; stroke-dasharray:4 4}
+  .step.on rect.halo{animation:none}
+  .hid.rise{transform:none}
+}

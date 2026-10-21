@@ -1,0 +1,49 @@
+/* shared look of the light SVG explainers built for week 3 (split, resampling):
+   a local copy of the CADC light palette — an iframe cannot inherit the parent's variables */
+:root{
+  --ink:#1a1a17; --ink-2:#3a3a34; --ink-3:#5a5a52; --muted:#7a7a70; --faint:#9a9a90;
+  --hair:#e7e3d9; --border:#e0dcd0; --surface:#ffffff; --strip:#f2f0ea; --paper:#faf8f4;
+  --accent:#2a8558; --accent-tint:#e4f2ea;
+  --a:#2678b0; --a-tint:#e8f1f8; --b:#b84a27; --b-tint:#fbeee8; --c:#6f5aa8; --c-tint:#ece7f5;
+  --font:"Space Grotesk", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono:ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+*{box-sizing:border-box}
+html,body{margin:0; height:100%}
+body{font-family:var(--font); background:transparent; color:var(--ink);
+     display:flex; align-items:center; justify-content:center;
+     overflow:hidden; cursor:pointer; -webkit-tap-highlight-color:transparent}
+svg{width:100%; height:100%; display:block}
+text{font-family:var(--font); fill:var(--ink)}
+.lab{font-size:10px; font-weight:700; letter-spacing:.09em; fill:var(--muted)}
+.lab.acc{fill:var(--accent)} .lab.warn{fill:var(--b)}
+.lab.onfill{fill:#fff}            /* a label sitting on a coloured fill: the class must win, an attribute would not */
+.lab.onlight{fill:var(--ink-2)}
+.sm{font-size:11.5px; fill:var(--ink-3)}
+.sm tspan.k{font-weight:700; fill:var(--ink)}
+.sm tspan.a{font-weight:700; fill:var(--accent)}
+.sm tspan.n{font-weight:700; fill:var(--b)}
+.big{font-size:22px; font-weight:700; fill:var(--accent)}
+.big.warn{fill:var(--b)}
+.tile{stroke:#faf8f4; stroke-width:.8; transition:transform .7s cubic-bezier(.2,.7,.2,1), opacity .4s}
+.tile.a{fill:var(--a)} .tile.b{fill:var(--b)} .tile.c{fill:var(--c)}
+.tile.dim{opacity:.28}
+.tile.fold{fill:var(--accent)}
+.tile.tr{fill:#c9c5ba}
+.box{fill:var(--surface); stroke:var(--border); stroke-width:1.1}
+.box.sealed{stroke:var(--b); stroke-dasharray:5 4}
+.box.tint{fill:var(--accent-tint); stroke:var(--accent)}
+.bar{stroke:none}
+.bar.a{fill:var(--a)} .bar.b{fill:var(--b)} .bar.c{fill:var(--c)}
+.brace{fill:none; stroke:var(--ink-3); stroke-width:1.2}
+.arrow{fill:none; stroke:var(--ink-3); stroke-width:1.4; stroke-linecap:round; stroke-linejoin:round}
+.arrow.warn{stroke:var(--b); stroke-dasharray:5 4}
+.ic{color:var(--ink-2)} .ic.warn{color:var(--b)} .ic.acc{color:var(--accent)}
+.chip rect{rx:4; ry:4; stroke-width:1.1}
+.chip text{font-size:10.5px; font-weight:700; text-anchor:middle}
+.chip.acc rect{fill:var(--accent-tint); stroke:var(--accent)} .chip.acc text{fill:var(--accent)}
+.chip.warn rect{fill:var(--b-tint); stroke:var(--b)} .chip.warn text{fill:var(--b)}
+.chip.grey rect{fill:var(--strip); stroke:var(--border)} .chip.grey text{fill:var(--ink-3)}
+.step{font-size:10.5px; fill:#b6b2a8; text-anchor:end}
+.fade{transition:opacity .45s ease}
+.hid{opacity:0; pointer-events:none}

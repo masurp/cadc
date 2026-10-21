@@ -1,0 +1,342 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Where R looks for a file</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&display=swap">
+<style>
+  /* ==========================================================================
+     Where R looks for a file — a self-paced explainer for the Setup page.
+
+     One folder tree (a student's laptop after the first lab download) and one
+     line of code, read_csv("ess-news.csv"). Six steps: the tree; the absolute
+     path; the working directory of a .qmd (found); the console's working
+     directory (not found); the Windows zip trap (not found); getwd() and
+     list.files() as the way to check. The error messages are readr's own
+     wording. "sam" is an invented user.
+
+     Unlike the lecture explainers this one runs without a lecturer, so the
+     narration sits under the drawing, with Back / Next. Click, Enter, space
+     and the arrow keys work too; #N in the URL opens at step N.
+     Two layouts: tree beside the panel from 640px, stacked below that.
+     ========================================================================== */
+  :root{
+    --paper:#faf8f4; --surface:#fff; --strip:#f2f0ea;
+    --hair:#e7e3d9; --border:#e0dcd0;
+    --ink:#1a1a17; --ink-2:#3a3a34; --ink-3:#5a5a52; --muted:#7a7a70; --faint:#9a9a90;
+    --accent:#0077B3; --accent-tint:#e3eff7;
+    --ok:#2a8558; --ok-tint:#e4f2ea;
+    --neg:#b84a27; --neg-tint:#fbeee8;
+    --font:"Space Grotesk", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+    --mono:ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --paper:#10243a; --surface:#16304a; --strip:#1b3550;
+      --hair:#2c4560; --border:#2c4560;
+      --ink:#e8eaec; --ink-2:#cfd6de; --ink-3:#a8c0d4; --muted:#7d9bb5; --faint:#6d8ba6;
+      --accent:#5cb0cf; --accent-tint:#14313f;
+      --ok:#5bbd8a; --ok-tint:#16382a;
+      --neg:#d26a49; --neg-tint:#3a2118;
+    }
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{font-family:var(--font); background:var(--paper); color:var(--ink);
+       padding:14px 18px 12px; -webkit-tap-highlight-color:transparent}
+  svg{width:100%; height:auto; display:block; cursor:pointer}
+  text{font-family:var(--font); fill:var(--ink)}
+
+  .row text.name{font-size:13px; fill:var(--ink-2)}
+  .row text.note{font-size:10.5px; fill:var(--faint)}
+  .row .ic{fill:none; stroke:var(--muted); stroke-width:1.3; stroke-linejoin:round}
+  .row .tint{fill:none}
+  .row.on text.name{fill:var(--accent); font-weight:700}
+  .row.on .ic{stroke:var(--accent)}
+  .row.ok text.name{fill:var(--ok); font-weight:700}
+  .row.ok .ic{stroke:var(--ok)}
+  .row.here .tint{fill:var(--accent-tint); stroke:var(--accent); stroke-width:1.2}
+  .row.here.bad .tint{fill:var(--neg-tint); stroke:var(--neg)}
+  .row.here text.name{font-weight:700; fill:var(--ink)}
+  .guide{fill:none; stroke:var(--border); stroke-width:1.2}
+  .route{fill:none; stroke:var(--accent); stroke-width:2.2; stroke-linecap:round; stroke-linejoin:round}
+  .route.ok{stroke:var(--ok)}
+  .chip rect{fill:var(--accent)} .chip.bad rect{fill:var(--neg)}
+  .chip text{font-size:10px; font-weight:700; letter-spacing:.05em; fill:#fff}
+
+  .lab{font-size:10px; font-weight:700; letter-spacing:.09em; fill:var(--muted)}
+  .box{fill:var(--strip); stroke:var(--border); stroke-width:1}
+  .code{font-family:var(--mono); font-size:12px; fill:var(--ink); white-space:pre}
+  .code.dim{fill:var(--ink-3)}
+  .sm{font-size:12px; fill:var(--ink-3)}
+  .res{font-family:var(--mono); font-size:12px; font-weight:700; white-space:pre}
+  .res.ok{fill:var(--ok)} .res.bad{fill:var(--neg)}
+
+  .fade{transition:opacity .4s ease}
+  .hid{opacity:0}
+
+  .foot{border-top:1px solid var(--hair); margin-top:10px; padding-top:10px;
+        display:flex; gap:18px; align-items:flex-start}
+  #cap{flex:1; margin:0; font-size:14px; line-height:1.55; color:var(--ink-2); min-height:4.6em}
+  #cap code{font-family:var(--mono); font-size:.9em; color:var(--ink)}
+  .ctl{display:flex; align-items:center; gap:8px; flex:0 0 auto}
+  .ctl button{font:inherit; font-size:13px; font-weight:700; padding:6px 12px; border-radius:6px;
+              border:1px solid var(--border); background:var(--surface); color:var(--ink-2); cursor:pointer}
+  .ctl button.go{background:var(--accent); border-color:var(--accent); color:#fff}
+  .ctl button:disabled{opacity:.35; cursor:default}
+  .ctl button:focus-visible{outline:2px solid var(--accent); outline-offset:2px}
+  #n{font-size:11px; color:var(--faint); min-width:3em; text-align:center}
+  @media (max-width:639px){
+    body{padding:10px 12px}
+    .foot{flex-direction:column; gap:10px}
+    #cap{font-size:13.5px}
+  }
+</style>
+</head>
+<body>
+<svg id="chart" role="img"
+     aria-label="A folder tree on a laptop and one line of R code, read_csv of ess-news.csv, showing which folder R looks in and when it finds the file.">
+  <g id="guides"></g>
+  <g id="route"></g>
+  <g id="rows"></g>
+  <g id="panel"></g>
+</svg>
+<div class="foot">
+  <p id="cap" aria-live="polite"></p>
+  <div class="ctl">
+    <button id="prev" type="button">← Back</button>
+    <span id="n"></span>
+    <button id="next" type="button" class="go">Next →</button>
+  </div>
+</div>
+<noscript><p style="max-width:34em;margin:2em;font-family:sans-serif">Needs JavaScript: a step-by-step
+walk through a folder tree, showing where R looks for a data file.</p></noscript>
+
+<script>
+(function () {
+  "use strict";
+  var NS = "http://www.w3.org/2000/svg";
+  function el(t, a) { var e = document.createElementNS(NS, t); for (var k in a) if (a[k] != null) e.setAttribute(k, a[k]); return e; }
+  function txt(p, s, a) { var t = el("text", a || {}); t.textContent = s; p.appendChild(t); return t; }
+  function g(p, a) { var e = el("g", a || {}); p.appendChild(e); return e; }
+  function clear(n) { while (n.firstChild) n.removeChild(n.firstChild); }
+
+  var svg = document.getElementById("chart");
+  var gG = document.getElementById("guides"), gR = document.getElementById("route"),
+      gRows = document.getElementById("rows"), gP = document.getElementById("panel");
+
+  /* Sam's laptop after the first lab. The Temp rows exist only for the zip
+     step and sit last, so nothing above them moves when they appear. */
+  var ROWS = [
+    { id: "root", d: 0, t: "/", kind: "root", note: "the top of the tree  ·  C: on Windows" },
+    { id: "users", d: 1, t: "Users", kind: "dir", p: "root" },
+    { id: "sam", d: 2, t: "sam", kind: "dir", p: "users", note: "your home folder" },
+    { id: "docs", d: 3, t: "Documents", kind: "dir", p: "sam" },
+    { id: "cadc", d: 4, t: "cadc", kind: "dir", p: "docs", note: "one folder for the course" },
+    { id: "lab", d: 5, t: "week01-lab-a", kind: "dir", p: "cadc" },
+    { id: "qmd", d: 6, t: "week01-lab-a-part1.qmd", kind: "file", p: "lab" },
+    { id: "ess", d: 6, t: "ess-news.csv", kind: "file", p: "lab" },
+    { id: "guns", d: 6, t: "guns-polls.csv", kind: "file", p: "lab" },
+    { id: "dl", d: 3, t: "Downloads", kind: "dir", p: "sam" },
+    { id: "zip", d: 4, t: "week01-lab-a.zip", kind: "zip", p: "dl" },
+    { id: "temp", d: 3, t: "AppData › Local › Temp", kind: "dir", p: "sam", from: 4, note: "hidden" },
+    { id: "t1", d: 4, t: "Temp1_week01-lab-a.zip", kind: "dir", p: "temp", from: 4 },
+    { id: "tq", d: 5, t: "week01-lab-a-part1.qmd", kind: "file", p: "t1", from: 4, note: "a copy, alone" }
+  ];
+  var BY = {}; ROWS.forEach(function (r, i) { r.i = i; BY[r.id] = r; });
+
+  /* what each step shows: the folder R is in, the route to draw, the rows to light */
+  var STEPS = [
+    { cap: "Every file on a computer sits somewhere in one tree of folders. This is Sam's laptop after the first lab: the zip is in Downloads, and its contents were extracted into a course folder in Documents. The lab asks R to read <code>ess-news.csv</code>. Which file is that?" },
+    { route: ["root", "users", "sam", "docs", "cadc", "lab", "ess"], on: ["root", "users", "sam", "docs", "cadc", "lab", "ess"],
+      cap: "An <b>absolute path</b> spells out the whole route from the top of the tree. It points to exactly one file, but only on this computer: on yours, the home folder has a different name. On Windows it starts with a drive letter. In R, write it with forward slashes." },
+    { here: "lab", route: ["lab", "ess"], ok: ["ess"],
+      cap: "R is always looking in one folder, the <b>working directory</b>. When you run code inside a .qmd file, that is the folder the .qmd sits in. A file name on its own (a <b>relative path</b>) is looked up there. That is why every lab keeps its data next to its .qmd." },
+    { here: "sam", bad: true,
+      cap: "Type the same line into the <b>console</b> and R looks in the console's working directory instead, usually your home folder. Same line, different folder, file not found. Run lab code from inside the .qmd: the green ▶ on a code chunk, or Ctrl/Cmd + Enter on a line." },
+    { here: "t1", bad: true,
+      cap: "On Windows, double-clicking a zip shows what is inside <i>without extracting it</i>. Open the .qmd from there and Windows copies that one file to a hidden temporary folder. The data stays behind, and anything you save there is lost. Right-click the zip and choose <b>Extract All</b> first." },
+    { here: "lab", ok: ["qmd", "ess", "guns"],
+      cap: "Not sure where R is looking? Ask it. <code>getwd()</code> prints the working directory, <code>list.files()</code> what is in it. If your data file is not in that list, R cannot find it by name: move the file there, or open the .qmd from the folder that holds the data." }
+  ];
+  var LAST = STEPS.length - 1;
+
+  var L; // layout, chosen by width
+  function layout() {
+    var wide = window.innerWidth >= 640;
+    return wide
+      ? { wide: true,  W: 900, H: 410, tx: 16, ty: 26, px: 462, py: 40, pw: 424 }
+      : { wide: false, W: 460, H: 610, tx: 6,  ty: 22, px: 6,  py: 412, pw: 446 };
+  }
+  var RH = 27, IND = 24;
+  function X(r) { return L.tx + r.d * IND; }
+  function Y(r) { return L.ty + r.i * RH; }
+
+  function icon(p, r) {
+    var x = X(r), y = Y(r) - 7, d;
+    if (r.kind === "dir")
+      d = "M" + x + " " + (y + 1.5) + " h5 l1.6 1.8 h7.4 v10.2 h-14 z";
+    else if (r.kind === "root")
+      d = "M" + x + " " + (y + 1) + " h14 v9 h-14 z M" + (x + 4) + " " + (y + 13.5) + " h6 M" + (x + 7) + " " + (y + 10) + " v3.5";
+    else {
+      d = "M" + (x + 2) + " " + y + " h7 l4 4 v10.5 h-11 z M" + (x + 9) + " " + y + " v4 h4";
+      if (r.kind === "zip") d += " M" + (x + 5.5) + " " + (y + 3) + " v1.6 M" + (x + 5.5) + " " + (y + 6.4) + " v1.6 M" + (x + 5.5) + " " + (y + 9.8) + " v1.6";
+    }
+    p.appendChild(el("path", { "class": "ic", d: d }));
+  }
+
+  var rowEls = {};
+  function build() {
+    L = layout();
+    svg.setAttribute("viewBox", "0 0 " + L.W + " " + L.H);
+    [gG, gR, gRows, gP].forEach(clear);
+    rowEls = {};
+    ROWS.forEach(function (r) {
+      var k = g(gRows, { "class": "row" });
+      var tint = el("rect", { "class": "tint", x: X(r) - 7, y: Y(r) - 12, height: 24, rx: 6, width: 10 });
+      k.appendChild(tint);
+      icon(k, r);
+      var name = txt(k, r.t, { "class": "name", x: X(r) + 21, y: Y(r) + 4.5 });
+      var note = r.note ? txt(k, r.note, { "class": "note", x: 0, y: Y(r) + 4 }) : null;
+      var chip = g(k, { "class": "chip fade hid" });
+      var cr = el("rect", { y: Y(r) - 9, height: 18, rx: 9, width: 10 }); chip.appendChild(cr);
+      var ct = txt(chip, "R IS LOOKING HERE", { y: Y(r) + 3.5 });
+      var guide = null;
+      if (r.p) {
+        var p = BY[r.p];
+        guide = el("path", { "class": "guide", d: "M" + (X(p) + 7) + " " + (Y(p) + 9) + " V" + Y(r) + " H" + (X(r) - 4) });
+        gG.appendChild(guide);
+      }
+      rowEls[r.id] = { g: k, tint: tint, name: name, note: note, chip: chip, cr: cr, ct: ct, guide: guide };
+    });
+    measure();
+  }
+
+  /* Labels are measured, never estimated: the chip and the note sit after
+     the name, and the name's width depends on whether the font has loaded. */
+  function measure() {
+    ROWS.forEach(function (r) {
+      var e = rowEls[r.id], end = X(r) + 21 + e.name.getComputedTextLength();
+      if (e.note) e.note.setAttribute("x", end + 10);
+      e.tint.setAttribute("width", end - X(r) + 15);
+      var cw = e.ct.getComputedTextLength() + 18;
+      e.cr.setAttribute("x", end + 14); e.cr.setAttribute("width", cw);
+      e.ct.setAttribute("x", end + 23);
+      e.chipEnd = end + 14 + cw;
+    });
+  }
+
+  /* ---- the panel: what R is asked, and what it answers ------------------- */
+  function codebox(lines, y, dims) {
+    var h = lines.length * 18 + 12;
+    gP.appendChild(el("rect", { "class": "box", x: L.px, y: y, width: L.pw, height: h, rx: 6 }));
+    lines.forEach(function (s, j) {
+      txt(gP, s, { "class": "code" + (dims && dims[j] ? " dim" : ""), x: L.px + 12, y: y + 20 + j * 18 });
+    });
+    return y + h;
+  }
+  function label(s, y) { txt(gP, s, { "class": "lab", x: L.px, y: y }); return y + 9; }
+  function small(s, y) { txt(gP, s, { "class": "sm", x: L.px, y: y }); return y + 6; }
+  function result(lines, ok, y) {
+    lines.forEach(function (s, j) { txt(gP, s, { "class": "res " + (ok ? "ok" : "bad"), x: L.px, y: y + j * 17 }); });
+    return y + lines.length * 17;
+  }
+
+  var RUN = 'read_csv("ess-news.csv")';
+  var PANELS = [
+    function (y) {
+      y = label("THE LAB ASKS R TO RUN", y); y = codebox([RUN], y + 2);
+      small("Which file is that? It depends on where R is looking.", y + 24);
+    },
+    function (y) {
+      y = label("ABSOLUTE PATH · MACOS", y); y = codebox(["/Users/sam/Documents/cadc/week01-lab-a/ess-news.csv"], y + 2);
+      y = label("ABSOLUTE PATH · WINDOWS", y + 26); y = codebox(["C:/Users/sam/Documents/cadc/week01-lab-a/ess-news.csv"], y + 2);
+      small("Windows shows C:\\Users\\sam\\... R needs / instead of \\.", y + 24);
+    },
+    function (y) {
+      y = label("R IS LOOKING IN", y); y = codebox(["week01-lab-a/   the folder of the .qmd"], y + 2, [0]);
+      y = label("YOU RUN, INSIDE THE .QMD", y + 26); y = codebox([RUN], y + 2);
+      result(["✔ found ess-news.csv, read as a table"], true, y + 26);
+    },
+    function (y) {
+      y = label("R IS LOOKING IN", y); y = codebox(["sam/   the console's folder"], y + 2);
+      y = label("YOU RUN, IN THE CONSOLE", y + 26); y = codebox([RUN], y + 2);
+      result(["✘ Error: 'ess-news.csv' does not exist in", "  current working directory ('/Users/sam')."], false, y + 26);
+    },
+    function (y) {
+      y = label("R IS LOOKING IN", y); y = codebox(["Temp1_week01-lab-a.zip/   a temporary copy"], y + 2);
+      y = label("YOU RUN, INSIDE THE .QMD", y + 26); y = codebox([RUN], y + 2);
+      result(["✘ Error: 'ess-news.csv' does not exist in", "  current working directory ('C:/Users/sam/", "  AppData/Local/Temp/Temp1_week01-lab-a.zip')."], false, y + 26);
+    },
+    function (y) {
+      y = label("ASK R WHERE IT IS LOOKING", y);
+      y = codebox(["> getwd()", '[1] "/Users/sam/Documents/cadc/week01-lab-a"'], y + 2, [0, 1]);
+      y = codebox(["> list.files()", '[1] "ess-news.csv"   "guns-polls.csv"', '[3] "week01-lab-a-part1.qmd"'], y + 10, [0, 1, 1]);
+      result(["✔ ess-news.csv is in the list: R will find it"], true, y + 26);
+    }
+  ];
+
+  /* ---- one step ---------------------------------------------------------- */
+  var cap = document.getElementById("cap"), nEl = document.getElementById("n"),
+      prev = document.getElementById("prev"), next = document.getElementById("next");
+  var state = Math.max(0, Math.min(LAST, parseInt((location.hash || "").slice(1), 10) || 0));
+
+  function render() {
+    var s = STEPS[state];
+    ROWS.forEach(function (r) {
+      var e = rowEls[r.id], shown = !r.from || state >= r.from;
+      var cls = "row fade" + (shown ? "" : " hid");
+      if (s.on && s.on.indexOf(r.id) >= 0) cls += " on";
+      if (s.ok && s.ok.indexOf(r.id) >= 0) cls += " ok";
+      if (s.here === r.id) cls += " here" + (s.bad ? " bad" : "");
+      e.g.setAttribute("class", cls);
+      e.chip.setAttribute("class", "chip fade" + (s.here === r.id ? "" : " hid") + (s.bad ? " bad" : ""));
+      if (e.note) e.note.style.opacity = s.here === r.id ? 0 : 1;   // the chip takes the note's place
+      if (e.guide) e.guide.setAttribute("class", "guide fade" + (shown ? "" : " hid"));
+    });
+    clear(gR);
+    if (s.route) {
+      var d = "";
+      for (var i = 1; i < s.route.length; i++) {
+        var p = BY[s.route[i - 1]], c = BY[s.route[i]];
+        d += "M" + (X(p) + 7) + " " + (Y(p) + 9) + " V" + Y(c) + " H" + (X(c) - 4) + " ";
+      }
+      gR.appendChild(el("path", { "class": "route" + (s.ok ? " ok" : ""), d: d }));
+    }
+    clear(gP);
+    PANELS[state](L.py);
+    cap.innerHTML = s.cap;
+    nEl.textContent = (state + 1) + " / " + (LAST + 1);
+    prev.disabled = state === 0;
+    next.textContent = state === LAST ? "Start again" : "Next →";
+  }
+  function go(to) {
+    to = Math.max(0, Math.min(LAST, to));
+    if (to === state) return;
+    state = to;
+    if (history.replaceState) history.replaceState(null, "", "#" + state);
+    render();
+  }
+
+  build(); render();
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(function () { measure(); render(); });
+  var wasWide = L.wide;
+  window.addEventListener("resize", function () {
+    if ((window.innerWidth >= 640) !== wasWide) { wasWide = !wasWide; build(); render(); }
+  });
+  window.addEventListener("hashchange", function () {
+    state = Math.max(0, Math.min(LAST, parseInt((location.hash || "").slice(1), 10) || 0)); render();
+  });
+  svg.addEventListener("click", function () { go(state + 1); });
+  prev.addEventListener("click", function () { go(state - 1); });
+  next.addEventListener("click", function () { go(state === LAST ? 0 : state + 1); });
+  document.addEventListener("keydown", function (e) {
+    if (e.target.tagName === "BUTTON" && (e.key === "Enter" || e.key === " ")) return;
+    if (e.key === "ArrowRight" || e.key === "Enter" || e.key === " ") { e.preventDefault(); go(state + 1); }
+    if (e.key === "ArrowLeft") { e.preventDefault(); go(state - 1); }
+  });
+})();
+</script>
+</body>
+</html>
