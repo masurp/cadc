@@ -353,7 +353,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <li><a href="#sketch-the-pipeline-first" id="toc-sketch-the-pipeline-first" class="nav-link" data-scroll-target="#sketch-the-pipeline-first">2 · Sketch the pipeline first</a></li>
   <li><a href="#the-state-of-the-union-corpus" id="toc-the-state-of-the-union-corpus" class="nav-link" data-scroll-target="#the-state-of-the-union-corpus">3 · The State of the Union corpus</a></li>
   <li><a href="#tokens-and-counts" id="toc-tokens-and-counts" class="nav-link" data-scroll-target="#tokens-and-counts">4 · Tokens and counts</a></li>
-  <li><a href="#your-first-ggplot" id="toc-your-first-ggplot" class="nav-link" data-scroll-target="#your-first-ggplot">5 · Your first ggplot</a></li>
+  <li><a href="#the-counts-as-a-bar-chart" id="toc-the-counts-as-a-bar-chart" class="nav-link" data-scroll-target="#the-counts-as-a-bar-chart">5 · The counts as a bar chart</a></li>
   <li><a href="#obama-and-trump" id="toc-obama-and-trump" class="nav-link" data-scroll-target="#obama-and-trump">6 · Obama and Trump</a></li>
   </ul></li>
   <li><a href="#part-2" id="toc-part-2" class="nav-link" data-scroll-target="#part-2">Part 2 · Homework 1: New Year’s resolutions</a></li>
@@ -387,8 +387,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <div class="cadc-labhead">
 <p><span class="cadc-stepchip" style="--cadc-accent:var(--cadc-era-1)"><svg viewbox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="3.5" width="17" height="17" rx="1.5"></rect><path d="M3.5 9.5h17M3.5 15.5h17M9.5 3.5v17M15.5 3.5v17"></path></svg><span>02 REPRESENT</span></span> <span class="cadc-labhead__meta">Lab B · Text wrangling &amp; exploration</span> <span class="cadc-labhead__right">Week 1 · 105 min</span></p>
 </div>
-<p>On Monday you saw how a text becomes numbers in three moves: split it into tokens, count them, and arrange the counts in a document–term matrix. Today you make those three moves yourself in R, first with the three sentences from the lecture, where you can check every number by eye, and then with more than two centuries of State of the Union speeches. Along the way you make your first plots with <code>ggplot</code>.</p>
-<p>The package that does the text work is <code>tidytext</code>, which turns a text into a table with <strong>one row per word</strong>. From then on, everything you learned on Tuesday (<code>filter()</code>, <code>mutate()</code>, <code>group_by()</code>, <code>summarize()</code>) works on text too.</p>
+<p>On Monday you saw how a text becomes numbers in three moves: split it into tokens, count them, and arrange the counts in a document–term matrix. Today you make those three moves yourself in R, first with the three sentences from the lecture, where you can check every number by eye, and then with more than two centuries of State of the Union speeches.</p>
+<p>The package that does the text work is <code>tidytext</code>, which turns a text into a table with <strong>one row per word</strong>. From then on, everything you learned on Tuesday works on text too: <code>filter()</code>, <code>mutate()</code>, <code>group_by()</code> and <code>summarize()</code> for the counts, and <code>ggplot</code> for the plots. You built your first bar chart on Tuesday; today you make the same kind of chart from word counts yourself.</p>
 <section id="from-the-lecture-to-the-lab" class="level3">
 <h3 class="anchored" data-anchor-id="from-the-lecture-to-the-lab">From the lecture to the lab</h3>
 <ul>
@@ -407,7 +407,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <p>BEFORE YOU START</p>
 </div>
 <ol type="1">
-<li>Download <strong>the lab folder from Canvas</strong> (Modules › Lab folders, version c60fdf5b) and unzip it. It holds the Part 1 script, the Part 2 skeleton and the data for Part 2.</li>
+<li>Download <strong>the lab folder from Canvas</strong> (Modules › Lab folders, version 08af7aef) and unzip it. It holds the Part 1 script, the Part 2 skeleton and the data for Part 2.</li>
 <li>Open <code>week01-lab-b-part1.qmd</code> in RStudio.</li>
 <li>Install the two packages for today once, in the console: <code>install.packages(c("tidytext", "sotu"))</code>.</li>
 </ol>
@@ -468,7 +468,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <div class="cadc-paper__question">
 <p><strong>What did Obama and Trump talk about in their State of the Union speeches?</strong></p>
 </div>
-<p>This is the question for the rest of Part 1. Answer the four questions below without a laptop.</p>
+<p>This is the question for the rest of Part 1. The data is the <code>sotu</code> package: the full text of all 240 State of the Union addresses from 1790 to 2020, one row per address, with the president, the year and the party. Answer the four questions below without a laptop.</p>
 <ol type="1">
 <li><strong>Input</strong>: which texts, and what is one document?</li>
 <li><strong>Output</strong>: what should the final table or plot look like?</li>
@@ -505,32 +505,29 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="co"># your code here</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 </section>
-<section id="your-first-ggplot" class="level3">
-<h3 class="anchored" data-anchor-id="your-first-ggplot">5 · Your first ggplot</h3>
-<p>A plot in <code>ggplot</code> is built from three parts, added with <code>+</code>: the <strong>data</strong>, the <strong>aesthetics</strong> (<code>aes()</code>: which column goes on which axis), and a <strong>geom</strong> (what to draw: bars, points, lines).</p>
+<section id="the-counts-as-a-bar-chart" class="level3">
+<h3 class="anchored" data-anchor-id="the-counts-as-a-bar-chart">5 · The counts as a bar chart</h3>
+<p>On Tuesday you built a bar chart of the countries in five steps: data and aesthetics, a geom, sorting, turning the chart on its side, and labels. The same steps work for text. The data is now a table of word counts, the words take the place of the countries, and the counts take the place of the averages. This chunk makes the table:</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>top_words <span class="ot">&lt;-</span> clean_words <span class="sc">|&gt;</span></span>
 <span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">count</span>(word, <span class="at">sort =</span> <span class="cn">TRUE</span>) <span class="sc">|&gt;</span></span>
 <span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">head</span>(<span class="dv">15</span>)</span>
-<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(top_words, <span class="fu">aes</span>(<span class="at">x =</span> <span class="fu">reorder</span>(word, n), <span class="at">y =</span> n)) <span class="sc">+</span></span>
-<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_col</span>(<span class="at">fill =</span> <span class="st">"steelblue"</span>) <span class="sc">+</span></span>
-<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">coord_flip</span>() <span class="sc">+</span></span>
-<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">x =</span> <span class="st">""</span>, <span class="at">y =</span> <span class="st">"Number of times used"</span>,</span>
-<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a>       <span class="at">title =</span> <span class="st">"The most frequent words in 240 State of the Union speeches"</span>) <span class="sc">+</span></span>
-<span id="cb8-10"><a href="#cb8-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_minimal</span>()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>top_words</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p><code>reorder(word, n)</code> sorts the bars by their count; <code>coord_flip()</code> turns the chart so that the words are readable.</p>
+<p><strong>Exercise 4:</strong> Plot <code>top_words</code> as a bar chart, with the most frequent word at the top, readable labels and a title. Build it step by step as on Tuesday, and run the code after each step. Which column goes in <code>aes()</code> as <code>x</code>, and which as <code>y</code>?</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="co"># your code here</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
 </section>
 <section id="obama-and-trump" class="level3">
 <h3 class="anchored" data-anchor-id="obama-and-trump">6 · Obama and Trump</h3>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>two_presidents <span class="ot">&lt;-</span> clean_words <span class="sc">|&gt;</span></span>
-<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(president <span class="sc">%in%</span> <span class="fu">c</span>(<span class="st">"Barack Obama"</span>, <span class="st">"Donald Trump"</span>))</span>
-<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>two_presidents <span class="sc">|&gt;</span></span>
-<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(word <span class="sc">%in%</span> <span class="fu">c</span>(<span class="st">"america"</span>, <span class="st">"jobs"</span>, <span class="st">"applause"</span>)) <span class="sc">|&gt;</span></span>
-<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">count</span>(president, word)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>two_presidents <span class="ot">&lt;-</span> clean_words <span class="sc">|&gt;</span></span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(president <span class="sc">%in%</span> <span class="fu">c</span>(<span class="st">"Barack Obama"</span>, <span class="st">"Donald Trump"</span>))</span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>two_presidents <span class="sc">|&gt;</span></span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(word <span class="sc">%in%</span> <span class="fu">c</span>(<span class="st">"america"</span>, <span class="st">"jobs"</span>, <span class="st">"applause"</span>)) <span class="sc">|&gt;</span></span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">count</span>(president, word)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <div class="cadc-note cadc-note--trap">
 <div class="cadc-note__label">
@@ -538,9 +535,9 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </div>
 <p>From this table you might conclude that Obama talked much more about <em>america</em> than Trump did. That conclusion is not supported by the table. Why not? Count the speeches per president before you answer.</p>
 </div>
-<p><strong>Exercise 4:</strong> Make the counts comparable. Compute, for each president, how often each word occurs <strong>per 1,000 words</strong> that president spoke (after stop-word removal). Then plot the ten most frequent words per president side by side. Tip: <code>group_by(president)</code> before a <code>mutate()</code> computes the total per president; <code>slice_max(share, n = 10)</code> keeps the top ten per group; <code>facet_wrap(~president)</code> draws one panel per president.</p>
+<p><strong>Exercise 5:</strong> Make the counts comparable. Compute, for each president, how often each word occurs <strong>per 1,000 words</strong> that president spoke (after stop-word removal). Then plot the ten most frequent words per president side by side. Tip: <code>group_by(president)</code> before a <code>mutate()</code> computes the total per president; <code>slice_max(share, n = 10)</code> keeps the top ten per group; <code>facet_wrap(~president)</code> draws one panel per president. <code>reorder()</code> sorts the words across both presidents at once, so within a panel the bars come out of order; sort within each president with <code>reorder_within(word, share, president)</code> in <code>aes()</code> and add <code>scale_x_reordered()</code> as a layer.</p>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="co"># your code here</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="co"># your code here</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 </section>
 </section>

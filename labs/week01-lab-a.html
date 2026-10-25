@@ -355,7 +355,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <li><a href="#pipes" id="toc-pipes" class="nav-link" data-scroll-target="#pipes">4 · Pipes</a></li>
   <li><a href="#new-variables-mutate" id="toc-new-variables-mutate" class="nav-link" data-scroll-target="#new-variables-mutate">5 · New variables: mutate()</a></li>
   <li><a href="#groups-and-summaries" id="toc-groups-and-summaries" class="nav-link" data-scroll-target="#groups-and-summaries">6 · Groups and summaries</a></li>
-  <li><a href="#all-countries-in-one-plot" id="toc-all-countries-in-one-plot" class="nav-link" data-scroll-target="#all-countries-in-one-plot">7 · All countries in one plot</a></li>
+  <li><a href="#all-countries-in-one-table" id="toc-all-countries-in-one-table" class="nav-link" data-scroll-target="#all-countries-in-one-table">7 · All countries in one table</a></li>
+  <li><a href="#a-plot-layer-by-layer" id="toc-a-plot-layer-by-layer" class="nav-link" data-scroll-target="#a-plot-layer-by-layer">8 · A plot, layer by layer</a></li>
   </ul></li>
   <li><a href="#part-2-on-your-own-gun-polls" id="toc-part-2-on-your-own-gun-polls" class="nav-link" data-scroll-target="#part-2-on-your-own-gun-polls">Part 2 · On your own: gun polls</a></li>
   </ul>
@@ -388,7 +389,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <div class="cadc-labhead">
 <p><span class="cadc-stepchip" style="--cadc-accent:var(--cadc-era-1)"><svg viewbox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="3.5" width="17" height="17" rx="1.5"></rect><path d="M3.5 9.5h17M3.5 15.5h17M9.5 3.5v17M15.5 3.5v17"></path></svg><span>02 REPRESENT</span></span> <span class="cadc-labhead__meta">Lab A · Tidy wrangling</span> <span class="cadc-labhead__right">Week 1 · 105 min</span></p>
 </div>
-<p>Monday’s lecture made a simple point about computational communication science: before a computer can analyse anything, a text, a post or a log file has to become a table, with one row per case and one column per variable. This first lab makes you comfortable with that kind of table in R. You learn the five functions from the <a href="https://www.tidyverse.org/">tidyverse</a> that you will use in every lab of this course, <code>filter()</code>, <code>select()</code>, <code>mutate()</code>, <code>group_by()</code> and <code>summarize()</code>, and the pipe <code>|&gt;</code> that chains them into a pipeline.</p>
+<p>Monday’s lecture made a simple point about computational communication science: before a computer can analyse anything, a text, a post or a log file has to become a table, with one row per case and one column per variable. This first lab makes you comfortable with that kind of table in R. You learn the five functions from the <a href="https://www.tidyverse.org/">tidyverse</a> that you will use in every lab of this course, <code>filter()</code>, <code>select()</code>, <code>mutate()</code>, <code>group_by()</code> and <code>summarize()</code>, and the pipe <code>|&gt;</code> that chains them into a pipeline. At the end you turn one of your results into a bar chart with <code>ggplot</code>, one layer at a time.</p>
 <p>If you have never used R before, work through chapters 2–5 of <a href="https://r4css.vanatteveldt.com/">R for Computational Social Science</a> before the session. This lab assumes that you can open RStudio and run a line of code.</p>
 <section id="from-the-lecture-to-the-lab" class="level3">
 <h3 class="anchored" data-anchor-id="from-the-lecture-to-the-lab">From the lecture to the lab</h3>
@@ -407,7 +408,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <p>BEFORE YOU START</p>
 </div>
 <ol type="1">
-<li>Download <strong>the lab folder from Canvas</strong> (Modules › Lab folders, version 5c540602) and unzip it into the folder where you keep this course. It holds the Part 1 script, the Part 2 skeleton and the two data files.</li>
+<li>Download <strong>the lab folder from Canvas</strong> (Modules › Lab folders, version d11d4b1e) and unzip it into the folder where you keep this course. It holds the Part 1 script, the Part 2 skeleton and the two data files.</li>
 <li>Open <code>week01-lab-a-part1.qmd</code> in RStudio. Because the data sits next to the script, the file name is all R needs to find it.</li>
 <li>If you have never used the tidyverse on this computer, run <code>install.packages("tidyverse")</code> once in the console.</li>
 </ol>
@@ -574,21 +575,62 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="co"># your code here</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 </section>
-<section id="all-countries-in-one-plot" class="level3">
-<h3 class="anchored" data-anchor-id="all-countries-in-one-plot">7 · All countries in one plot</h3>
-<p><strong>Exercise 4:</strong> Compute the average political news use per country, using only real answers. Keep the number of respondents per country as well, and sort the table from most to least news. Tip: <code>arrange(-mean_news)</code> sorts in descending order.</p>
+<section id="all-countries-in-one-table" class="level3">
+<h3 class="anchored" data-anchor-id="all-countries-in-one-table">7 · All countries in one table</h3>
+<p><strong>Exercise 4:</strong> Compute the average political news use per country, using only real answers. Keep the number of respondents per country as well, and sort the table from most to least news. Call the result <code>countries</code>. Tip: <code>arrange(-mean_news)</code> sorts in descending order.</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="co"># your code here</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p>If you called your result <code>countries</code>, this makes a bar chart of it. We will learn ggplot properly on Thursday; for now, change one thing (a colour, a label) and see what happens.</p>
+</section>
+<section id="a-plot-layer-by-layer" class="level3">
+<h3 class="anchored" data-anchor-id="a-plot-layer-by-layer">8 · A plot, layer by layer</h3>
+<p>A table with 22 rows is hard to take in at a glance, and a bar chart makes the ranking easier to see. The tidyverse makes plots with <code>ggplot</code>, which builds a plot from layers that you add one at a time with <code>+</code>. Every plot needs three things:</p>
+<ul>
+<li>the <strong>data</strong>: a table, here <code>countries</code>;</li>
+<li>the <strong>aesthetics</strong>, written inside <code>aes()</code>: which column decides what you see, for example which column goes on the x axis and which on the y axis;</li>
+<li>a <strong>geom</strong>: the kind of mark that stands for one row, such as a bar, a point or a line.</li>
+</ul>
+<p>Everything else (the order of the bars, the labels, the colours) is added on top of these three. We build the chart in five steps. Run each chunk and look at what has changed before you go on to the next one.</p>
+<p>Start with the data and the aesthetics only:</p>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(countries, <span class="fu">aes</span>(<span class="at">x =</span> <span class="fu">reorder</span>(country, mean_news), <span class="at">y =</span> mean_news)) <span class="sc">+</span></span>
-<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_col</span>(<span class="at">fill =</span> <span class="st">"steelblue"</span>) <span class="sc">+</span></span>
-<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">coord_flip</span>() <span class="sc">+</span></span>
-<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">x =</span> <span class="st">""</span>, <span class="at">y =</span> <span class="st">"Minutes of political news per day"</span>,</span>
-<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>       <span class="at">title =</span> <span class="st">"Political news use in 22 European countries"</span>,</span>
-<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a>       <span class="at">caption =</span> <span class="st">"Source: European Social Survey, round 10 (2020)"</span>) <span class="sc">+</span></span>
-<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_minimal</span>()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="co"># step 1: data and aesthetics</span></span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(countries, <span class="fu">aes</span>(<span class="at">x =</span> country, <span class="at">y =</span> mean_news))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<p>R draws an empty panel. It already knows which column goes on which axis and has set the scales: country codes along the x axis, minutes along the y axis. It does not know yet what to draw on them.</p>
+<p>For that you add a geom. <code>geom_col()</code> draws one bar (a <em>column</em>) per row, as high as the value on the y axis:</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="co"># step 2: add a geom</span></span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(countries, <span class="fu">aes</span>(<span class="at">x =</span> country, <span class="at">y =</span> mean_news)) <span class="sc">+</span></span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_col</span>()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<p>The <code>+</code> must stand at the end of a line. If you put it at the start of the next line, R treats the first line as a finished plot and then stops with the error <em>Cannot use <code>+</code> with a single argument</em>.</p>
+<p>The bars are in alphabetical order, which tells you nothing about the countries. <code>reorder(country, mean_news)</code> sorts the countries by their average instead:</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="co"># step 3: sort the bars</span></span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(countries, <span class="fu">aes</span>(<span class="at">x =</span> <span class="fu">reorder</span>(country, mean_news), <span class="at">y =</span> mean_news)) <span class="sc">+</span></span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_col</span>()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<p>A ranking reads more easily from top to bottom, and labels have more room on the side. <code>coord_flip()</code> swaps the two axes. With two-letter country codes this is a matter of taste, but in Part 2 the policies have names such as <code>ban-assault-weapons</code>, which do not fit under a bar.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb13"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="co"># step 4: turn the chart on its side</span></span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(countries, <span class="fu">aes</span>(<span class="at">x =</span> <span class="fu">reorder</span>(country, mean_news), <span class="at">y =</span> mean_news)) <span class="sc">+</span></span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_col</span>() <span class="sc">+</span></span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">coord_flip</span>()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<p>The last step changes how the chart looks, without changing what it shows. <code>fill = "steelblue"</code> gives all bars the same colour. <code>labs()</code> sets the axis titles, a title and a caption; note that <code>x</code> and <code>y</code> keep the names they have in <code>aes()</code> even after <code>coord_flip()</code> has moved them, so <code>x = ""</code> removes the title next to the country codes. <code>theme_minimal()</code> replaces the grey background with a plainer one (try <code>theme_classic()</code> or <code>theme_bw()</code> as well).</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb14"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="co"># step 5: colour, labels and theme</span></span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(countries, <span class="fu">aes</span>(<span class="at">x =</span> <span class="fu">reorder</span>(country, mean_news), <span class="at">y =</span> mean_news)) <span class="sc">+</span></span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_col</span>(<span class="at">fill =</span> <span class="st">"steelblue"</span>) <span class="sc">+</span></span>
+<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">coord_flip</span>() <span class="sc">+</span></span>
+<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">x =</span> <span class="st">""</span>, <span class="at">y =</span> <span class="st">"Minutes of political news per day"</span>,</span>
+<span id="cb14-6"><a href="#cb14-6" aria-hidden="true" tabindex="-1"></a>       <span class="at">title =</span> <span class="st">"Political news use in 22 European countries"</span>,</span>
+<span id="cb14-7"><a href="#cb14-7" aria-hidden="true" tabindex="-1"></a>       <span class="at">caption =</span> <span class="st">"Source: European Social Survey, round 10 (2020)"</span>) <span class="sc">+</span></span>
+<span id="cb14-8"><a href="#cb14-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_minimal</span>()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<p><strong>Exercise 5:</strong> Change one layer at a time, and write down what you expect to see before you run the code. First, replace <code>geom_col(fill = "steelblue")</code> with <code>geom_point()</code>: what stays the same, and what changes? Then go back to bars and colour them by the number of respondents, with <code>geom_col(aes(fill = n))</code>. Why does <code>fill = n</code> have to go inside <code>aes()</code>, while <code>fill = "steelblue"</code> stood outside it?</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb15"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="co"># your code here</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 </section>
 </section>
