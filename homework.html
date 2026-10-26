@@ -45,9 +45,9 @@ ul.task-list li input[type="checkbox"] {
 <link href="site_libs/quarto-html/quarto-syntax-highlighting-bf27225e3a48a9273f3daa8f8e829971.css" rel="stylesheet" class="quarto-color-scheme-extra" id="quarto-text-highlighting-styles">
 <script src="site_libs/bootstrap/bootstrap.min.js"></script>
 <link href="site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
-<link href="site_libs/bootstrap/bootstrap-708f368b1b787bdbb5120da4541c3d7b.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme" id="quarto-bootstrap" data-mode="light">
-<link href="site_libs/bootstrap/bootstrap-dark-30c5a01ec59a3d62991f903af197df9e.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme quarto-color-alternate" id="quarto-bootstrap" data-mode="dark">
-<link href="site_libs/bootstrap/bootstrap-708f368b1b787bdbb5120da4541c3d7b.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme-extra" id="quarto-bootstrap" data-mode="light">
+<link href="site_libs/bootstrap/bootstrap-a2f8ea6fc60fd3a8c4ae009cc88cebd5.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme" id="quarto-bootstrap" data-mode="light">
+<link href="site_libs/bootstrap/bootstrap-dark-20e7e51325ba5d36e1a3e4bc34b04bc4.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme quarto-color-alternate" id="quarto-bootstrap" data-mode="dark">
+<link href="site_libs/bootstrap/bootstrap-a2f8ea6fc60fd3a8c4ae009cc88cebd5.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme-extra" id="quarto-bootstrap" data-mode="light">
 <script id="quarto-search-options" type="application/json">{
   "location": "navbar",
   "copy-button": false,
@@ -447,21 +447,37 @@ ul.task-list li input[type="checkbox"] {
 <div class="cadc-section-label">
 <p>WHAT A GOOD REFLECTION LOOKS LIKE</p>
 </div>
-<div class="cadc-cards cadc-cards--2">
+<div class="cadc-lede">
+<p>Both examples are reflections on a made-up homework question. Here, a student wrote a short dictionary of insults to find uncivil comments among 50 reader comments under a news article about a local tax plan, and compared its verdicts with the labels they and their partner had coded by hand. The reflection question asks to reflect on the quality of the dictionary approach.</p>
+</div>
+<div class="cadc-cards" style="grid-template-columns:1fr">
 <div class="cadc-card cadc-card--lane" style="--cadc-accent:var(--cadc-era-5)">
 <div class="cadc-card__label">
 <p>Too general</p>
 </div>
-<p><em>“Dictionaries have problems with negation and sarcasm, so the accuracy is not very high. A better dictionary or a machine-learning model would probably perform better.”</em></p>
-<p>This could be said of any dictionary. Nothing in it shows that you looked at your own results.</p>
+<p><em>“Dictionaries cannot understand context, so some comments were classified wrongly. Sarcasm and irony are especially hard to detect. A larger dictionary or a machine-learning model would probably give better results.”</em></p>
+<p>It could have been written before running any code. It quotes no comment and gives no number, and there may not be a single sarcastic comment among this student’s errors.</p>
 </div>
 <div class="cadc-card cadc-card--lane" style="--cadc-accent:var(--cadc-era-3)">
 <div class="cadc-card__label">
 <p>About your own output</p>
 </div>
-<p><em>“Tweet 1843 (‘My mum tested positive, ten days of isolation again’) was coded negative by my partner and me, and positive by Bing: its only listed word is ‘positive’. Three of my eight errors are this type: a medical term that Bing reads as sentiment.”</em></p>
-<p>It quotes a specific text, gives a specific number, and explains the error.</p>
+<p><em>Comment 12 says: “Calling the mayor an idiot, like half this thread does, doesn’t make your argument any stronger.” The dictionary flagged it because of ‘idiot’, but my partner and I coded it as civil, since the writer is objecting to the insult. My word list cannot tell whether a word is aimed at someone or only mentioned.</em></p>
+<p><em>In comment 31 (“I’m so stupid, I read the headline and thought the tax was going up”) the matched word is ‘stupid’. The writer is talking about themselves, so nobody is insulted, and we coded this one as civil as well.</em></p>
+<p><em>The third error goes the other way. Comment 44 (“Can’t wait to hear what the 🤡 in charge comes up with next”) mocks the mayor, and we both coded it as uncivil, but the dictionary found nothing. The insult is an emoji, and my list contains only words. Of the three uncivil comments it missed, two use an emoji or a misspelling such as ‘id1ot’.</em></p>
+<p><em>Most of my errors look like comments 12 and 31. The dictionary flagged 10 comments, only 4 of which are uncivil in our coding, and 5 of the other 6 use an insult without aiming it at anyone else. For a study of incivility, this means that a thread where people push back against insults gets a higher score than a thread with the same insults and no pushback, so part of what the dictionary counts is talk about incivility.</em></p>
 </div>
+</div>
+<div class="cadc-note">
+<div class="cadc-note__label">
+<p>WHAT MAKES THE SECOND ONE GOOD</p>
+</div>
+<ul>
+<li>Each comment is quoted with its id, with what the dictionary did and how the two coders labelled it. A reader can check every claim against the output.</li>
+<li>Each explanation gives the reason for that particular error: the insult was only mentioned, it was aimed at the writer, or it was not a word.</li>
+<li>It keeps the comment the dictionary missed apart from the ones it flagged by mistake, because they go wrong for different reasons.</li>
+<li>The last paragraph counts how often the main error occurs, with numbers from the student’s own output, and says what it does to the measurement. Explaining why the results look as they do is what the grading table asks for in an Excellent.</li>
+</ul>
 </div>
 </div>
 <div class="cadc-block">
