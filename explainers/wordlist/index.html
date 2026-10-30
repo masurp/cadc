@@ -1,0 +1,202 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>What a dictionary is</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&display=swap">
+<style>
+  /* ==========================================================================
+     What a dictionary is — a week 2 lecture explainer, square, for the
+     figure column beside the slide's bullets.
+
+     An open book. Each page is one category with its word list; a text
+     arrives underneath; the words the book knows light up and are counted;
+     the count becomes a label. The four clicks follow the four bullets on
+     the slide: word lists · counting rule · decision rule · and the fact
+     that the book was written before any text was read.
+
+     The sentence is text B from week 1's three-sentence corpus ("The new law
+     is not good news."), so the verdict the book reaches here is the one the
+     DTM slides already showed to be wrong — the lecturer decides whether to
+     say so now or leave it for the negation slide.
+
+     Click / Enter / space advances; #N in the URL opens at step N.
+     No caption band: the narration is in the slide's speaker notes.
+     ========================================================================== */
+  :root{
+    --ink:#1a1a17; --ink-2:#3a3a34; --ink-3:#5a5a52; --muted:#7a7a70; --faint:#9a9a90;
+    --hair:#e7e3d9; --border:#e0dcd0; --surface:#ffffff; --strip:#f2f0ea; --page:#fdfcf8;
+    --accent:#2f7f9e; --accent-deep:#256a85; --accent-tint:#e6f2f7;
+    --pos:#2678b0; --pos-tint:#e8f1f8;
+    --neg:#b84a27; --neg-tint:#fbeee8;
+    --font:"Space Grotesk", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0; height:100%}
+  body{font-family:var(--font); background:transparent; color:var(--ink);
+       display:flex; align-items:center; justify-content:center;
+       overflow:hidden; cursor:pointer; -webkit-tap-highlight-color:transparent}
+  svg{width:100%; height:100%; display:block}
+  text{font-family:var(--font); fill:var(--ink)}
+  .cover{fill:var(--accent); }
+  .cover-edge{fill:var(--accent-deep)}
+  .page{fill:var(--page); stroke:var(--border); stroke-width:1}
+  .gutter{fill:url(#gutter)}
+  .rule{stroke:var(--hair); stroke-width:1}
+  .cat{font-size:12px; font-weight:700; letter-spacing:.14em}
+  .cat.pos{fill:var(--pos)} .cat.neg{fill:var(--neg)}
+  .w{font-size:17px; fill:var(--ink-2); transition:opacity .45s ease}
+  .w.on{font-weight:700} .w.on.pos{fill:var(--pos)} .w.on.neg{fill:var(--neg)}
+  .wl{stroke-width:2.2; stroke-linecap:round; opacity:.6}
+  .wl.pos{stroke:var(--pos)} .wl.neg{stroke:var(--neg)}
+  .card{fill:var(--surface); stroke:var(--border); stroke-width:1.3}
+  .s{font-size:18px; fill:var(--ink-2)}
+  .s.pos{fill:var(--pos); font-weight:700}
+  .hl{rx:3; ry:3; fill:var(--pos-tint)}
+  .link{stroke:var(--pos); stroke-width:1.4; fill:none; stroke-dasharray:3 4; opacity:.75}
+  .tally{font-size:13px; fill:var(--ink-3)}
+  .tally tspan.pos{fill:var(--pos); font-weight:700} .tally tspan.neg{fill:var(--neg); font-weight:700}
+  .chip rect{rx:6; ry:6; fill:var(--pos)} .chip text{font-size:12px; font-weight:700; letter-spacing:.08em; fill:#fff; text-anchor:middle}
+  .lab{font-size:10.5px; font-weight:700; letter-spacing:.09em; fill:var(--muted)}
+  .step{font-size:10.5px; fill:#b6b2a8; text-anchor:end}
+  .fade{transition:opacity .45s ease}
+  .hid{opacity:0}
+</style>
+</head>
+<body>
+<svg id="chart" viewBox="0 0 560 560" preserveAspectRatio="xMidYMid meet" role="img"
+     aria-label="An open book: the left page lists positive words, the right page negative words. A sentence arrives underneath; the one word the book knows lights up, is counted, and the count becomes the label positive.">
+  <defs>
+    <linearGradient id="gutter" x1="0" x2="1" y1="0" y2="0">
+      <stop offset="0" stop-color="#000" stop-opacity="0"/>
+      <stop offset=".5" stop-color="#000" stop-opacity=".10"/>
+      <stop offset="1" stop-color="#000" stop-opacity="0"/>
+    </linearGradient>
+  </defs>
+  <g id="book"></g>
+  <g id="words"></g>
+  <g id="text" class="fade hid"></g>
+  <g id="decide" class="fade hid"></g>
+  <g id="hud"></g>
+</svg>
+<noscript><p style="max-width:34em;margin:2em;font-family:sans-serif">Needs JavaScript: an open
+dictionary, a sentence, a count, a label.</p></noscript>
+
+<script>
+(function () {
+  "use strict";
+  var NS = "http://www.w3.org/2000/svg";
+  function el(t, a) { var e = document.createElementNS(NS, t); for (var k in a) if (a[k] != null) e.setAttribute(k, a[k]); return e; }
+  function txt(p, s, a) { var t = el("text", a || {}); t.textContent = s; p.appendChild(t); return t; }
+  function tsp(t, s, a) { var x = el("tspan", a || {}); x.textContent = s; t.appendChild(x); return x; }
+  function g(p, a) { var e = el("g", a || {}); p.appendChild(e); return e; }
+
+  var gBook = document.getElementById("book"), gWords = document.getElementById("words"),
+      gText = document.getElementById("text"), gDec = document.getElementById("decide"),
+      gHud = document.getElementById("hud");
+
+  /* ---- the book ------------------------------------------------------------ */
+  var BX = 44, BY = 46, BW = 472, BH = 340, MID = BX + BW / 2;   /* cover */
+  var PY = BY + 12, PH = BH - 24, PL = BX + 14, PR = BX + BW - 14; /* pages */
+  gBook.appendChild(el("rect", { "class": "cover", x: BX, y: BY, width: BW, height: BH, rx: 10 }));
+  gBook.appendChild(el("rect", { "class": "cover-edge", x: MID - 7, y: BY, width: 14, height: BH }));
+  /* two pages, inner edges bowing slightly toward the spine */
+  function page(left) {
+    var x0 = left ? PL : MID + 4, x1 = left ? MID - 4 : PR, inner = left ? x1 : x0, outer = left ? x0 : x1;
+    var d = "M" + outer + "," + PY + " L" + inner + "," + (PY + 3) +
+            " Q" + (inner + (left ? -6 : 6)) + "," + (PY + PH / 2) + " " + inner + "," + (PY + PH - 3) +
+            " L" + outer + "," + (PY + PH) + " Z";
+    gBook.appendChild(el("path", { "class": "page", d: d }));
+  }
+  page(true); page(false);
+  gBook.appendChild(el("rect", { "class": "gutter", x: MID - 26, y: PY, width: 52, height: PH }));
+
+  /* ---- the two word lists --------------------------------------------------- */
+  var LISTS = [
+    { cls: "pos", head: "POSITIVE", x: PL + 30, words: ["good", "safe", "hope", "trust", "better", "success", "peace", "welcome"] },
+    { cls: "neg", head: "NEGATIVE", x: MID + 36, words: ["bad", "threat", "war", "fear", "disaster", "crisis", "fail", "loss"] }
+  ];
+  var wordNodes = {};
+  LISTS.forEach(function (L) {
+    var y0 = PY + 34;
+    txt(gBook, L.head, { x: L.x, y: y0, "class": "cat " + L.cls });
+    gBook.appendChild(el("line", { "class": "rule", x1: L.x, x2: L.x + 150, y1: y0 + 10, y2: y0 + 10 }));
+    L.words.forEach(function (w, i) {
+      var y = y0 + 40 + i * 31;
+      var t = txt(gWords, w, { x: L.x, y: y, "class": "w hid", style: "transition-delay:" + (i * 60) + "ms" });
+      wordNodes[w] = { node: t, cls: L.cls, x: L.x, y: y };
+    });
+  });
+
+  /* ---- the text, its count, and the decision ------------------------------- */
+  var SENT = "The new law is not good news.".split(" ");
+  var CY = 428, CH = 46;
+  gText.appendChild(el("rect", { "class": "card", x: BX, y: CY, width: BW, height: CH, rx: 8 }));
+  txt(gText, "A TEXT", { x: BX + 14, y: CY - 8, "class": "lab" });
+  var gHl = g(gText), gS = g(gText);
+  var sWords = SENT.map(function (w) {
+    var key = w.toLowerCase().replace(/[^a-z]/g, ""), known = !!wordNodes[key];
+    return { w: w, key: key, known: known, node: txt(gS, w, { "class": "s" + (known ? " pos" : ""), y: CY + 30 }) };
+  });
+  var link = el("path", { "class": "link" }); gText.appendChild(link);
+  var tally = txt(gText, "", { x: BX + 14, y: CY + CH + 28, "class": "tally" });
+  tsp(tally, "counting rule: "); tsp(tally, "1 positive", { "class": "pos" }); tsp(tally, " · "); tsp(tally, "0 negative", { "class": "neg" }); tsp(tally, " word on the list");
+
+  /* decision: the rule on its own line, the label chip placed right after the
+     rule's measured end so nothing is drawn over text */
+  var DY = CY + CH + 52;
+  var rule = txt(gDec, "decision rule: more positive than negative words  →", { x: BX + 14, y: DY, "class": "tally" });
+  var chip = g(gDec, { "class": "chip" });
+  var chipRect = el("rect", { y: DY - 17, width: 92, height: 26 }); chip.appendChild(chipRect);
+  var chipText = txt(chip, "POSITIVE", { y: DY });
+
+  /* sentence laid out word by word with measured widths, so the highlight
+     sits under the word whatever font is on the machine */
+  function layout() {
+    while (gHl.firstChild) gHl.removeChild(gHl.firstChild);
+    var x = BX + 16, space = 6;
+    sWords.forEach(function (s) {
+      var w = s.node.getComputedTextLength();
+      s.node.setAttribute("x", x);
+      if (s.known) {
+        gHl.appendChild(el("rect", { "class": "hl", x: x - 4, y: CY + 12, width: w + 8, height: 25 }));
+        var target = wordNodes[s.key];
+        var tw = target.node.getComputedTextLength();
+        /* dashed link from the sentence word up to the same word in the book */
+        link.setAttribute("d", "M" + (x + w / 2) + "," + (CY + 8) + " C" + (x + w / 2) + "," + (CY - 40) + " " +
+                               (target.x + tw + 16) + "," + (target.y + 30) + " " + (target.x + tw + 8) + "," + (target.y - 5));
+      }
+      x += w + space;
+    });
+    /* the label chip follows the decision rule's measured length */
+    var rx = BX + 14 + rule.getComputedTextLength() + 10;
+    chipRect.setAttribute("x", rx); chipText.setAttribute("x", rx + 46);
+  }
+
+  var counter = txt(gHud, "", { x: 540, y: 548, "class": "step" });
+
+  var MAX = 3;
+  var state = Math.max(0, Math.min(MAX, parseInt((location.hash || "").slice(1), 10) || 0));
+  function render() {
+    layout();
+    Object.keys(wordNodes).forEach(function (k) {
+      var wn = wordNodes[k], lit = state >= 2 && sWords.some(function (s) { return s.known && s.key === k; });
+      wn.node.setAttribute("class", "w" + (state >= 1 ? "" : " hid") + (lit ? " on " + wn.cls : ""));
+    });
+    gText.setAttribute("class", "fade" + (state >= 2 ? "" : " hid"));
+    gDec.setAttribute("class", "fade" + (state >= 3 ? "" : " hid"));
+    counter.textContent = (state + 1) + " / " + (MAX + 1);
+  }
+  function advance() { if (state >= MAX) return; state += 1; render(); }
+  render();
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(render);
+  window.addEventListener("hashchange", function () {
+    state = Math.max(0, Math.min(MAX, parseInt((location.hash || "").slice(1), 10) || 0)); render();
+  });
+  document.body.addEventListener("click", advance);
+  document.body.addEventListener("keydown", function (e) { if (e.key === "Enter" || e.key === " ") advance(); });
+})();
+</script>
+</body>
+</html>

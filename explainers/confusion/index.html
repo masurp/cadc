@@ -1,0 +1,258 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The confusion matrix</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&display=swap">
+<style>
+  /* ==========================================================================
+     The confusion matrix — a week 2 lecture explainer.
+
+     Twenty film reviews, the same twenty the Playground's "Two coders, one
+     codebook" uses (explainers/coding/data.js, a subset of
+     data/prompt-lab/gold.json). The human label is the narrow codebook's
+     two-class verdict. The instrument is a small declared word list, stated
+     in full below; a review is called positive when it has more positive
+     than negative listed words, negative otherwise (so a review with no
+     listed word is negative — the "silence is negative" rule the deck
+     discusses). That rule yields 9 true positives, 7 true negatives, 2 false
+     positives and 2 false negatives; both misses are negations, both false
+     alarms are praise words inside a negative sentence.
+
+     Steps: the reviews with human labels → the list's verdicts → the cards
+     sort into the four cells → the cells get their names → accuracy →
+     precision → recall → F1, each lighting the cells it uses.
+
+     Click / Enter / space advances; #N in the URL opens at step N.
+     No caption band: the narration is in the slide's speaker notes.
+     ========================================================================== */
+  :root{
+    --ink:#1a1a17; --ink-2:#3a3a34; --ink-3:#5a5a52; --muted:#7a7a70; --faint:#9a9a90;
+    --hair:#e7e3d9; --border:#e0dcd0; --surface:#ffffff; --strip:#f2f0ea;
+    --accent:#2f7f9e; --accent-tint:#e6f2f7;
+    --pos:#2678b0; --pos-tint:#e8f1f8;
+    --neg:#b84a27; --neg-tint:#fbeee8;
+    --font:"Space Grotesk", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0; height:100%}
+  body{font-family:var(--font); background:transparent; color:var(--ink);
+       display:flex; align-items:center; justify-content:center;
+       overflow:hidden; cursor:pointer; -webkit-tap-highlight-color:transparent}
+  svg{width:100%; height:100%; display:block}
+  text{font-family:var(--font); fill:var(--ink)}
+  .rv{transition:transform .7s cubic-bezier(.4,0,.2,1)}
+  .rv rect.bg{fill:var(--surface); stroke:var(--border); stroke-width:1.1; rx:5; ry:5}
+  .rv rect.bar{width:4}
+  .rv rect.bar.pos{fill:var(--pos)} .rv rect.bar.neg{fill:var(--neg)}
+  .rv text{font-size:9.2px; fill:var(--ink-2)}
+  .rv .v{transition:opacity .4s ease}
+  .rv .v circle{r:4.4} .rv .v.pos circle{fill:var(--pos)} .rv .v.neg circle{fill:var(--neg)}
+  .rv .v text{font-size:7px; font-weight:700; fill:#fff; text-anchor:middle}
+  .hdr{font-size:10.5px; font-weight:700; letter-spacing:.09em; fill:var(--muted)}
+  .cell{fill:var(--strip); stroke:#faf8f4; stroke-width:3; rx:8; ry:8; transition:fill .4s ease}
+  .cell.right{fill:#eef4f8} .cell.wrong{fill:#fbf1ec}
+  .cell.lit{fill:var(--accent-tint); stroke:var(--accent); stroke-width:2}
+  .cname{font-size:10.5px; font-weight:700; letter-spacing:.06em; fill:var(--ink-3)}
+  .ccount{font-size:26px; font-weight:700; fill:var(--ink); text-anchor:end}
+  .axis{font-size:11.5px; font-weight:700; letter-spacing:.06em; fill:var(--muted); text-anchor:middle}
+  .axis.pos{fill:var(--pos)} .axis.neg{fill:var(--neg)}
+  .m .h{font-size:17px; font-weight:700; fill:var(--ink)}
+  .m .f{font-size:13.5px; fill:var(--ink-3)}
+  .m .f tspan.k{fill:var(--accent); font-weight:700}
+  .m .r{font-size:30px; font-weight:700; fill:var(--accent)}
+  .m .s{font-size:12px; fill:var(--ink-3)}
+  .step{font-size:10.5px; fill:#b6b2a8; text-anchor:end}
+  .fade{transition:opacity .45s ease}
+  .hid{opacity:0}
+</style>
+</head>
+<body>
+<svg id="chart" viewBox="0 0 1000 440" preserveAspectRatio="xMidYMid meet" role="img"
+     aria-label="Twenty film reviews with a human label and a word list's verdict sort themselves into the four cells of a confusion matrix; then accuracy, precision, recall and F1 each light the cells they use.">
+  <g id="matrix" class="fade hid"></g>
+  <g id="reviews"></g>
+  <g id="heads"></g>
+  <g id="metric" class="m fade hid"></g>
+  <g id="hud"></g>
+</svg>
+<noscript><p style="max-width:34em;margin:2em;font-family:sans-serif">Needs JavaScript: twenty reviews
+sorting into a confusion matrix, and the four metrics computed from it.</p></noscript>
+
+<script>
+(function () {
+  "use strict";
+  var NS = "http://www.w3.org/2000/svg";
+  function el(t, a) { var e = document.createElementNS(NS, t); for (var k in a) if (a[k] != null) e.setAttribute(k, a[k]); return e; }
+  function txt(p, s, a) { var t = el("text", a || {}); t.textContent = s; p.appendChild(t); return t; }
+  function g(p, a) { var e = el("g", a || {}); p.appendChild(e); return e; }
+  function clear(n) { while (n.firstChild) n.removeChild(n.firstChild); }
+
+  var gM = document.getElementById("matrix"), gR = document.getElementById("reviews"),
+      gH = document.getElementById("heads"), gMet = document.getElementById("metric"),
+      gHud = document.getElementById("hud");
+
+  /* the declared word list — the instrument */
+  var POS = ["gorgeous","charming","funny","humour","works","brilliant","superb","captivating","loved","worth","better","beautiful","good","like"];
+  var NEG = ["disaster","muddled","dull","predictable","awful","boring","wastes","terribly"];
+  /* the twenty reviews, human label = the narrow codebook's verdict */
+  var REVIEWS = [
+    ["Gorgeous cinematography throughout.","pos"], ["Charming and genuinely funny.","pos"],
+    ["The humour actually works.","pos"], ["The script is a disaster.","neg"],
+    ["Muddled and far too long.","neg"], ["A little messy, but I loved it.","pos"],
+    ["It wastes a good cast.","neg"], ["Brilliant writing and a superb cast.","pos"],
+    ["Utterly captivating.","pos"], ["Dull characters and a predictable ending.","neg"],
+    ["Awful dialogue and awful pacing.","neg"], ["Slow, but worth it.","pos"],
+    ["Better than it had any right to be.","pos"], ["Beautiful to look at, and nothing else.","neg"],
+    ["I loved every second.","pos"], ["Never boring for a moment.","pos"],
+    ["I turned it off after twenty minutes.","neg"], ["I wanted to like it.","neg"],
+    ["Long, but never dull.","pos"], ["A great idea, terribly executed.","neg"]
+  ];
+  function verdict(t) {
+    var w = t.toLowerCase().replace(/[^a-z\s]/g, "").split(/\s+/), s = 0;
+    w.forEach(function (x) { if (POS.indexOf(x) >= 0) s++; if (NEG.indexOf(x) >= 0) s--; });
+    return s > 0 ? "pos" : "neg";
+  }
+
+  /* geometry: a 2 x 10 grid of cards at the top; a 2 x 2 matrix below it */
+  var RW = 94, RH = 30, GX = 98, GY = 36, RX0 = 12, RY0 = 30;
+  var MX = 112, MY = 88, CW = 304, CH = 150;          /* 3 cards per row fit a cell */          /* matrix origin and cell size */
+  var cells = { tp: { c: 0, r: 0 }, fp: { c: 0, r: 1 }, fn: { c: 1, r: 0 }, tn: { c: 1, r: 1 } };
+  var NAMES = { tp: "TRUE POSITIVE", fp: "FALSE POSITIVE", fn: "FALSE NEGATIVE", tn: "TRUE NEGATIVE" };
+
+  var reviews = REVIEWS.map(function (r, i) {
+    var v = verdict(r[0]);
+    var cell = r[1] === "pos" ? (v === "pos" ? "tp" : "fn") : (v === "pos" ? "fp" : "tn");
+    var k = g(gR, { "class": "rv" });
+    k.appendChild(el("rect", { "class": "bg", x: 0, y: 0, width: RW, height: RH }));
+    k.appendChild(el("rect", { "class": "bar " + r[1], x: 0, y: 0, height: RH, rx: 2 }));
+    var label = txt(k, r[0], { x: 9, y: 19 });
+    var vg = g(k, { "class": "v " + v + " hid" });
+    vg.appendChild(el("circle", { cx: RW - 8, cy: 8 }));
+    txt(vg, v === "pos" ? "+" : "−", { x: RW - 8, y: 10.6 });
+    return { node: k, vg: vg, human: r[1], v: v, cell: cell, i: i, label: label, full: r[0] };
+  });
+  /* the label must end inside the card: measure, then trim to fit */
+  function fitLabels() {
+    var avail = RW - 9 - 9;
+    reviews.forEach(function (r) {
+      var t = r.full;
+      r.label.textContent = t;
+      while (t.length > 1 && r.label.getComputedTextLength() > avail) {
+        t = t.slice(0, -1);
+        r.label.textContent = t.replace(/[ ,.]+$/, "") + "…";
+      }
+    });
+  }
+  var counts = { tp: 0, fp: 0, fn: 0, tn: 0 };
+  reviews.forEach(function (r) { counts[r.cell]++; });
+
+  var headHuman = txt(gH, "HUMAN LABEL   (bar: blue = positive, orange = negative)", { x: RX0, y: 18, "class": "hdr" });
+  var headV = txt(gH, "THE LIST'S VERDICT   (dot, top right)", { x: 560, y: 18, "class": "hdr fade hid" });
+
+  /* the matrix */
+  var cellNodes = {}, cellNames = {}, cellCounts = {};
+  Object.keys(cells).forEach(function (k) {
+    var c = cells[k], x = MX + c.c * CW, y = MY + c.r * CH;
+    cellNodes[k] = el("rect", { "class": "cell " + (k === "tp" || k === "tn" ? "right" : "wrong"), x: x, y: y, width: CW, height: CH });
+    gM.appendChild(cellNodes[k]);
+    cellNames[k] = txt(gM, NAMES[k], { x: x + 12, y: y + CH - 12, "class": "cname fade hid" });
+    cellCounts[k] = txt(gM, counts[k], { x: x + CW - 12, y: y + CH - 10, "class": "ccount fade hid" });
+  });
+  txt(gM, "THE LIST SAYS", { x: MX + CW, y: MY - 30, "class": "axis" });
+  txt(gM, "POSITIVE", { x: MX + CW / 2, y: MY - 10, "class": "axis pos" });
+  txt(gM, "NEGATIVE", { x: MX + CW * 1.5, y: MY - 10, "class": "axis neg" });
+  var ay = g(gM, { transform: "translate(" + (MX - 46) + " " + (MY + CH) + ") rotate(-90)" });
+  txt(ay, "THE HUMAN SAYS", { x: 0, y: 0, "class": "axis" });
+  var ap = g(gM, { transform: "translate(" + (MX - 22) + " " + (MY + CH / 2) + ") rotate(-90)" });
+  txt(ap, "POSITIVE", { x: 0, y: 0, "class": "axis pos" });
+  var an = g(gM, { transform: "translate(" + (MX - 22) + " " + (MY + CH * 1.5) + ") rotate(-90)" });
+  txt(an, "NEGATIVE", { x: 0, y: 0, "class": "axis neg" });
+
+  /* card positions: grid at the top, or a 3-per-row stack inside the cell */
+  function gridPos(i) { return { x: RX0 + (i % 10) * GX, y: RY0 + Math.floor(i / 10) * GY }; }
+  var slot = {};
+  function cellPos(r) {
+    var c = cells[r.cell], n = slot[r.cell] = (slot[r.cell] || 0) + 1, j = n - 1;
+    return { x: MX + c.c * CW + 12 + (j % 3) * (RW + 4), y: MY + c.r * CH + 10 + Math.floor(j / 3) * (RH + 4) };
+  }
+
+  /* the metric panel */
+  var METRICS = [
+    { k: "accuracy",  lit: ["tp","tn"],      f: [["tp"," + ","tn"], ["tp"," + ","fp"," + ","fn"," + ","tn"]],
+      val: (counts.tp + counts.tn) / 20, s: "of all twenty verdicts, the share that were right" },
+    { k: "precision", lit: ["tp","fp"],      f: [["tp"], ["tp"," + ","fp"]],
+      val: counts.tp / (counts.tp + counts.fp), s: "of the reviews the list called positive, the share that were" },
+    { k: "recall",    lit: ["tp","fn"],      f: [["tp"], ["tp"," + ","fn"]],
+      val: counts.tp / (counts.tp + counts.fn), s: "of the reviews that were positive, the share the list found" },
+    { k: "F1",        lit: ["tp","fp","fn"], f: [["2 · ","tp"], ["2 · ","tp"," + ","fp"," + ","fn"]],
+      val: 2 * counts.tp / (2 * counts.tp + counts.fp + counts.fn), s: "the harmonic mean of precision and recall" }
+  ];
+  var ABBR = { tp: "TP", fp: "FP", fn: "FN", tn: "TN" };
+  function drawMetric(m) {
+    clear(gMet);
+    var x = 750, y = MY + 8;
+    txt(gMet, m.k, { x: x, y: y + 10, "class": "h" });
+    function frac(parts, yy) {
+      var t = txt(gMet, "", { x: x, y: yy, "class": "f" });
+      parts.forEach(function (p) {
+        var s = el("tspan", ABBR[p] ? { "class": "k" } : {}); s.textContent = ABBR[p] || p; t.appendChild(s);
+      });
+      return t;
+    }
+    frac(m.f[0], y + 48);
+    gMet.appendChild(el("line", { x1: x, x2: x + 226, y1: y + 58, y2: y + 58, stroke: "var(--ink-3)", "stroke-width": 1.2 }));
+    frac(m.f[1], y + 82);
+    var num = m.f[0].filter(function (p) { return ABBR[p]; }).map(function (p) { return counts[p]; });
+    var den = m.f[1].filter(function (p) { return ABBR[p]; }).map(function (p) { return counts[p]; });
+    var numS = (m.k === "F1" ? "2 · " : "") + num.join(" + "), denS = (m.k === "F1" ? "2 · " : "") + den.join(" + ");
+    txt(gMet, "= " + numS + " / " + denS, { x: x, y: y + 120, "class": "s" });
+    txt(gMet, "= " + m.val.toFixed(2), { x: x, y: y + 165, "class": "r" });
+    var sub = txt(gMet, "", { x: x, y: y + 200, "class": "s" });
+    /* wrap the sentence at ~34 chars */
+    var words = m.s.split(" "), line = "", lines = [];
+    words.forEach(function (w) { if ((line + " " + w).length > 36) { lines.push(line); line = w; } else line = line ? line + " " + w : w; });
+    lines.push(line);
+    lines.forEach(function (l, i) { var s = el("tspan", { x: x, dy: i ? 16 : 0 }); s.textContent = l; sub.appendChild(s); });
+  }
+
+  var counter = txt(gHud, "", { x: 980, y: 428, "class": "step" });
+
+  var MAX = 7;
+  var state = Math.max(0, Math.min(MAX, parseInt((location.hash || "").slice(1), 10) || 0));
+  function render() {
+    slot = {};
+    var sorted = state >= 2;
+    reviews.forEach(function (r) {
+      var p = sorted ? cellPos(r) : gridPos(r.i);
+      r.node.setAttribute("transform", "translate(" + p.x + " " + p.y + ")");
+      r.vg.setAttribute("class", "v " + r.v + (state >= 1 ? "" : " hid"));
+    });
+    headV.setAttribute("class", "hdr fade" + (state === 1 ? "" : " hid"));
+    headHuman.setAttribute("class", "hdr fade" + (state < 2 ? "" : " hid"));
+    gM.setAttribute("class", "fade" + (sorted ? "" : " hid"));
+    var m = state >= 4 ? METRICS[state - 4] : null;
+    Object.keys(cells).forEach(function (k) {
+      var base = "cell " + (k === "tp" || k === "tn" ? "right" : "wrong");
+      cellNodes[k].setAttribute("class", base + (m && m.lit.indexOf(k) >= 0 ? " lit" : ""));
+      cellNames[k].setAttribute("class", "cname fade" + (state >= 3 ? "" : " hid"));
+      cellCounts[k].setAttribute("class", "ccount fade" + (state >= 3 ? "" : " hid"));
+    });
+    if (m) drawMetric(m);
+    gMet.setAttribute("class", "m fade" + (m ? "" : " hid"));
+    counter.textContent = (state + 1) + " / " + (MAX + 1);
+  }
+  function advance() { if (state >= MAX) return; state += 1; render(); }
+  render();
+  fitLabels();
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(fitLabels);
+  window.addEventListener("hashchange", function () {
+    state = Math.max(0, Math.min(MAX, parseInt((location.hash || "").slice(1), 10) || 0)); render();
+  });
+  document.body.addEventListener("click", advance);
+  document.body.addEventListener("keydown", function (e) { if (e.key === "Enter" || e.key === " ") advance(); });
+})();
+</script>
+</body>
+</html>

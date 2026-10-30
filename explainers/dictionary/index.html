@@ -1,0 +1,409 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Build-a-dictionary — CADC</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&display=swap">
+<style>
+  /* --- tokens (subset of the CADC system; inline so the frame works offline) ---
+     Positive / negative hues are the VU blue and orange-red steps, validated for
+     colour-vision separation (CVD ΔE 20). They always ship with a + / − marker,
+     so identity is never carried by colour alone. */
+  :root{
+    --paper:#faf8f4; --surface:#fff; --strip:#f2f0ea; --hairline:#e7e3d9; --border:#e0dcd0;
+    --ink:#1a1a17; --ink-2:#3a3a34; --ink-3:#5a5a52; --muted:#7a7a70; --faint:#9a9a90;
+    --blue:#0077B3;
+    --pos:#2678b0; --pos-tint:#e8f1f8;
+    --neg:#b84a27; --neg-tint:#fbeee8;
+    --font:"Space Grotesk", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --paper:#10243a; --surface:#16304a; --strip:#16304a; --hairline:#2c4560; --border:#2c4560;
+      --ink:#e8eaec; --ink-2:#cfd6de; --ink-3:#a8c0d4; --muted:#7d9bb5; --faint:#6d8ba6;
+      --blue:#4aa8dc;
+      --pos:#3291d1; --pos-tint:#14304a;
+      --neg:#d26a49; --neg-tint:#3a2118;
+    }
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{font-family:var(--font); background:var(--paper); color:var(--ink); font-size:14px; line-height:1.5; padding:18px 20px 20px}
+  h1{font-size:15px; font-weight:700; margin:0}
+  .sub{font-size:12px; color:var(--ink-3); margin:4px 0 14px; max-width:66ch}
+
+  .grid{display:grid; grid-template-columns:minmax(0,300px) minmax(0,1fr); gap:20px}
+  @media (max-width:700px){ .grid{grid-template-columns:1fr} }
+
+  h2{font-size:11px; font-weight:700; letter-spacing:.07em; text-transform:uppercase; color:var(--muted); margin:0 0 8px}
+  .n{color:var(--faint); font-weight:400; letter-spacing:0}
+
+  /* --- lexicon panels --- */
+  .lex{border:1px solid var(--border); border-radius:9px; padding:11px 12px; background:var(--surface); margin-bottom:12px}
+  .lex h2{margin-bottom:7px}
+  .lex--pos h2{color:var(--pos)}
+  .lex--neg h2{color:var(--neg)}
+  .chips{display:flex; flex-wrap:wrap; gap:5px; min-height:22px}
+  .chip{
+    display:inline-flex; align-items:center; gap:5px; font-size:12px;
+    padding:2px 4px 2px 8px; border-radius:6px; cursor:pointer; border:1px solid transparent;
+  }
+  .chip .x{font-size:13px; line-height:1; opacity:.5; padding:0 2px}
+  .chip:hover .x{opacity:1}
+  .chip:hover{border-color:currentColor}
+  .lex--pos .chip{background:var(--pos-tint); color:var(--pos)}
+  .lex--neg .chip{background:var(--neg-tint); color:var(--neg)}
+  .add{width:100%; margin-top:9px; font:inherit; font-size:12px; padding:5px 8px;
+       border:1px dashed var(--border); border-radius:6px; background:transparent; color:var(--ink)}
+  .add:focus{outline:none; border-style:solid; border-color:var(--blue)}
+
+  .ctl{display:flex; align-items:center; gap:8px; font-size:12.5px; color:var(--ink-2); cursor:pointer; margin-top:2px}
+  .ctl input{width:15px; height:15px; accent-color:var(--blue); cursor:pointer}
+  .reset{background:none; border:0; font:inherit; font-size:12px; color:var(--muted); cursor:pointer; padding:8px 0 0; text-decoration:underline}
+  .reset:hover{color:var(--blue)}
+
+  /* --- stat tiles --- */
+  .tiles{display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:8px; margin-bottom:14px}
+  .tile{
+    position:relative; border:1px solid var(--border); border-radius:8px; padding:9px 10px;
+    background:var(--surface); cursor:help;
+  }
+  .tile:hover, .tile:focus-visible{border-color:var(--blue); outline:none}
+  .tile .lab{font-size:9.5px; letter-spacing:.06em; text-transform:uppercase; color:var(--muted)}
+  .tile .val{font-size:19px; font-weight:700; margin-top:3px; font-variant-numeric:tabular-nums; color:var(--ink)}
+  .tile .val.dim{color:var(--faint); font-weight:400}
+  .tile .meter{height:4px; margin-top:6px; border-radius:2px; background:var(--strip); overflow:hidden}
+  .tile .meter i{display:block; height:100%; width:0; background:var(--blue); border-radius:2px; transition:width .18s ease}
+  .tile--cov .meter i{background:var(--muted)}
+
+  /* hover / focus definition popover */
+  .tip{
+    position:absolute; top:calc(100% + 7px); left:50%; transform:translateX(-50%);
+    width:258px; z-index:20; padding:10px 12px; text-align:left;
+    background:var(--surface); border:1px solid var(--border); border-radius:9px;
+    box-shadow:0 6px 22px rgba(0,0,0,.13);
+    opacity:0; visibility:hidden; transition:opacity .12s ease;
+  }
+  .tile:hover .tip, .tile:focus-within .tip, .tile:focus-visible .tip{opacity:1; visibility:visible}
+  .tip--l{left:0; transform:none}
+  .tip--r{left:auto; right:0; transform:none}
+  .tip b{display:block; font-size:11.5px; color:var(--ink); margin-bottom:3px}
+  .tip .def{display:block; font-size:11.5px; color:var(--ink-3); line-height:1.45}
+  .tip .frm{
+    display:block; margin-top:7px; font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
+    font-size:11px; color:var(--muted);
+  }
+  .tip .sub{
+    display:block; margin-top:2px; font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
+    font-size:11.5px; color:var(--blue); font-weight:500;
+  }
+
+  /* --- confusion matrix --- */
+  .cm{border-collapse:separate; border-spacing:2px; font-size:11.5px; margin-bottom:14px}
+  .cm th{font-weight:500; color:var(--muted); font-size:10px; letter-spacing:.05em; text-transform:uppercase; padding:2px 6px; text-align:left}
+  .cm td{background:var(--strip); border-radius:5px; padding:6px 9px; min-width:74px; color:var(--ink-2)}
+  .cm td.hit{background:var(--pos-tint); color:var(--pos)}
+  .cm td.correct{background:var(--strip)}
+  .cm td .c{font-size:15px; font-weight:700; font-variant-numeric:tabular-nums; display:block}
+  .cm td .k{font-size:9.5px; color:var(--muted); display:block; margin-top:1px}
+
+  /* --- corpus --- */
+  .corpus{
+    position:relative; border:1px solid var(--border); border-radius:9px;
+    background:var(--surface); max-height:308px; overflow-y:auto;
+    /* the last row fades out, so it is obvious there is more below */
+    -webkit-mask-image:linear-gradient(180deg,#000 calc(100% - 22px),transparent);
+            mask-image:linear-gradient(180deg,#000 calc(100% - 22px),transparent);
+  }
+  .corpus.at-end{-webkit-mask-image:none; mask-image:none}
+  .row{display:flex; gap:9px; padding:7px 11px; border-bottom:1px solid var(--hairline); font-size:12.5px; align-items:flex-start}
+  .row:last-child{border-bottom:0}
+  .mark{flex-shrink:0; width:14px; font-weight:700; font-size:12px; line-height:1.5}
+  .mark.ok{color:var(--muted)}
+  .mark.no{color:var(--neg)}
+  .row .txt{flex:1; color:var(--ink-2)}
+  .row .verdict{flex-shrink:0; font-size:10.5px; color:var(--faint); white-space:nowrap; padding-top:1px}
+  mark{background:transparent; padding:0; font-weight:500}
+  mark.p{color:var(--pos); box-shadow:inset 0 -2px 0 var(--pos-tint)}
+  mark.n{color:var(--neg); box-shadow:inset 0 -2px 0 var(--neg-tint)}
+  mark sup{font-size:9px; opacity:.85; margin-left:1px}
+  .foot{font-size:11px; color:var(--faint); margin-top:7px}
+</style>
+</head>
+<body>
+
+<h1>Build-a-dictionary</h1>
+<p class="sub">A dictionary is just a word list. Add and remove words, and watch how well it reproduces
+20 human-coded judgements. Getting a good score is harder than it looks.</p>
+
+<div class="grid">
+  <div>
+    <div class="lex lex--pos">
+      <h2>+ Positive words <span class="n" id="np"></span></h2>
+      <div class="chips" id="chips-pos"></div>
+      <input class="add" id="add-pos" placeholder="add a word, then Enter" spellcheck="false">
+    </div>
+    <div class="lex lex--neg">
+      <h2>&minus; Negative words <span class="n" id="nn"></span></h2>
+      <div class="chips" id="chips-neg"></div>
+      <input class="add" id="add-neg" placeholder="add a word, then Enter" spellcheck="false">
+    </div>
+    <label class="ctl"><input type="checkbox" id="stemOn"> match word stems (love → loved)</label>
+    <button class="reset" id="reset">reset to the starter list</button>
+  </div>
+
+  <div>
+    <h2>Against the human codes</h2>
+    <div class="tiles">
+      <div class="tile" tabindex="0"><div class="lab">Precision</div><div class="val" id="m-p">—</div><div class="meter"><i id="m-p-bar"></i></div>
+        <div class="tip tip--l" role="note"><b>Precision</b>
+          <span class="def">Of the texts your dictionary called positive, how many really were. Falls when your words fire on the wrong texts.</span>
+          <span class="frm">hits / (hits + false alarms)</span>
+          <span class="sub" id="t-p"></span></div></div>
+
+      <div class="tile" tabindex="0"><div class="lab">Recall</div><div class="val" id="m-r">—</div><div class="meter"><i id="m-r-bar"></i></div>
+        <div class="tip tip--l" role="note"><b>Recall</b>
+          <span class="def">Of the texts a human called positive, how many your dictionary caught. Falls when your words never fire.</span>
+          <span class="frm">hits / (hits + misses + no calls)</span>
+          <span class="sub" id="t-r"></span></div></div>
+
+      <div class="tile" tabindex="0"><div class="lab">F1</div><div class="val" id="m-f">—</div><div class="meter"><i id="m-f-bar"></i></div>
+        <div class="tip" role="note"><b>F1</b>
+          <span class="def">The harmonic mean of the two. One number, and it punishes a big gap between precision and recall.</span>
+          <span class="frm">2 &times; P &times; R / (P + R)</span>
+          <span class="sub" id="t-f"></span></div></div>
+
+      <div class="tile" tabindex="0"><div class="lab">Accuracy</div><div class="val" id="m-a">—</div><div class="meter"><i id="m-a-bar"></i></div>
+        <div class="tip tip--r" role="note"><b>Accuracy</b>
+          <span class="def">Verdicts that matched the human code, over all 20 texts. A text your dictionary said nothing about counts as wrong.</span>
+          <span class="frm">(hits + correct) / all texts</span>
+          <span class="sub" id="t-a"></span></div></div>
+
+      <div class="tile tile--cov" tabindex="0"><div class="lab">Coverage</div><div class="val" id="m-c">—</div><div class="meter"><i id="m-c-bar"></i></div>
+        <div class="tip tip--r" role="note"><b>Coverage</b>
+          <span class="def">Texts where at least one of your words fired. Not a performance score &mdash; a check on whether the instrument spoke at all.</span>
+          <span class="frm">(all texts &minus; silent) / all texts</span>
+          <span class="sub" id="t-c"></span></div></div>
+    </div>
+
+    <table class="cm">
+      <tr><th></th><th>Dict: positive</th><th>Dict: negative</th><th>No call</th></tr>
+      <tr><th>Human: positive</th>
+        <td class="hit"><span class="c" id="c-tp">0</span><span class="k">hit</span></td>
+        <td><span class="c" id="c-fn">0</span><span class="k">miss</span></td>
+        <td><span class="c" id="c-pn">0</span><span class="k">silent or tied</span></td></tr>
+      <tr><th>Human: negative</th>
+        <td><span class="c" id="c-fp">0</span><span class="k">false alarm</span></td>
+        <td class="correct"><span class="c" id="c-tn">0</span><span class="k">correct</span></td>
+        <td><span class="c" id="c-nn">0</span><span class="k">silent or tied</span></td></tr>
+    </table>
+
+    <h2>The 20 texts <span class="n">· human code vs. your dictionary · scroll for all 20</span></h2>
+    <div class="corpus" id="corpus"></div>
+    <div class="foot" id="foot"></div>
+  </div>
+</div>
+
+<script>
+(function () {
+  // 20 short review-like texts, each with a human code. Deliberately includes
+  // negation, mixed sentiment and items with no sentiment vocabulary at all.
+  var CORPUS = [
+    ["Absolutely loved the new season.", "pos"],
+    ["The plot was a mess and the acting was worse.", "neg"],
+    ["Not good at all.", "neg"],
+    ["I can't say I enjoyed this.", "neg"],
+    ["Brilliant writing, superb cast.", "pos"],
+    ["Boring, slow, and far too long.", "neg"],
+    ["It exists.", "neg"],
+    ["A masterpiece.", "pos"],
+    ["Terrible pacing ruined an otherwise great idea.", "neg"],
+    ["Would happily watch it again.", "pos"],
+    ["Waste of two hours.", "neg"],
+    ["Charming and genuinely funny.", "pos"],
+    ["The worst thing I have seen this year.", "neg"],
+    ["Solid, if unspectacular.", "pos"],
+    ["Nothing about this works.", "neg"],
+    ["Gorgeous cinematography.", "pos"],
+    ["Dull characters, predictable ending.", "neg"],
+    ["I was pleasantly surprised.", "pos"],
+    ["Overhyped and disappointing.", "neg"],
+    ["One of the best films of the decade.", "pos"]
+  ];
+
+  var START_POS = ["good", "great", "love", "best"];
+  var START_NEG = ["bad", "boring", "worst", "terrible"];
+
+  var lex = { pos: START_POS.slice(), neg: START_NEG.slice() };
+
+  // Crude demonstration stemmer. It also drops a trailing "e" so that the
+  // stripped form of "loved" ("lov") meets the stripped form of "love".
+  // Over-stemming like this is exactly what real stemmers are criticised for.
+  function stem(w) {
+    if (w.length <= 3) return w;
+    var suf = ["ingly", "edly", "ing", "ies", "ed", "ly", "es", "s"];
+    for (var i = 0; i < suf.length; i++) {
+      var s = suf[i];
+      if (w.length - s.length >= 3 && w.slice(-s.length) === s) {
+        var b = w.slice(0, -s.length);
+        if (s === "ies") return b + "y";
+        w = b;
+        break;
+      }
+    }
+    if (w.length > 3 && w.slice(-1) === "e") w = w.slice(0, -1);
+    return w;
+  }
+
+  var el = function (id) { return document.getElementById(id); };
+  var stemOn = el("stemOn");
+
+  function norm(w) {
+    w = w.toLowerCase().replace(/^[^\p{L}\p{N}]+|[^\p{L}\p{N}]+$/gu, "");
+    return stemOn.checked ? stem(w) : w;
+  }
+
+  function lookup(word) {
+    var k = norm(word);
+    if (!k) return null;
+    var P = new Set(lex.pos.map(norm)), N = new Set(lex.neg.map(norm));
+    if (P.has(k)) return "p";
+    if (N.has(k)) return "n";
+    return null;
+  }
+
+  function renderChips() {
+    ["pos", "neg"].forEach(function (side) {
+      var box = el("chips-" + side);
+      box.innerHTML = "";
+      lex[side].forEach(function (w, i) {
+        var c = document.createElement("span");
+        c.className = "chip";
+        c.title = "remove";
+        c.innerHTML = (side === "pos" ? "+" : "−") + "&nbsp;" +
+          w.replace(/</g, "&lt;") + '<span class="x">&times;</span>';
+        c.onclick = function () { lex[side].splice(i, 1); renderChips(); score(); };
+        box.appendChild(c);
+      });
+    });
+    el("np").textContent = "· " + lex.pos.length;
+    el("nn").textContent = "· " + lex.neg.length;
+  }
+
+  function addWord(side, input) {
+    var w = input.value.trim().toLowerCase().replace(/[^\p{L}\p{N}'-]/gu, "");
+    input.value = "";
+    if (!w) return;
+    if (lex.pos.indexOf(w) < 0 && lex.neg.indexOf(w) < 0) lex[side].push(w);
+    renderChips(); score();
+  }
+  ["pos", "neg"].forEach(function (side) {
+    var inp = el("add-" + side);
+    inp.addEventListener("keydown", function (e) { if (e.key === "Enter") { e.preventDefault(); addWord(side, inp); } });
+    inp.addEventListener("blur", function () { addWord(side, inp); });
+  });
+
+  el("reset").onclick = function () {
+    lex = { pos: START_POS.slice(), neg: START_NEG.slice() };
+    stemOn.checked = false;
+    renderChips(); score();
+  };
+  stemOn.addEventListener("change", score);
+
+  // Six confusion-matrix cells; every metric below is derived from exactly these,
+  // so the formulas in the tooltips can be checked against the table on screen.
+  //   tp  human pos, dict pos      fnm human pos, dict neg     sp  human pos, no call
+  //   fp  human neg, dict pos      tnm human neg, dict neg     sn  human neg, no call
+  function score() {
+    var tp = 0, fp = 0, fnm = 0, tnm = 0, sp = 0, sn = 0, silent = 0, tied = 0;
+    var box = el("corpus");
+    box.innerHTML = "";
+
+    CORPUS.forEach(function (item) {
+      var text = item[0], human = item[1];
+      var parts = text.split(/(\s+)/), s = 0, fired = 0, html = "";
+      parts.forEach(function (tok) {
+        if (/^\s+$/.test(tok)) { html += tok; return; }
+        var hit = lookup(tok);
+        if (hit === "p") { s++; fired++; html += '<mark class="p">' + esc(tok) + "<sup>+</sup></mark>"; }
+        else if (hit === "n") { s--; fired++; html += '<mark class="n">' + esc(tok) + "<sup>&minus;</sup></mark>"; }
+        else html += esc(tok);
+      });
+
+      var pred = s > 0 ? "pos" : s < 0 ? "neg" : "none";
+      // Two different silences: no word fired at all, or words fired and cancelled.
+      if (pred === "none") { if (fired === 0) silent++; else tied++; }
+      if (human === "pos") {
+        if (pred === "pos") tp++; else if (pred === "neg") fnm++; else sp++;
+      } else {
+        if (pred === "pos") fp++; else if (pred === "neg") tnm++; else sn++;
+      }
+      // A "no call" is never scored as correct: the dictionary produced no verdict,
+      // and a silent instrument has not agreed with anybody.
+
+      var right = (pred === human);
+      var row = document.createElement("div");
+      row.className = "row";
+      row.innerHTML =
+        '<span class="mark ' + (right ? "ok" : "no") + '">' + (right ? "✓" : "✗") + "</span>" +
+        '<span class="txt">' + html + "</span>" +
+        '<span class="verdict">human ' + human + " · dict " + (pred === "none" ? "no call" : pred) + "</span>";
+      box.appendChild(row);
+    });
+
+    var N = CORPUS.length;
+    var allPos = tp + fnm + sp;                 // every text a human called positive
+    var P = (tp + fp) ? tp / (tp + fp) : null;
+    var R = allPos ? tp / allPos : null;
+    var F = (P !== null && R !== null && P + R > 0) ? 2 * P * R / (P + R) : null;
+    var A = (tp + tnm) / N;                     // only explicit verdicts can be correct
+    var C = (N - silent) / N;                   // covered = at least one word fired
+
+    set("m-p", P); set("m-r", R); set("m-f", F); set("m-a", A); set("m-c", C);
+    el("c-tp").textContent = tp;  el("c-fn").textContent = fnm; el("c-pn").textContent = sp;
+    el("c-fp").textContent = fp;  el("c-tn").textContent = tnm; el("c-nn").textContent = sn;
+
+    // live substitution shown inside each tile's hover popover — the numbers are
+    // the matrix cells directly above, so students can check the arithmetic.
+    var pc = function (v) { return v === null ? "—" : (v * 100).toFixed(0) + "%"; };
+    el("t-p").textContent = (tp + fp)
+      ? tp + " / (" + tp + " + " + fp + ") = " + pc(P)
+      : "nothing was called positive — undefined";
+    el("t-r").textContent = allPos
+      ? tp + " / (" + tp + " + " + fnm + " + " + sp + ") = " + pc(R)
+      : "no positive texts — undefined";
+    el("t-f").textContent = (F === null)
+      ? "needs both precision and recall"
+      : "2 × " + pc(P) + " × " + pc(R) + " / (" + pc(P) + " + " + pc(R) + ") = " + pc(F);
+    el("t-a").textContent = "(" + tp + " + " + tnm + ") / " + N + " = " + pc(A);
+    el("t-c").textContent = "(" + N + " − " + silent + ") / " + N + " = " + pc(C);
+
+    var bits = [];
+    if (silent) bits.push(silent + "/" + N + " fired no words");
+    if (tied) bits.push(tied + " tied to zero");
+    el("foot").textContent = bits.length
+      ? "No verdict: " + bits.join(", ") + "."
+      : "Every text produced a verdict.";
+  }
+
+  function set(id, v) {
+    var n = el(id), bar = el(id + "-bar");
+    if (v === null) { n.textContent = "—"; n.className = "val dim"; bar.style.width = "0"; }
+    else { n.textContent = (v * 100).toFixed(0) + "%"; n.className = "val"; bar.style.width = (v * 100).toFixed(1) + "%"; }
+  }
+  function esc(s) { return s.replace(/&/g, "&amp;").replace(/</g, "&lt;"); }
+
+  // the fade at the foot of the list is a scroll cue; retire it at the end
+  var corpusBox = el("corpus");
+  corpusBox.addEventListener("scroll", function () {
+    var atEnd = corpusBox.scrollTop + corpusBox.clientHeight >= corpusBox.scrollHeight - 2;
+    corpusBox.classList.toggle("at-end", atEnd);
+  });
+
+  renderChips();
+  score();
+})();
+</script>
+</body>
+</html>

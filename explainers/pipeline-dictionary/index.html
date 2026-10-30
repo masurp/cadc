@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The pipeline with a dictionary</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&display=swap">
+<link rel="stylesheet" href="../shared/pipeline.css">
+<style>:root{ --accent:var(--era2) }</style>
+</head>
+<!-- ===========================================================================
+  WEEK 2 — the same pipeline, with a word list under step 03.
+  Redraw of text_analysis_fundamentals/Slide02.
+
+  The row comes from shared/pipeline.js and is pixel identical to
+  explainers/pipeline/ (week 1). Everything below y = G.SLOT is this week's:
+  the dictionary, the worked count, and the traps that make step 04 the point.
+=========================================================================== -->
+<body>
+<svg id="chart" viewBox="-8 -10 996 440" preserveAspectRatio="xMidYMid meet" role="img"
+     aria-label="The text classification pipeline with a dictionary feeding step 03: a declared list of positive and negative words, counted in every text. Click to step through."></svg>
+<noscript><p style="max-width:34em;margin:2em;font-family:sans-serif">Needs JavaScript: the text
+classification pipeline, with a dictionary feeding the classifier.</p></noscript>
+
+<script src="../shared/pipeline.js"></script>
+<script>
+(function () {
+  "use strict";
+  var P = CADCPipeline.build({
+    matrix: { kind: "counts", label: "texts × words" },
+    labLabel: "scored texts"
+  });
+  var G = P.G, S = P.layer.slot;
+
+  /* -- the dictionary itself, under step 03 -------------------------------- */
+  var POS = ["great", "love", "kind"], NEG = ["awful", "hate", "rude"];
+  var dict = P.g(S, {});
+  (function () {
+    /* card 262 to 420, floor is 424: three words a column plus an ellipsis is
+       what fits. Adding a fourth row pushes the list through the card. */
+    var x = 545, y = 262, w = 260, row = 16;
+    P.arrow(dict, G.CX[2], y - 6, G.CX[2], G.BY + G.BH + 4, "feed flow");
+    P.card(dict, { x: x, y: y, w: w, h: 158, cls: "tint", icon: "book",
+                   title: "A dictionary", sub: "you write it, or borrow LIWC or NRC" });
+    P.txt(dict, "positive", { x: x + 16, y: y + 68, "class": "lbl left", fill: "var(--accent)" });
+    P.txt(dict, "negative", { x: x + 146, y: y + 68, "class": "lbl left", fill: "var(--neg)" });
+    dict.appendChild(P.el("line", { x1: x + 16, x2: x + w - 16, y1: y + 76, y2: y + 76, "class": "pageline" }));
+    POS.concat("…").forEach(function (t, i) { P.txt(dict, t, { x: x + 16,  y: y + 94 + i * row, "class": "word pos" }); });
+    NEG.concat("…").forEach(function (t, i) { P.txt(dict, t, { x: x + 146, y: y + 94 + i * row, "class": "word neg" }); });
+    P.show(dict, false, true);
+  })();
+
+  /* -- what step 03 actually does, worked on one text ---------------------- */
+  var work = P.g(S, {});
+  (function () {
+    var x = 120, y = 262, w = 380;
+    P.elbow(work, [[G.SX[2] + 6, G.BY + G.BH + 2], [G.SX[2] + 6, 244], [x + w / 2, 244], [x + w / 2, y - 4]], "dashed");
+    P.txt(work, "inside step 03", { x: x + w / 2 + 8, y: 240, "class": "lbl left" });
+    P.card(work, { x: x, y: y, w: w, h: 92, icon: "count", title: "One text, counted" });
+    var t = P.el("text", { x: x + 16, y: y + 48, "class": "word" });
+    [["the food was ", ""], ["great", "pos"], [", the staff ", ""], ["kind", "pos"],
+     [", the wait ", ""], ["awful", "neg"]].forEach(function (piece) {
+      var ts = P.el("tspan", { "class": "word " + piece[1] });
+      if (piece[1]) ts.setAttribute("font-weight", "700");
+      ts.textContent = piece[0]; t.appendChild(ts);
+    });
+    work.appendChild(t);
+    P.wrap(work, "2 positive · 1 negative  →  positive", { x: x + 16, y: y + 74, width: w - 32, "class": "cardsub" });
+    P.show(work, false, true);
+  })();
+
+  /* -- and why it so often fails ------------------------------------------- */
+  var trap = P.g(S, {});
+  P.card(trap, { x: 120, y: 384, w: 380, h: 34, cls: "sunk", pad: 10,
+                 icon: "warn", iconCls: "warn", iconSize: 16,
+                 sub: "“not great” counts as positive · “sick” can be praise" });
+  P.show(trap, false, true);
+
+  /* -- scenes: what each click puts on screen ---------------------------
+     (the lecturer narrates these; nothing is printed under the figure) 
+       0. Last week's pipeline, unchanged.
+       1. The classifier is a list of words you wrote.
+       2. So step 03 is counting.
+       3. Which is why step 04 decides whether you may use it at all.
+       4. One box changed.
+     -------------------------------------------------------------------- */
+  var SCENES = 5;
+  CADCPipeline.run(P, SCENES, function (s) {
+    P.setSteps([ "", "", s >= 1 && s !== 3 ? "on accent" : "", s === 3 ? "on accent" : "" ]);
+    [P.art.docs, P.art.mat, P.art.lab, P.art.gold, P.fb].forEach(function (n) { P.show(n, true); });
+    P.show(dict, s >= 1, true); P.show(work, s >= 2, true); P.show(trap, s >= 3, true);
+    if (s === 2) P.travel(G.ART[1], G.MID, G.ART[2], G.MID);
+  });
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,583 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Two coders, one codebook — CADC</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&display=swap">
+<style>
+  /* --- tokens ---------------------------------------------------------------
+     Week 2, so the chrome accent is the era-2 teal-blue. Three label colours are
+     needed and they are the same three used by every classifier tool in the
+     course, so a student who has seen build-a-dictionary reads them without
+     being told:  positive = VU blue · negative = orange-red · mixed = grey. */
+  :root{
+    --paper:#faf8f4; --surface:#fff; --panel:#fdfcf9; --strip:#f2f0ea;
+    --hairline:#e7e3d9; --border:#e0dcd0;
+    --ink:#1a1a17; --ink-2:#3a3a34; --ink-3:#5a5a52; --muted:#7a7a70; --faint:#9a9a90;
+    --accent:#2f7f9e; --accent-tint:#e6f2f7;
+    --pos:#2678b0; --pos-tint:#e8f1f8;
+    --neg:#b84a27; --neg-tint:#fbeee8;
+    --mid:#8b8a86; --mid-tint:#eeedea;
+    --warn:#8a6d1f; --warn-tint:#fbf4e0;
+    --font:"Space Grotesk", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+    --mono:ui-monospace,SFMono-Regular,Menlo,monospace;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --paper:#10243a; --surface:#16304a; --panel:#142c44; --strip:#1b3550;
+      --hairline:#2c4560; --border:#2c4560;
+      --ink:#e8eaec; --ink-2:#cfd6de; --ink-3:#a8c0d4; --muted:#7d9bb5; --faint:#6d8ba6;
+      --accent:#5cb0cf; --accent-tint:#14313f;
+      --pos:#3291d1; --pos-tint:#14304a;
+      --neg:#d26a49; --neg-tint:#3a2118;
+      --mid:#9aa0a4; --mid-tint:#2b3238;
+      --warn:#d9b45c; --warn-tint:#332d16;
+    }
+  }
+  *{box-sizing:border-box}
+  [hidden]{display:none !important}
+  html,body{margin:0}
+  body{font-family:var(--font); background:var(--paper); color:var(--ink);
+       font-size:14px; line-height:1.5; padding:0 20px 20px; overflow-x:hidden}
+
+  .band{height:3px; background:var(--accent); margin:0 -20px 13px; opacity:.9}
+  .eyebrow{font-size:10px; font-weight:700; letter-spacing:.1em; text-transform:uppercase;
+           color:var(--accent); margin-bottom:5px}
+  h1{font-size:15px; font-weight:700; margin:0}
+  .sub{font-size:12px; color:var(--ink-3); margin:4px 0 14px; max-width:80ch}
+  .sub b{color:var(--ink-2); font-weight:500}
+
+  .bnd{border-top:1px solid var(--hairline); padding-top:12px; margin-bottom:16px}
+  .qn{display:flex; align-items:baseline; gap:9px; margin-bottom:11px}
+  .qn .num{flex:0 0 20px; height:20px; border-radius:50%; background:var(--accent);
+    color:#fff; font-size:11px; font-weight:700; display:flex; align-items:center;
+    justify-content:center; align-self:center}
+  .qn h2{font-size:14px; font-weight:700; margin:0}
+  .qn .sd{font-size:11.5px; color:var(--faint)}
+
+  .seg{display:flex; flex-wrap:wrap; gap:4px}
+  .seg button{font:inherit; font-size:11px; padding:4px 9px; cursor:pointer;
+    border:1px solid var(--border); border-radius:6px; background:var(--surface); color:var(--ink-2)}
+  .seg button:hover{border-color:var(--accent)}
+  .seg button[aria-pressed=true]{background:var(--accent); border-color:var(--accent); color:#fff;
+    font-weight:500}
+  .i{flex:0 0 auto; width:13px; height:13px; border-radius:50%; border:1px solid var(--border);
+     color:var(--faint); font-size:9px; font-weight:700; line-height:1; display:inline-flex;
+     align-items:center; justify-content:center; cursor:help; position:relative}
+  .i:hover{border-color:var(--accent); color:var(--accent)}
+  .i::after{content:attr(data-tip); position:absolute; bottom:calc(100% + 7px); left:-6px;
+    width:236px; max-width:44vw; background:var(--ink); color:var(--paper); font-size:10.5px;
+    font-weight:400; line-height:1.45; padding:7px 9px; border-radius:6px; text-align:left;
+    opacity:0; pointer-events:none; transition:opacity .12s; z-index:30}
+  .i.flip::after{left:auto; right:-6px}
+  .i:hover::after{opacity:1}
+
+  /* --- the codebook ------------------------------------------------------- */
+  .book{border:1px solid var(--border); border-left:3px solid var(--accent);
+        border-radius:0 9px 9px 0; background:var(--panel); padding:10px 13px; margin-bottom:12px}
+  .book__hd{display:flex; align-items:center; gap:9px; flex-wrap:wrap; margin-bottom:7px}
+  .book__hd h3{font-size:10px; font-weight:700; letter-spacing:.09em; text-transform:uppercase;
+               color:var(--accent); margin:0}
+  .book__hd .seg{margin-left:auto}
+  .book pre{font-family:var(--mono); font-size:11px; line-height:1.55; color:var(--ink-2);
+    background:var(--surface); border:1px solid var(--hairline); border-radius:7px;
+    padding:8px 10px; margin:0; white-space:pre-wrap}
+  .book .bn{font-size:11px; color:var(--faint); margin-top:6px}
+
+  /* --- the coding task ----------------------------------------------------- */
+  /* two columns at most: at three the review texts truncate, and the text is
+     the thing being coded */
+  .items{display:grid; grid-template-columns:repeat(auto-fit,minmax(430px,1fr)); gap:3px 20px}
+  .itlegend{font-size:10.5px; color:var(--faint); margin:0 0 5px; display:flex; gap:12px;
+            flex-wrap:wrap; align-items:center}
+  .itlegend b{color:var(--ink-3); font-weight:500}
+  .it{display:flex; align-items:center; gap:8px; padding:3px 0; border-bottom:1px solid var(--hairline)}
+  .it__t{flex:1; font-size:12.5px; color:var(--ink-2); min-width:0; overflow:hidden;
+         text-overflow:ellipsis; white-space:nowrap}
+  .it__b{display:flex; gap:3px; flex:0 0 auto}
+  .it__b button{font:inherit; font-size:10px; width:26px; height:21px; cursor:pointer; padding:0;
+    border:1px solid var(--border); border-radius:5px; background:var(--surface); color:var(--muted)}
+  .it__b button:hover{border-color:var(--ink-3)}
+  .it__b button[aria-pressed=true][data-v=pos]{background:var(--pos); border-color:var(--pos); color:#fff}
+  .it__b button[aria-pressed=true][data-v=neg]{background:var(--neg); border-color:var(--neg); color:#fff}
+  .it__b button[aria-pressed=true][data-v=mixed]{background:var(--mid); border-color:var(--mid); color:#fff}
+  .it.dis{background:var(--warn-tint)}
+  .it__o{flex:0 0 auto; display:flex; gap:3px}
+  .pill{font-size:9.5px; font-weight:700; padding:1px 5px; border-radius:4px; line-height:1.5}
+  .pill.pos{background:var(--pos-tint); color:var(--pos)}
+  .pill.neg{background:var(--neg-tint); color:var(--neg)}
+  .pill.mixed{background:var(--mid-tint); color:var(--mid)}
+
+  .bar{display:flex; align-items:center; gap:12px; margin-top:12px; flex-wrap:wrap}
+  .prog{flex:1 1 160px; height:6px; background:var(--strip); border-radius:3px; overflow:hidden;
+        min-width:120px}
+  .prog i{display:block; height:100%; background:var(--accent); border-radius:3px; transition:width .2s}
+  .cta{font:inherit; font-size:12px; font-weight:500; padding:6px 14px; border-radius:7px;
+    border:1px solid var(--accent); background:var(--accent); color:#fff; cursor:pointer}
+  .cta[disabled]{opacity:.4; cursor:not-allowed}
+  .cta.ghost{background:transparent; color:var(--accent)}
+  .barnote{font-size:11.5px; color:var(--faint)}
+
+  /* --- results ------------------------------------------------------------- */
+  .tiles{display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:0;
+         border:1px solid var(--border); border-radius:9px; overflow:hidden; background:var(--surface)}
+  .tile{padding:9px 12px; border-right:1px solid var(--hairline)}
+  .tile:last-child{border-right:0}
+  .tile .k{font-size:9.5px; color:var(--muted); letter-spacing:.05em; text-transform:uppercase;
+           display:flex; align-items:center; gap:5px}
+  .tile .v{font-size:22px; font-weight:700; letter-spacing:-.02em; margin-top:2px;
+           font-variant-numeric:tabular-nums}
+  .tile .n{font-size:10.5px; color:var(--faint); margin-top:1px}
+  .tile.hi .v{color:var(--accent)}
+  .tile.bad .v{color:var(--neg)}
+
+  .grid2{display:grid; grid-template-columns:auto minmax(0,1fr); gap:18px; margin-top:12px;
+         align-items:start}
+  @media (max-width:760px){ .grid2{grid-template-columns:1fr} }
+  table.cm{border-collapse:collapse; font-size:11.5px; font-variant-numeric:tabular-nums}
+  table.cm th{font-size:9.5px; font-weight:700; color:var(--muted); padding:2px 6px;
+              text-transform:uppercase; letter-spacing:.04em}
+  table.cm th.rot{text-align:left}
+  table.cm td{width:34px; height:28px; text-align:center; border:1px solid var(--hairline);
+              color:var(--ink-2)}
+  table.cm td.d{font-weight:700; color:var(--ink)}
+  table.cm td.z{color:var(--faint)}
+  .cmcap{font-size:10px; color:var(--faint); margin-top:5px; max-width:250px; line-height:1.5}
+
+  .disp{border:1px solid var(--border); border-radius:9px; background:var(--surface); overflow:hidden}
+  .disp__hd{font-size:9.5px; font-weight:700; letter-spacing:.06em; text-transform:uppercase;
+    color:var(--muted); padding:7px 11px; border-bottom:1px solid var(--hairline);
+    background:var(--panel)}
+  .dr{display:flex; align-items:center; gap:8px; padding:5px 11px; font-size:12px; cursor:pointer;
+      border-bottom:1px solid var(--hairline)}
+  .dr:last-child{border-bottom:0}
+  .dr:hover,.dr.on{background:var(--accent-tint)}
+  .dr .t{flex:1; color:var(--ink-2); overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+  .dwhy{font-size:11.5px; color:var(--ink-3); line-height:1.55; padding:8px 11px;
+        background:var(--strip); border-top:1px solid var(--hairline)}
+  .dwhy b{color:var(--ink)}
+  .empty{font-size:12px; color:var(--faint); padding:10px 11px}
+
+  /* --- the what-if --------------------------------------------------------- */
+  .whatif{display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1.1fr); gap:18px;
+          align-items:center}
+  @media (max-width:760px){ .whatif{grid-template-columns:1fr} }
+  .lb{font-size:10.5px; color:var(--muted); margin-bottom:5px; display:flex;
+      justify-content:space-between; gap:6px; align-items:center}
+  .lb .t{display:flex; align-items:center; gap:5px}
+  .lb .v{color:var(--ink); font-weight:500; font-variant-numeric:tabular-nums}
+  input[type=range]{width:100%; accent-color:var(--accent); margin:0; cursor:pointer}
+  .kmath{font-family:var(--mono); font-size:11px; color:var(--ink-3); background:var(--strip);
+         border-radius:7px; padding:8px 10px; line-height:1.7}
+  .kmath b{color:var(--ink)}
+  .kbig{font-size:26px; font-weight:700; letter-spacing:-.02em; font-variant-numeric:tabular-nums}
+
+  .note{border-left:3px solid var(--accent); background:var(--accent-tint); border-radius:0 7px 7px 0;
+    padding:9px 12px; font-size:12px; color:var(--ink-2); margin-top:12px; line-height:1.55}
+  .note b{color:var(--ink); font-weight:700}
+  .note.warn{border-left-color:var(--warn); background:var(--warn-tint)}
+
+  .src{border-top:1px solid var(--hairline); margin-top:18px; padding-top:11px}
+  .src summary{font-size:10px; font-weight:700; letter-spacing:.09em; text-transform:uppercase;
+    color:var(--muted); cursor:pointer; list-style:none; display:flex; align-items:center; gap:7px}
+  .src summary::-webkit-details-marker{display:none}
+  .src summary::before{content:"▸"; font-size:10px; transition:transform .15s; display:inline-block}
+  .src[open] summary::before{transform:rotate(90deg)}
+  .src summary:hover{color:var(--accent)}
+  .src ul{margin:11px 0 0; padding:0; list-style:none; columns:2; column-gap:24px}
+  @media (max-width:700px){ .src ul{columns:1} }
+  .src li{font-size:11px; color:var(--ink-3); line-height:1.55; margin-bottom:6px; break-inside:avoid}
+  .src li b{color:var(--ink-2); font-weight:500}
+  .src a{color:var(--accent); text-decoration:none}
+  .src a:hover{text-decoration:underline}
+</style>
+</head>
+<body>
+
+<div class="band"></div>
+<div class="eyebrow">Week 2 · Measurement &amp; validation</div>
+<h1>Two coders, one codebook</h1>
+<p class="sub">Every other tool in this playground is handed a set of human codes and treats them
+as the truth. <b>This is where those codes come from.</b> Code twenty reviews yourself, then meet
+the colleague who coded the same twenty from the same instructions.</p>
+
+<!-- ============ PART 1 — code them ============ -->
+<section class="bnd">
+  <div class="qn">
+    <span class="num">1</span>
+    <div>
+      <h2>Code these twenty reviews</h2>
+      <div class="sd">Takes about a minute. There is no answer key — that is the point.</div>
+    </div>
+  </div>
+
+  <div class="book">
+    <div class="book__hd">
+      <h3>The codebook</h3>
+      <span class="i" data-tip="The instructions both coders were given. Most codebooks start life like the first one: fine for the easy cases, silent about the hard ones.">i</span>
+      <div class="seg" role="group" id="seg-book"></div>
+    </div>
+    <pre id="book-text"></pre>
+    <div class="bn" id="book-note"></div>
+  </div>
+
+  <p class="itlegend" id="itlegend" hidden></p>
+  <div class="items" id="items"></div>
+
+  <div class="bar">
+    <div class="prog"><i id="prog"></i></div>
+    <span class="barnote" id="progn">0 of 20 coded</span>
+    <button class="cta" id="reveal" disabled>Reveal the second coding</button>
+  </div>
+</section>
+
+<!-- ============ PART 2 — compare ============ -->
+<section class="bnd" id="part2" hidden>
+  <div class="qn">
+    <span class="num">2</span>
+    <div>
+      <h2>How much did you agree?</h2>
+      <div class="sd">Two numbers that answer that, and disagree with each other.</div>
+    </div>
+  </div>
+
+  <div class="tiles" id="tiles"></div>
+
+  <div class="grid2">
+    <div>
+      <div id="cm"></div>
+      <div class="cmcap" id="cmcap"></div>
+    </div>
+    <div class="disp">
+      <div class="disp__hd" id="disp-hd">Where you disagreed</div>
+      <div id="disp"></div>
+      <div class="dwhy" id="dwhy" hidden></div>
+    </div>
+  </div>
+
+  <div class="note" id="verdict"></div>
+</section>
+
+<!-- ============ PART 3 — the what-if ============ -->
+<section class="bnd" id="part3" hidden>
+  <div class="qn">
+    <span class="num">3</span>
+    <div>
+      <h2>Why high agreement can still be worthless</h2>
+      <div class="sd">The same arithmetic, on somebody else's corpus. Starts from your result.</div>
+    </div>
+  </div>
+
+  <div class="whatif">
+    <div>
+      <div class="lb"><span class="t">Suppose two coders agree this often
+        <span class="i" data-tip="A free parameter, not your result — it just starts there. Hold it still and move the base rate below to see what the same agreement is worth on differently balanced data.">i</span></span>
+        <span class="v" id="v-po">90%</span></div>
+      <input type="range" id="po" min="50" max="100" value="90" step="1">
+      <div class="lb" style="margin-top:12px"><span class="t">How common the majority category is
+        <span class="i" data-tip="The base rate. If 95% of your items are 'not hate speech', two coders who never look at the text and always guess the common answer will agree with each other almost every time.">i</span></span>
+        <span class="v" id="v-pi">50%</span></div>
+      <input type="range" id="pi" min="50" max="99" value="50" step="1">
+    </div>
+    <div class="kmath" id="kmath"></div>
+  </div>
+  <div class="note warn" id="whatifnote"></div>
+</section>
+
+<details class="src">
+  <summary>Where these numbers come from</summary>
+  <ul>
+    <li><b>The reviews and the human coding</b> — <code>data/prompt-lab/gold.json</code>, the same
+      hand-coded set the prompt-sensitivity tool uses. Each text carries three factual judgements:
+      whether the reviewer recommends it, whether the review contains both substantial praise and
+      substantial criticism, and whether the overall verdict is clear.</li>
+    <li><b>The second coder is not invented.</b> The two codings are derived from those facts
+      mechanically — <i>broad</i> = mixed whenever both praise and criticism are present;
+      <i>narrow</i> = the verdict whenever it is clear. Neither is privileged, and neither was
+      written to disagree with you. They are two readings of an instruction that does not say
+      which to take.</li>
+    <li><b>Cohen's κ</b> — (p<sub>o</sub> − p<sub>e</sub>) / (1 − p<sub>e</sub>), where
+      p<sub>o</sub> is observed agreement and p<sub>e</sub> is the agreement you would expect from
+      two coders guessing independently with the same marginals
+      (<a href="https://doi.org/10.1177/001316446002000104" target="_blank" rel="noopener">Cohen 1960</a>).
+      For more than two coders, or ordinal categories, use Krippendorff's α instead — same idea,
+      fewer assumptions.</li>
+    <li><b>The part 3 slider is a what-if, not your data.</b> It assumes two categories and two
+      coders whose marginals match the base rate, and asks what κ would be at that agreement. The
+      arithmetic is exact; the scenario is hypothetical, and it is drawn that way because this is
+      the trap most often walked into in published work.</li>
+    <li><b>This sample over-represents hard cases</b> — 7 of the 20 items are ones where the two
+      readings part company. In a real corpus that fraction is usually far smaller, which makes
+      overall agreement look better while leaving the rare-category problem exactly as it is.</li>
+    <li><b>Why the rare category matters</b> — an overall figure is a weighted average dominated by
+      the common classes. Reporting agreement per category, or macro-averaging across them, is what
+      exposes the category your instrument cannot actually measure.</li>
+  </ul>
+</details>
+
+<script src="data.js"></script>
+<script>
+(function () {
+  "use strict";
+  var D = window.CADC_CODING, IT = D.items, N = IT.length;
+  var el = function (id) { return document.getElementById(id); };
+  var LAB = ["pos", "neg", "mixed"], SHORT = { pos: "pos", neg: "neg", mixed: "mix" };
+
+  var S = { mine: new Array(N).fill(null), book: "vague", revealed: false,
+            sel: null, po: 90, pi: 50 };
+
+  /* --- your one colleague ---------------------------------------------------
+     There is exactly one other coder. Under the vague instruction she resolved
+     the hard cases one way; once a decision rule is written down she recodes to
+     follow it, which is what actually happens after a reconciliation meeting. */
+  function colleague() {
+    return { id: S.book === "narrow" ? "narrow" : "broad", name: "Ruth" };
+  }
+  function theirs() {
+    var id = colleague().id;
+    return IT.map(function (x) { return x[id]; });
+  }
+
+  /* --- agreement and kappa -------------------------------------------------- */
+  function agree(a, b) {
+    var n = 0, m = 0, i;
+    for (i = 0; i < a.length; i++) if (a[i] !== null && b[i] !== null) { m++; if (a[i] === b[i]) n++; }
+    return m ? n / m : 0;
+  }
+  function kappa(a, b) {
+    var n = 0, po = 0, pe = 0, i, l, ca = {}, cb = {};
+    for (i = 0; i < a.length; i++) {
+      if (a[i] === null || b[i] === null) continue;
+      n++; if (a[i] === b[i]) po++;
+      ca[a[i]] = (ca[a[i]] || 0) + 1; cb[b[i]] = (cb[b[i]] || 0) + 1;
+    }
+    if (!n) return { po: 0, pe: 0, k: 0 };
+    po /= n;
+    for (l in ca) if (cb[l]) pe += (ca[l] / n) * (cb[l] / n);
+    return { po: po, pe: pe, k: pe >= 1 ? 0 : (po - pe) / (1 - pe) };
+  }
+  // agreement restricted to the items either coder put in this category
+  function perClass(a, b, l) {
+    var either = 0, both = 0, i;
+    for (i = 0; i < a.length; i++) {
+      if (a[i] === null || b[i] === null) continue;
+      if (a[i] === l || b[i] === l) { either++; if (a[i] === l && b[i] === l) both++; }
+    }
+    return { either: either, both: both, r: either ? both / either : null };
+  }
+
+  /* --- the codebook ---------------------------------------------------------- */
+  function drawBook() {
+    var keys = ["vague", "narrow", "broad"];
+    el("seg-book").innerHTML = keys.map(function (k) {
+      return '<button data-k="' + k + '" aria-pressed="' + (k === S.book) + '">' +
+             D.codebooks[k].label + "</button>";
+    }).join("");
+    Array.prototype.forEach.call(el("seg-book").querySelectorAll("button"), function (b) {
+      b.onclick = function () { S.book = b.dataset.k; S.sel = null; render(); };
+    });
+    el("book-text").textContent = D.codebooks[S.book].text;
+    el("book-note").textContent = D.codebooks[S.book].note;
+  }
+
+  /* --- the items ------------------------------------------------------------- */
+  function drawItems() {
+    var box = el("items"), th = theirs(), co = colleague();
+    box.innerHTML = "";
+    IT.forEach(function (x, i) {
+      var d = document.createElement("div");
+      var dis = S.revealed && th[i] !== S.mine[i];
+      d.className = "it" + (dis ? " dis" : "");
+      var btns = LAB.map(function (l) {
+        return '<button data-i="' + i + '" data-v="' + l + '" aria-pressed="' +
+               (S.mine[i] === l) + '" title="' + l + '">' + SHORT[l] + "</button>";
+      }).join("");
+      var other = S.revealed
+        ? '<div class="it__o"><span class="pill ' + th[i] + '" title="' + co.name +
+          '">' + SHORT[th[i]] + "</span></div>" : "";
+      d.innerHTML = '<span class="it__t" title="' + x.t.replace(/"/g, "&quot;") + '">' +
+                    x.t + '</span><div class="it__b">' + btns + "</div>" + other;
+      box.appendChild(d);
+    });
+    Array.prototype.forEach.call(box.querySelectorAll(".it__b button"), function (b) {
+      b.onclick = function () { S.mine[+b.dataset.i] = b.dataset.v; render(); };
+    });
+
+    var lg = el("itlegend");
+    lg.hidden = !S.revealed;
+    if (S.revealed)
+      lg.innerHTML = "The grey code after each review is <b>" + co.name +
+        "&rsquo;s</b>. Amber rows are the ones the two of you coded differently — " +
+        "your buttons still work, so you can change your mind.";
+
+    var done = S.mine.filter(function (x) { return x !== null; }).length;
+    el("prog").style.width = (done / N * 100) + "%";
+    el("progn").textContent = done + " of " + N + " coded";
+    el("reveal").disabled = done < N;
+    el("reveal").hidden = S.revealed;
+  }
+
+  /* --- the comparison --------------------------------------------------------- */
+  function drawResults() {
+    var mine = S.mine, th = theirs(), co = colleague();
+    var K = kappa(mine, th);
+
+    var t = [];
+    t.push('<div class="tile"><div class="k">You and ' + co.name + ' agree</div><div class="v">' +
+      Math.round(K.po * 100) + '%</div><div class="n">' +
+      Math.round(K.po * N) + " of " + N + " items</div></div>");
+    t.push('<div class="tile ' + (K.k < 0.67 ? "bad" : "hi") + '"><div class="k">Cohen&rsquo;s κ' +
+      ' <span class="i" data-tip="Agreement after subtracting what two coders would have reached by guessing alone, given how often each of them used each category. Below about 0.67 is usually treated as too weak to build on.">i</span>' +
+      '</div><div class="v">' + K.k.toFixed(2) + '</div>' +
+      '<div class="n">chance-corrected</div></div>');
+
+    var worst = null;
+    LAB.forEach(function (l) {
+      var pc = perClass(mine, th, l);
+      if (pc.r !== null && (worst === null || pc.r < worst.r)) worst = { l: l, r: pc.r, pc: pc };
+    });
+    if (worst)
+      t.push('<div class="tile ' + (worst.r < 0.5 ? "bad" : "") + '"><div class="k">Worst category' +
+        ' <span class="i" data-tip="Of the items either of you put in this category, how often you both did. The overall figure is an average dominated by the easy, common classes; this is the one that tells you what your instrument cannot measure.">i</span>' +
+        '</div><div class="v">' + Math.round(worst.r * 100) + '%</div><div class="n">' +
+        worst.l + " · " + worst.pc.both + " of " + worst.pc.either + "</div></div>");
+    el("tiles").innerHTML = t.join("");
+
+    // confusion matrix
+    var m = {}, i;
+    LAB.forEach(function (a) { m[a] = {}; LAB.forEach(function (b) { m[a][b] = 0; }); });
+    for (i = 0; i < N; i++) if (mine[i] && th[i]) m[mine[i]][th[i]]++;
+    var h = ['<table class="cm"><tr><th class="rot">you \\ ' + co.name + "</th>"];
+    LAB.forEach(function (b) { h.push("<th>" + SHORT[b] + "</th>"); });
+    h.push("</tr>");
+    LAB.forEach(function (a) {
+      h.push('<tr><th class="rot">' + SHORT[a] + "</th>");
+      LAB.forEach(function (b) {
+        var v = m[a][b];
+        h.push('<td class="' + (a === b ? "d" : v ? "" : "z") + '">' + v + "</td>");
+      });
+      h.push("</tr>");
+    });
+    h.push("</table>");
+    el("cm").innerHTML = h.join("");
+    el("cmcap").innerHTML = "The diagonal is where you agreed. Everything off it is an item the " +
+      "codebook did not decide &mdash; <b>and every one of them becomes a data point either way</b>.";
+
+    // disputed list
+    var dis = [];
+    for (i = 0; i < N; i++) if (mine[i] !== th[i]) dis.push(i);
+    el("disp-hd").textContent = "Where you and " + co.name + " disagreed — " + dis.length +
+      " of " + N;
+    if (!dis.length) {
+      el("disp").innerHTML = '<div class="empty">Nothing at all. You and ' + co.name +
+        " read the rule the same way — which is agreement, but not yet evidence that the rule " +
+        "is clear enough for a third person to read it that way too.</div>";
+      el("dwhy").hidden = true;
+    } else {
+      el("disp").innerHTML = dis.map(function (i) {
+        return '<div class="dr' + (S.sel === i ? " on" : "") + '" data-i="' + i + '">' +
+          '<span class="pill ' + mine[i] + '">' + SHORT[mine[i]] + "</span>" +
+          '<span class="pill ' + th[i] + '">' + SHORT[th[i]] + "</span>" +
+          '<span class="t">' + IT[i].t + "</span></div>";
+      }).join("");
+      Array.prototype.forEach.call(el("disp").querySelectorAll(".dr"), function (r) {
+        r.onclick = function () { S.sel = +r.dataset.i; render(); };
+      });
+      if (S.sel !== null && dis.indexOf(S.sel) >= 0) {
+        var x = IT[S.sel];
+        el("dwhy").hidden = false;
+        el("dwhy").innerHTML = "<b>&ldquo;" + x.t + "&rdquo;</b><br>" + x.why +
+          "<br><span style='color:var(--faint)'>Coded facts: recommends&nbsp;" +
+          x.facts.verdict + " · both praise and criticism&nbsp;" + (x.facts.both ? "yes" : "no") +
+          " · verdict clear&nbsp;" + (x.facts.clear ? "yes" : "no") + "</span>";
+      } else el("dwhy").hidden = true;
+    }
+
+    // what to do about it
+    var mixed = perClass(mine, th, "mixed");
+    if (S.book === "vague") {
+      el("verdict").innerHTML = dis.length
+        ? "You disagreed on <b>" + dis.length + " of " + N + "</b>, and none of it is carelessness: " +
+          "every one is the same boundary the codebook never drew. " +
+          (mixed.either ? "Of the " + mixed.either + " items one of you called <b>mixed</b>, you " +
+            "both did on " + mixed.both + ". " : "") +
+          "<b>This is the point where a real project stops and writes a decision rule.</b> Add one " +
+          "above: " + co.name + " recodes to follow it, and so should you."
+        : "You agreed on all " + N + ". That is a comfortable result and a fragile one — the rule " +
+          "still does not say what to do with a review that praises one thing and criticises " +
+          "another, so the next coder may not read it as the two of you did. <b>Add a decision " +
+          "rule above</b> and watch " + co.name + "'s coding move.";
+    } else {
+      el("verdict").innerHTML = "<b>" + co.name + " has recoded under the rule.</b> " +
+        (dis.length
+          ? "You have not — the " + dis.length + " amber row" + (dis.length > 1 ? "s are" : " is") +
+            " yours to code again, applying the rule as written. "
+          : "You and she now agree completely. ") +
+        "Note what the rule did and did not do: it did not make the coding <i>true</i>, it made it " +
+        "<b>explicit</b>. The other rule would have produced a different gold standard from the " +
+        "same twenty reviews, and every model you later validate against it inherits that choice.";
+    }
+  }
+
+  /* --- the what-if ------------------------------------------------------------- */
+  function drawWhatIf() {
+    var po = S.po / 100, pi = S.pi / 100;
+    var pe = pi * pi + (1 - pi) * (1 - pi);
+    var k = pe >= 1 ? 0 : (po - pe) / (1 - pe);
+    el("v-po").textContent = S.po + "%";
+    el("v-pi").textContent = S.pi + "%";
+    var col = k < 0.4 ? "var(--neg)" : k < 0.67 ? "var(--warn)" : "var(--accent)";
+    el("kmath").innerHTML =
+      "p<sub>o</sub> = <b>" + po.toFixed(2) + "</b>   observed agreement<br>" +
+      "p<sub>e</sub> = " + pi.toFixed(2) + "² + " + (1 - pi).toFixed(2) + "² = <b>" +
+      pe.toFixed(2) + "</b>   expected by chance<br><br>" +
+      "κ = (" + po.toFixed(2) + " − " + pe.toFixed(2) + ") / (1 − " + pe.toFixed(2) + ") = " +
+      '<span class="kbig" style="color:' + col + '">' + k.toFixed(2) + "</span>";
+    el("whatifnote").innerHTML = k < 0.4
+      ? "<b>" + S.po + "% agreement, κ = " + k.toFixed(2) + ".</b> When " + S.pi + "% of items " +
+        "belong to one category, two coders who never read a word and always guessed the common " +
+        "answer would already agree " + Math.round(pe * 100) + "% of the time. Yours beat that by " +
+        "very little, so almost none of the agreement is evidence they were reading the same " +
+        "instrument. <b>This is the number to report, and the reason to report it.</b>"
+      : "At a " + S.pi + "% base rate, guessing alone gets you " + Math.round(pe * 100) +
+        "% agreement. Push the majority category towards 95% and see what " + S.po +
+        "% agreement is really worth.";
+  }
+
+  function render() {
+    drawBook(); drawItems();
+    el("part2").hidden = !S.revealed;
+    el("part3").hidden = !S.revealed;
+    if (S.revealed) { drawResults(); drawWhatIf(); }
+    placeTips(); fit();
+  }
+
+  el("reveal").onclick = function () {
+    S.revealed = true;
+    S.po = Math.round(agree(S.mine, theirs()) * 100);
+    el("po").value = S.po;
+    render();
+  };
+  el("po").oninput = function () { S.po = +this.value; drawWhatIf(); };
+  el("pi").oninput = function () { S.pi = +this.value; drawWhatIf(); };
+
+  function placeTips() {
+    Array.prototype.forEach.call(document.querySelectorAll(".i"), function (b) {
+      var r = b.getBoundingClientRect();
+      b.classList.toggle("flip", r.left + 242 > document.documentElement.clientWidth);
+    });
+  }
+  function fit() {
+    try { var f = window.frameElement; if (f) f.style.height = (document.body.scrollHeight + 4) + "px"; }
+    catch (e) { /* cross-origin: keep the declared height */ }
+  }
+  var det = document.querySelector(".src");
+  if (det) det.addEventListener("toggle", fit);
+  window.addEventListener("resize", function () { placeTips(); fit(); });
+
+  render();
+})();
+</script>
+</body>
+</html>

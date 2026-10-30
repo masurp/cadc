@@ -1,0 +1,262 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Two coders, twenty reviews</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&display=swap">
+<style>
+  /* ==========================================================================
+     Two coders, twenty reviews: a week 2 lecture explainer on agreement and
+     chance.
+
+     The twenty reviews and both coders are the Playground's "Two coders, one
+     codebook" (explainers/coding/data.js): coder A applies the broad reading
+     of the codebook (praise AND criticism = mixed), coder B the narrow one
+     (mixed only when the verdict is genuinely unclear). Thirteen of twenty
+     agree. A's label counts are 7 / 6 / 7, B's 11 / 9 / 0.
+
+     Five screens, one click each:
+       1  both rows of labels
+       2  the thirteen agreements tick: 65 %
+       3  chance, shown instead of computed: coder B keeps the same labels in
+          a shuffled order, and some reviews still match. Averaged over many
+          shuffles that is 6.55 of 20 = 33 %; the by-hand sum (7 x 11 + 6 x 9
+          + 7 x 0) / 20 sits underneath as one line
+       4  kappa on a ruler from chance (6.55) to perfect (20): the coders got
+          6.45 of the 13.45 there was to get = .48
+       5  a hundred items, ninety negative for both coders, ten positive each,
+          one shared: 82 agree, and shuffled labels agree on 82 as well, so
+          kappa is 0
+
+     Text is measured (getComputedTextLength) and wrapped, never placed at
+     fixed offsets. Click / Enter / space advances; #N opens at screen N.
+     No caption band: the narration is in the slide's speaker notes.
+     ========================================================================== */
+  :root{
+    --ink:#1a1a17; --ink-2:#3a3a34; --ink-3:#5a5a52; --muted:#6f6f66; --faint:#9a9a90;
+    --hair:#e7e3d9; --border:#d6d1c3; --surface:#ffffff; --strip:#f2f0ea;
+    --accent:#2f7f9e; --accent-tint:#e1eff5; --accent-ink:#1d5a74;
+    --pos:#2678b0; --pos-tint:#e8f1f8;
+    --neg:#b84a27; --neg-tint:#fbeee8;
+    --mid:#8b8a86; --mid-tint:#eeedea;
+    --font:"Space Grotesk", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0; height:100%}
+  body{font-family:var(--font); background:transparent; color:var(--ink);
+       display:flex; align-items:center; justify-content:center;
+       overflow:hidden; cursor:pointer; -webkit-tap-highlight-color:transparent}
+  svg{width:100%; height:100%; display:block}
+  text{font-family:var(--font); fill:var(--ink)}
+  #stage{animation:in .35s ease}
+  @keyframes in{from{opacity:0}to{opacity:1}}
+  .lab{font-size:12px; font-weight:700; letter-spacing:.09em; fill:var(--muted)}
+  .idx{font-size:10px; fill:var(--faint); text-anchor:middle}
+  .chip rect{rx:5; ry:5; stroke-width:1.4}
+  .chip text{font-size:14px; font-weight:700; text-anchor:middle}
+  .chip.pos rect{fill:var(--pos-tint); stroke:var(--pos)} .chip.pos text{fill:var(--pos)}
+  .chip.neg rect{fill:var(--neg-tint); stroke:var(--neg)} .chip.neg text{fill:var(--neg)}
+  .chip.mixed rect{fill:var(--mid-tint); stroke:var(--mid)} .chip.mixed text{fill:var(--ink-2)}
+  .col.dim{opacity:.3}
+  .tick{font-size:14px; font-weight:700; fill:var(--accent-ink); text-anchor:middle}
+  .cross{font-size:14px; font-weight:700; fill:var(--neg); text-anchor:middle}
+  .big{font-size:40px; font-weight:700; fill:var(--ink)}
+  .big.acc{fill:var(--accent-ink)}
+  .sm{font-size:15px; fill:var(--ink-2)}
+  .sm.b{font-weight:700; fill:var(--ink)}
+  .sm.a{font-weight:700; fill:var(--accent-ink)}
+  .cap{font-size:13px; fill:var(--ink-3)}
+  .legend{font-size:13px; fill:var(--ink-3)}
+  .rowlab{font-size:12px; font-weight:700; letter-spacing:.09em; fill:var(--muted)}
+  /* ruler */
+  .seg.chance{fill:var(--mid-tint); stroke:var(--mid)}
+  .seg.earned{fill:var(--accent); stroke:var(--accent)}
+  .seg.missing{fill:none; stroke:var(--border); stroke-dasharray:4 3}
+  .brk{stroke:var(--ink-3); stroke-width:1.4; fill:none}
+  .mark{stroke:var(--ink); stroke-width:2}
+  .rn{font-size:20px; font-weight:700; text-anchor:middle; fill:var(--ink)}
+  .rl{font-size:13px; text-anchor:middle; fill:var(--ink-3)}
+  .kap{font-size:34px; font-weight:700; fill:var(--ink)}
+  .kap tspan.k{fill:var(--accent-ink)}
+  .step{font-size:11px; fill:#9c978c; text-anchor:end}
+</style>
+</head>
+<body>
+<svg id="chart" viewBox="0 0 1000 430" preserveAspectRatio="xMidYMid meet" role="img"
+     aria-label="Two coders' labels on twenty film reviews: thirteen agree, sixty-five percent. If coder B's labels are shuffled, about thirty-three percent still match by luck. Cohen's kappa is how far the coders got from that chance level to perfect agreement: point four eight. With ninety negative items out of a hundred, eighty-two percent agreement is exactly what shuffled labels give, so kappa is zero.">
+  <g id="stage"></g>
+  <g id="hud"></g>
+</svg>
+<noscript><p style="max-width:34em;margin:2em;font-family:sans-serif">Needs JavaScript: two coders'
+labels on twenty reviews, raw agreement against Cohen's kappa.</p></noscript>
+
+<script>
+(function () {
+  "use strict";
+  var NS = "http://www.w3.org/2000/svg";
+  function el(t, a) { var e = document.createElementNS(NS, t); for (var k in a) if (a[k] != null) e.setAttribute(k, a[k]); return e; }
+  function txt(p, s, a) { var t = el("text", a || {}); t.textContent = s; p.appendChild(t); return t; }
+  function g(p, a) { var e = el("g", a || {}); p.appendChild(e); return e; }
+  function clear(n) { while (n.firstChild) n.removeChild(n.firstChild); }
+
+  var stage = document.getElementById("stage"), gHud = document.getElementById("hud");
+
+  /* wrap a paragraph to maxW, measured in the SVG's own units; returns the y after it */
+  function wrap(p, str, x, y, maxW, cls, lh) {
+    var t = el("text", { x: x, y: y, "class": cls }); p.appendChild(t);
+    var words = str.split(" "), line = "", n = 0, sp = null;
+    function fresh() { sp = el("tspan", { x: x, dy: n ? lh : 0 }); t.appendChild(sp); n++; }
+    fresh();
+    words.forEach(function (w) {
+      var test = line ? line + " " + w : w;
+      sp.textContent = test;
+      if (line && sp.getComputedTextLength() > maxW) { sp.textContent = line; fresh(); line = w; sp.textContent = w; }
+      else line = test;
+    });
+    return y + (n - 1) * lh + lh;
+  }
+
+  /* ---- data: coder A = broad codebook, coder B = narrow ------------------- */
+  var A = ["pos","pos","pos","neg","neg","mixed","mixed","pos","pos","neg","neg","mixed","mixed","mixed","pos","pos","neg","neg","mixed","mixed"];
+  var B = ["pos","pos","pos","neg","neg","pos","neg","pos","pos","neg","neg","pos","pos","neg","pos","pos","neg","neg","pos","neg"];
+  var CAT = { pos: "+", neg: "−", mixed: "±" };
+  var N = 20;
+  function count(a, b) { var n = 0; a.forEach(function (x, i) { if (x === b[i]) n++; }); return n; }
+  function freq(v, k) { return v.filter(function (x) { return x === k; }).length; }
+  var agree = count(A, B);                                   /* 13 */
+  var chance = ["pos", "neg", "mixed"].reduce(function (s, k) { return s + freq(A, k) * freq(B, k) / N; }, 0);   /* 6.55 */
+  function fmt(v) { return String(Math.round(v * 100) / 100); }
+  function pct(v) { return Math.round(v * 100) + "%"; }
+
+  /* one shuffle of B, found deterministically: the first seed whose shuffle matches 7 times */
+  function shuffled(seed) {
+    var a = B.slice(), r = seed;
+    function rnd() { r = (r * 1664525 + 1013904223) % 4294967296; return r / 4294967296; }
+    for (var i = a.length - 1; i > 0; i--) { var j = Math.floor(rnd() * (i + 1)), t = a[i]; a[i] = a[j]; a[j] = t; }
+    return a;
+  }
+  var SH = null;
+  for (var sd = 1; sd < 500 && !SH; sd++) { var c = shuffled(sd); if (count(A, c) === 7) SH = c; }
+  var luck = count(A, SH);
+
+  /* ---- pieces -------------------------------------------------------------- */
+  function chip(p, cat, x, y, w, h, faint) {
+    var k = g(p, { "class": "chip " + cat, opacity: faint ? 0.3 : null });
+    k.appendChild(el("rect", { x: x, y: y, width: w, height: h }));
+    txt(k, CAT[cat], { x: x + w / 2, y: y + h / 2 + 5 });
+  }
+  var X0 = 96, DX = 30, CW = 24, CH = 26;
+  function row(p, label, v, y, o) {
+    o = o || {};
+    txt(p, label, { x: 20, y: y + 18, "class": "rowlab" });
+    v.forEach(function (c, j) {
+      var x = X0 + j * DX, k = g(p, { opacity: o.faint ? 0.3 : null });
+      chip(k, c, x, y, CW, CH);
+      if (o.marks) {
+        var same = o.marks[j] === c;
+        txt(p, same ? "✓" : "✕", { x: x + CW / 2, y: y + CH + 22, "class": same ? "tick" : "cross" });
+      }
+    });
+  }
+  function header(p) {
+    for (var j = 0; j < N; j++) txt(p, j + 1, { x: X0 + j * DX + CW / 2, y: 60, "class": "idx" });
+  }
+  function legend(p, ly) {
+    var lx = 96;
+    [["pos", "positive"], ["neg", "negative"], ["mixed", "mixed: praise and criticism in one review"]].forEach(function (c) {
+      chip(p, c[0], lx, ly - 18, 24, 24);
+      var t = txt(p, c[1], { x: lx + 32, y: ly, "class": "legend" });
+      lx += 32 + t.getComputedTextLength() + 26;
+    });
+  }
+  function figure(p, x, y, label, value, note, acc) {
+    txt(p, label, { x: x, y: y, "class": "lab" });
+    txt(p, value, { x: x, y: y + 44, "class": "big" + (acc ? " acc" : "") });
+    if (note) txt(p, note, { x: x, y: y + 70, "class": "sm" });
+  }
+
+  /* a ruler: the part chance gives, the part the coders earned, the part still missing */
+  function ruler(p, o) {
+    var x0 = o.x0, x1 = o.x1, y = o.y, h = 30, T = o.total;
+    function X(v) { return x0 + (x1 - x0) * v / T; }
+    var xc = X(o.chance), xo = X(o.obs);
+    p.appendChild(el("rect", { "class": "seg chance", x: x0, y: y, width: xc - x0, height: h }));
+    if (xo > xc) p.appendChild(el("rect", { "class": "seg earned", x: xc, y: y, width: xo - xc, height: h }));
+    p.appendChild(el("rect", { "class": "seg missing", x: xo, y: y, width: x1 - xo, height: h }));
+    function bracket(a, b, by, label, anchor) {
+      p.appendChild(el("path", { "class": "brk", d: "M" + a + " " + (by + 7) + "V" + by + "H" + b + "V" + (by + 7) }));
+      txt(p, label, { x: anchor === "end" ? b : (a + b) / 2, y: by - 8, "class": "sm", "text-anchor": anchor || "middle" });
+    }
+    bracket(xc, x1, y - 44, o.possible, o.possibleAnchor);
+    if (o.achieved) bracket(xc, xo, y - 14, o.achieved);
+    function tick(x, num, name, anchor) {
+      p.appendChild(el("line", { "class": "mark", x1: x, x2: x, y1: y - 4, y2: y + h + 4 }));
+      txt(p, num, { x: x, y: y + h + 28, "class": "rn", "text-anchor": anchor || "middle" });
+      if (name) txt(p, name, { x: x, y: y + h + 46, "class": "rl", "text-anchor": anchor || "middle" });
+    }
+    tick(x0, "0", "none", "start");
+    if (o.same) tick(xc, fmt(o.chance), "chance = observed");
+    else { tick(xc, fmt(o.chance), "chance"); tick(xo, fmt(o.obs), "observed"); }
+    tick(x1, String(T), "perfect", "end");
+  }
+  function kappaLine(p, y, got, room) {
+    var kt = txt(p, "", { x: 60, y: y, "class": "kap" });
+    var a = el("tspan", {}); a.textContent = "κ = " + fmt(got) + " ÷ " + fmt(room) + " = "; kt.appendChild(a);
+    var b = el("tspan", { "class": "k" }); b.textContent = (got / room).toFixed(2); kt.appendChild(b);
+  }
+
+  /* ---- the five screens ------------------------------------------------------ */
+  var MAX = 4;
+  function screen(s) {
+    var p = stage;
+    clear(p);
+    if (s <= 2) {
+      header(p);
+      row(p, "CODER A", A, 70);
+      row(p, "CODER B", B, 124, { marks: s >= 1 ? A : null, faint: s === 2 });
+      if (s === 0) legend(p, 232);
+      if (s === 1) figure(p, 20, 262, "AGREEMENT", pct(agree / N), agree + " of " + N + " reviews match");
+      if (s === 2) {
+        row(p, "SHUFFLED", SH, 208, { marks: A });
+        figure(p, 20, 300, "AGREEMENT", pct(agree / N), agree + " of " + N + " reviews match");
+        figure(p, 330, 300, "BY LUCK", pct(chance / N), "same labels, random order: " + luck + " match here, " + fmt(chance) + " on average");
+        txt(p, "by hand: (7 × 11 + 6 × 9 + 7 × 0) ÷ 20 = " + fmt(chance), { x: 330, y: 402, "class": "cap" });
+      }
+    }
+    if (s === 3) {
+      txt(p, "AGREEMENT, IN REVIEWS OUT OF 20", { x: 60, y: 28, "class": "lab" });
+      ruler(p, { x0: 60, x1: 940, y: 150, total: N, chance: chance, obs: agree,
+                 possible: "possible gain over chance: 20 − " + fmt(chance) + " = " + fmt(N - chance),
+                 achieved: "gain achieved: " + agree + " − " + fmt(chance) + " = " + fmt(agree - chance) });
+      txt(p, "COHEN'S κ", { x: 60, y: 276, "class": "lab" });
+      kappaLine(p, 322, agree - chance, N - chance);
+      wrap(p, "How far the coders got from chance (0) to perfect agreement (1).", 60, 356, 860, "sm", 21);
+    }
+    if (s === 4) {
+      var agree2 = 82, chance2 = 82;
+      txt(p, "A HUNDRED ITEMS, 90 NEGATIVE FOR BOTH CODERS", { x: 60, y: 28, "class": "lab" });
+      wrap(p, "Each coder labels ten items positive, and they share one. They agree on 82 items. Shuffled labels agree on 82 on average.", 60, 62, 860, "sm", 21);
+      ruler(p, { x0: 60, x1: 940, y: 190, total: 100, chance: chance2, obs: agree2, same: true,
+                 possible: "possible gain over chance: 100 − 82 = 18", possibleAnchor: "end" });
+      kappaLine(p, 340, agree2 - chance2, 100 - chance2);
+      wrap(p, "More raw agreement than the twenty reviews (82% against 65%), and nothing measured.", 60, 376, 860, "sm", 21);
+    }
+    clear(gHud);
+    txt(gHud, (s + 1) + " / " + (MAX + 1), { x: 980, y: 422, "class": "step" });
+  }
+
+  var state = Math.max(0, Math.min(MAX, (parseInt((location.hash || "").slice(1), 10) || 1) - 1));
+  function render() { screen(state); }
+  function advance() { if (state >= MAX) return; state += 1; render(); }
+  render();
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(render);
+  window.addEventListener("hashchange", function () {
+    state = Math.max(0, Math.min(MAX, (parseInt((location.hash || "").slice(1), 10) || 1) - 1)); render();
+  });
+  document.body.addEventListener("click", advance);
+  document.body.addEventListener("keydown", function (e) { if (e.key === "Enter" || e.key === " " || e.key === "ArrowRight") { e.preventDefault(); advance(); } });
+})();
+</script>
+</body>
+</html>
