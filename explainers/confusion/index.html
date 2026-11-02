@@ -44,7 +44,6 @@
   text{font-family:var(--font); fill:var(--ink)}
   .rv{transition:transform .7s cubic-bezier(.4,0,.2,1)}
   .rv rect.bg{fill:var(--surface); stroke:var(--border); stroke-width:1.1; rx:5; ry:5}
-  .rv rect.bar{width:4}
   .rv rect.bar.pos{fill:var(--pos)} .rv rect.bar.neg{fill:var(--neg)}
   .rv text{font-size:9.2px; fill:var(--ink-2)}
   .rv .v{transition:opacity .4s ease}
@@ -53,7 +52,8 @@
   .hdr{font-size:10.5px; font-weight:700; letter-spacing:.09em; fill:var(--muted)}
   .cell{fill:var(--strip); stroke:#faf8f4; stroke-width:3; rx:8; ry:8; transition:fill .4s ease}
   .cell.right{fill:#eef4f8} .cell.wrong{fill:#fbf1ec}
-  .cell.lit{fill:var(--accent-tint); stroke:var(--accent); stroke-width:2}
+  .cell.lit{fill:var(--accent-tint)}
+  .litbox{fill:none; stroke:var(--accent); stroke-width:2.5; rx:8; ry:8}
   .cname{font-size:10.5px; font-weight:700; letter-spacing:.06em; fill:var(--ink-3)}
   .ccount{font-size:26px; font-weight:700; fill:var(--ink); text-anchor:end}
   .axis{font-size:11.5px; font-weight:700; letter-spacing:.06em; fill:var(--muted); text-anchor:middle}
@@ -73,6 +73,7 @@
      aria-label="Twenty film reviews with a human label and a word list's verdict sort themselves into the four cells of a confusion matrix; then accuracy, precision, recall and F1 each light the cells they use.">
   <g id="matrix" class="fade hid"></g>
   <g id="reviews"></g>
+  <g id="lit"></g>
   <g id="heads"></g>
   <g id="metric" class="m fade hid"></g>
   <g id="hud"></g>
@@ -91,7 +92,7 @@ sorting into a confusion matrix, and the four metrics computed from it.</p></nos
 
   var gM = document.getElementById("matrix"), gR = document.getElementById("reviews"),
       gH = document.getElementById("heads"), gMet = document.getElementById("metric"),
-      gHud = document.getElementById("hud");
+      gHud = document.getElementById("hud"), gLit = document.getElementById("lit");
 
   /* the declared word list — the instrument */
   var POS = ["gorgeous","charming","funny","humour","works","brilliant","superb","captivating","loved","worth","better","beautiful","good","like"];
@@ -126,7 +127,7 @@ sorting into a confusion matrix, and the four metrics computed from it.</p></nos
     var cell = r[1] === "pos" ? (v === "pos" ? "tp" : "fn") : (v === "pos" ? "fp" : "tn");
     var k = g(gR, { "class": "rv" });
     k.appendChild(el("rect", { "class": "bg", x: 0, y: 0, width: RW, height: RH }));
-    k.appendChild(el("rect", { "class": "bar " + r[1], x: 0, y: 0, height: RH, rx: 2 }));
+    k.appendChild(el("rect", { "class": "bar " + r[1], x: 0, y: 0, width: 5, height: RH, rx: 2 }));
     var label = txt(k, r[0], { x: 9, y: 19 });
     var vg = g(k, { "class": "v " + v + " hid" });
     vg.appendChild(el("circle", { cx: RW - 8, cy: 8 }));
@@ -207,7 +208,7 @@ sorting into a confusion matrix, and the four metrics computed from it.</p></nos
     var num = m.f[0].filter(function (p) { return ABBR[p]; }).map(function (p) { return counts[p]; });
     var den = m.f[1].filter(function (p) { return ABBR[p]; }).map(function (p) { return counts[p]; });
     var numS = (m.k === "F1" ? "2 · " : "") + num.join(" + "), denS = (m.k === "F1" ? "2 · " : "") + den.join(" + ");
-    txt(gMet, "= " + numS + " / " + denS, { x: x, y: y + 120, "class": "s" });
+    txt(gMet, "= " + numS + " / " + (den.length > 1 ? "(" + denS + ")" : denS), { x: x, y: y + 120, "class": "s" });
     txt(gMet, "= " + m.val.toFixed(2), { x: x, y: y + 165, "class": "r" });
     var sub = txt(gMet, "", { x: x, y: y + 200, "class": "s" });
     /* wrap the sentence at ~34 chars */
@@ -238,6 +239,12 @@ sorting into a confusion matrix, and the four metrics computed from it.</p></nos
       cellNodes[k].setAttribute("class", base + (m && m.lit.indexOf(k) >= 0 ? " lit" : ""));
       cellNames[k].setAttribute("class", "cname fade" + (state >= 3 ? "" : " hid"));
       cellCounts[k].setAttribute("class", "ccount fade" + (state >= 3 ? "" : " hid"));
+    });
+    /* the cells a metric uses get their border on top of everything, so no neighbour covers it */
+    clear(gLit);
+    if (m) m.lit.forEach(function (k) {
+      var c = cells[k];
+      gLit.appendChild(el("rect", { "class": "litbox", x: MX + c.c * CW + 1.5, y: MY + c.r * CH + 1.5, width: CW - 3, height: CH - 3 }));
     });
     if (m) drawMetric(m);
     gMet.setAttribute("class", "m fade" + (m ? "" : " hid"));

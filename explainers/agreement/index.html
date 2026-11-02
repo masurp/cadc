@@ -79,6 +79,8 @@
   .rl{font-size:13px; text-anchor:middle; fill:var(--ink-3)}
   .kap{font-size:34px; font-weight:700; fill:var(--ink)}
   .kap tspan.k{fill:var(--accent-ink)}
+  .tile.pos{fill:var(--pos)} .tile.neg{fill:var(--neg-tint); stroke:var(--neg); stroke-width:.6}
+  .match.yes{fill:var(--accent)} .match.no{fill:var(--neg)}
   .step{font-size:11px; fill:#9c978c; text-anchor:end}
 </style>
 </head>
@@ -130,14 +132,21 @@ labels on twenty reviews, raw agreement against Cohen's kappa.</p></noscript>
   function pct(v) { return Math.round(v * 100) + "%"; }
 
   /* one shuffle of B, found deterministically: the first seed whose shuffle matches 7 times */
-  function shuffled(seed) {
-    var a = B.slice(), r = seed;
+  function shuffleArr(src, seed) {
+    var a = src.slice(), r = seed;
     function rnd() { r = (r * 1664525 + 1013904223) % 4294967296; return r / 4294967296; }
     for (var i = a.length - 1; i > 0; i--) { var j = Math.floor(rnd() * (i + 1)), t = a[i]; a[i] = a[j]; a[j] = t; }
     return a;
   }
+  function shuffled(seed) { return shuffleArr(B, seed); }
   var SH = null;
   for (var sd = 1; sd < 500 && !SH; sd++) { var c = shuffled(sd); if (count(A, c) === 7) SH = c; }
+
+  /* the hundred-item case: ten positives each, one shared; everything else negative */
+  var A2 = [], B2 = [], PA = [3, 12, 21, 30, 39, 48, 57, 66, 75, 84], PB = [8, 17, 26, 30, 44, 53, 62, 71, 80, 93];
+  for (var u = 0; u < 100; u++) { A2.push(PA.indexOf(u) >= 0 ? "pos" : "neg"); B2.push(PB.indexOf(u) >= 0 ? "pos" : "neg"); }
+  var SH2 = null;
+  for (var sd2 = 1; sd2 < 2000 && !SH2; sd2++) { var c2 = shuffleArr(B2, sd2); if (count(A2, c2) === 82) SH2 = c2; }
   var luck = count(A, SH);
 
   /* ---- pieces -------------------------------------------------------------- */
@@ -195,10 +204,11 @@ labels on twenty reviews, raw agreement against Cohen's kappa.</p></noscript>
       txt(p, num, { x: x, y: y + h + 28, "class": "rn", "text-anchor": anchor || "middle" });
       if (name) txt(p, name, { x: x, y: y + h + 46, "class": "rl", "text-anchor": anchor || "middle" });
     }
-    tick(x0, "0", "none", "start");
+    var nm = o.names || { zero: "none", chance: "chance", obs: "observed", top: "perfect" };
+    tick(x0, "0", nm.zero, "start");
     if (o.same) tick(xc, fmt(o.chance), "chance = observed");
-    else { tick(xc, fmt(o.chance), "chance"); tick(xo, fmt(o.obs), "observed"); }
-    tick(x1, String(T), "perfect", "end");
+    else { tick(xc, fmt(o.chance), nm.chance); tick(xo, fmt(o.obs), nm.obs); }
+    tick(x1, String(T), nm.top, "end");
   }
   function kappaLine(p, y, got, room) {
     var kt = txt(p, "", { x: 60, y: y, "class": "kap" });
@@ -227,6 +237,7 @@ labels on twenty reviews, raw agreement against Cohen's kappa.</p></noscript>
     if (s === 3) {
       txt(p, "AGREEMENT, IN REVIEWS OUT OF 20", { x: 60, y: 28, "class": "lab" });
       ruler(p, { x0: 60, x1: 940, y: 150, total: N, chance: chance, obs: agree,
+                 names: { zero: "none match", chance: "by luck (screen 3)", obs: "the " + agree + " ticks (screen 2)", top: "all " + N + " match" },
                  possible: "possible gain over chance: 20 − " + fmt(chance) + " = " + fmt(N - chance),
                  achieved: "gain achieved: " + agree + " − " + fmt(chance) + " = " + fmt(agree - chance) });
       txt(p, "COHEN'S κ", { x: 60, y: 276, "class": "lab" });
@@ -234,13 +245,31 @@ labels on twenty reviews, raw agreement against Cohen's kappa.</p></noscript>
       wrap(p, "How far the coders got from chance (0) to perfect agreement (1).", 60, 356, 860, "sm", 21);
     }
     if (s === 4) {
-      var agree2 = 82, chance2 = 82;
-      txt(p, "A HUNDRED ITEMS, 90 NEGATIVE FOR BOTH CODERS", { x: 60, y: 28, "class": "lab" });
-      wrap(p, "Each coder labels ten items positive, and they share one. They agree on 82 items. Shuffled labels agree on 82 on average.", 60, 62, 860, "sm", 21);
-      ruler(p, { x0: 60, x1: 940, y: 190, total: 100, chance: chance2, obs: agree2, same: true,
-                 possible: "possible gain over chance: 100 − 82 = 18", possibleAnchor: "end" });
-      kappaLine(p, 340, agree2 - chance2, 100 - chance2);
-      wrap(p, "More raw agreement than the twenty reviews (82% against 65%), and nothing measured.", 60, 376, 860, "sm", 21);
+      /* three rows of a hundred tiles; a strip under B and under shuffled B marks the matches with coder A */
+      var X2 = 96, W2 = 8.6;
+      function tiles(label, v, y, strip) {
+        txt(p, label, { x: 20, y: y + 16, "class": "rowlab" });
+        v.forEach(function (c, j) {
+          p.appendChild(el("rect", { "class": "tile " + c, x: X2 + j * W2, y: y, width: W2 - 1.2, height: 22 }));
+          if (strip) p.appendChild(el("rect", { "class": "match " + (strip[j] === c ? "yes" : "no"), x: X2 + j * W2, y: y + 28, width: W2 - 1.2, height: 7 }));
+        });
+      }
+      tiles("CODER A", A2, 40);
+      tiles("CODER B", B2, 94, A2);
+      tiles("SHUFFLED", SH2, 164, A2);
+      var lg = 232;
+      p.appendChild(el("rect", { "class": "tile pos", x: X2, y: lg - 12, width: 14, height: 14 }));
+      txt(p, "positive", { x: X2 + 20, y: lg, "class": "legend" });
+      p.appendChild(el("rect", { "class": "tile neg", x: X2 + 100, y: lg - 12, width: 14, height: 14 }));
+      txt(p, "negative", { x: X2 + 120, y: lg, "class": "legend" });
+      p.appendChild(el("rect", { "class": "match yes", x: X2 + 210, y: lg - 10, width: 14, height: 7 }));
+      txt(p, "same label as coder A", { x: X2 + 230, y: lg, "class": "legend" });
+      p.appendChild(el("rect", { "class": "match no", x: X2 + 410, y: lg - 10, width: 14, height: 7 }));
+      txt(p, "different", { x: X2 + 430, y: lg, "class": "legend" });
+      figure(p, 20, 282, "AGREEMENT", "82%", "82 of 100 match");
+      figure(p, 330, 282, "BY LUCK", "82%", "the shuffled row matches on 82");
+      figure(p, 690, 282, "COHEN'S κ", "0.00", "no better than luck", true);
+      wrap(p, "Nearly every item is negative, so luck alone already matches on most of them.", 20, 394, 900, "cap", 18);
     }
     clear(gHud);
     txt(gHud, (s + 1) + " / " + (MAX + 1), { x: 980, y: 422, "class": "step" });

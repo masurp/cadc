@@ -100,7 +100,7 @@
     code span.vs { color: #da4453; } /* VerbatimString */
     code span.wa { color: #da4453; } /* Warning */
   </style>
-  <link rel="stylesheet" href="../site_libs/revealjs/dist/theme/quarto-35e274adc21a3bf56222f3ccd7938042.css">
+  <link rel="stylesheet" href="../site_libs/revealjs/dist/theme/quarto-adcfead8d0bef5f85aa5c503482f1c87.css">
   <link href="../site_libs/revealjs/plugin/quarto-line-highlight/line-highlight.css" rel="stylesheet">
   <link href="../site_libs/revealjs/plugin/reveal-menu/menu.css" rel="stylesheet">
   <link href="../site_libs/revealjs/plugin/reveal-menu/quarto-menu.css" rel="stylesheet">
@@ -239,10 +239,10 @@
 <section id="last-week-you-learned-to-count" class="slide level2" data-background-color="#faf8f4">
 <h2>Last week you learned to count</h2>
 <ul>
-<li>A text became a row of the <strong>document–term matrix</strong>: one column per word, a count in every cell, the order of the words gone</li>
-<li>That is a representation, but not yet a measurement: counting itself does not provide a label (e.g., <em>negative</em> or <em>about migration</em>)</li>
+<li>A text became a row of the <strong>document–term matrix</strong>: one column per word, a count in every cell, and importantly: the order of the words gone</li>
+<li>That is a representation, but not yet a classification: counting itself does not provide a label (e.g., <em>negative</em> or <em>migration</em>)</li>
 <li>A measurement or classification adds two things a count lacks: a <strong>claim about meaning</strong>, and a <strong>check</strong> that the claim holds</li>
-<li>This week supplies the oldest way of making the claim, and the general approach of checking it</li>
+<li>This week supplies the “oldest way” of making such a claim, and the general approach of checking it (validation)</li>
 </ul>
 <div class="cadc-take">
 <p>Counting → measuring is the step from step 02 of the pipeline to steps 03 and 04.</p>
@@ -274,12 +274,12 @@
   <div class="cadc-toc__item">
     <div class="cadc-toc__n">I</div>
     <h3>From counting to measuring</h3>
-    <p>Making a corpus countable, and what a count can and cannot say</p>
+    <p>Reminder: How to count words, and what a count can and cannot say</p>
   </div>
   <div class="cadc-toc__item">
     <div class="cadc-toc__n">II</div>
     <h3>Dictionaries</h3>
-    <p>A word list, a counting rule, and the first automated content analysis</p>
+    <p>The first automated classification: a word list and a counting rule</p>
   </div>
   <div class="cadc-toc__item">
     <div class="cadc-toc__n">III</div>
@@ -316,8 +316,8 @@
 <h1>I · From counting to measuring</h1>
 
 </section>
-<section id="a-corpus-to-count" class="slide level2" data-background-color="#faf8f4">
-<h2>A corpus to count</h2>
+<section id="reminder-how-to-count-words-in-a-corpus" class="slide level2" data-background-color="#faf8f4">
+<h2>Reminder: How to count words in a corpus</h2>
 <div class="columns">
 <div class="column" style="width:50%;">
 <div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb1"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a aria-label="1"></a><span class="fu">library</span>(sotu)</span>
@@ -607,6 +607,8 @@
 <div class="columns">
 <div class="column" style="width:46%;">
 <ul>
+<li>Raw counts reward words every speech uses, like <em>government</em> and <em>congress</em></li>
+<li>So counts alone cannot show which words set one president apart</li>
 <li><strong>tf</strong> is the share of a president’s words that a word makes up</li>
 <li><strong>idf</strong> is ln(4 ÷ presidents who use the word): 0 if all four use it, 1.39 if only one does</li>
 <li><strong>tf-idf</strong> is tf × idf: high only for a word that is frequent here and rare elsewhere</li>
@@ -694,6 +696,43 @@
 </div>
 </div>
 </div></div>
+</section>
+<section id="the-vocabulary-follows-the-history" class="slide level2" data-background-color="#faf8f4">
+<h2>The vocabulary follows the history</h2>
+<div class="columns">
+<div class="column" style="width:36%;">
+<ul>
+<li>One row per word, one column per decade of speeches</li>
+<li>The darker the tile, the closer the decade is to the word’s own peak</li>
+<li>The diagonal is the history: treaties, slavery, gold, the Soviets, terrorists, jobs</li>
+</ul>
+<div class="cadc-take">
+<p>Counting alone already shows what each era talked about.</p>
+</div>
+</div><div class="column" style="width:64%;">
+<div class="cell">
+<div class="cell-output-display">
+<div>
+<figure>
+<p><img data-src="02_dictionaries_files/figure-revealjs/plot-vocabulary-1.png" width="691"></p>
+</figure>
+</div>
+</div>
+</div>
+</div></div>
+<aside class="notes">
+<p>Each row is the share of a decade’s words that one word makes up, scaled to the word’s own highest decade, so a dark tile means “this word at its most frequent”. The words were picked by hand, because they are easy to place in history; the weighting from the previous slides would find the same kind of words automatically. Nothing here is interpreted yet: the plot says what each era talked about, not what it thought.</p>
+<style type="text/css">
+        span.MJX_Assistive_MathML {
+          position:absolute!important;
+          clip: rect(1px, 1px, 1px, 1px);
+          padding: 1px 0 0 0!important;
+          border: 0!important;
+          height: 1px!important;
+          width: 1px!important;
+          overflow: hidden!important;
+          display:block!important;
+      }</style></aside>
 </section>
 <section id="what-a-count-can-tell-you-and-what-it-cannot" class="slide level2" data-background-color="#faf8f4">
 <h2>What a count can tell you, and what it cannot</h2>
@@ -880,9 +919,9 @@
 <span id="cb17-11"><a aria-label="11"></a>  <span class="fu">transmute</span>(year, <span class="at">kwic =</span> <span class="fu">str_c</span>(</span>
 <span id="cb17-12"><a aria-label="12"></a>    before, <span class="st">" ["</span>, word, <span class="st">"] "</span>, after))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <ul>
-<li>Before you put a word on a list, read how it is used</li>
+<li>Before we put a word on a list, we should understand how it is used</li>
 <li>Each hit comes with the three words on either side</li>
-<li>A <strong>keyword-in-context</strong> listing is the cheapest validity check you will ever run</li>
+<li>A <strong>keyword-in-context</strong> listing is the cheapest validity check one can run</li>
 </ul>
 </div><div class="column" style="width:54%;">
 <div class="cadc-label">
@@ -905,8 +944,8 @@
 </div>
 </div></div>
 </section>
-<section id="a-dictionary-is-a-table" class="slide level2" data-background-color="#faf8f4">
-<h2>A dictionary is a table</h2>
+<section id="a-dictionary-is-nothing-but-a-table" class="slide level2" data-background-color="#faf8f4">
+<h2>A dictionary is nothing but a table</h2>
 <div class="columns">
 <div class="column" style="width:50%;">
 <div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb19"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb19-1"><a aria-label="1"></a><span class="fu">library</span>(textdata)</span>
@@ -917,7 +956,7 @@
 <span id="cb19-6"><a aria-label="6"></a>nrc <span class="sc">|&gt;</span> <span class="fu">count</span>(sentiment, <span class="at">sort =</span> <span class="cn">TRUE</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <ul>
 <li>One row per word–category pair; a word can sit in several categories</li>
-<li>The NRC lexicon: about 6,000 English words in eight emotions and two polarities, rated by crowd workers</li>
+<li>The NRC lexicon as example: about 6,000 English words in eight emotions and two polarities, rated by crowd workers</li>
 </ul>
 </div><div class="column" style="width:50%;">
 <div class="cadc-label">
@@ -987,8 +1026,8 @@
 </div>
 </div><div class="column" style="width:45%;">
 <ul>
-<li>The list says <em>nation</em>; the text says <em>nations</em>. No match</li>
-<li>Lemmatising the text first finds a quarter more hits</li>
+<li>The list says <em>nation</em>; the text says <em>nations</em>, this would lead to no match</li>
+<li>Lemmatising the text first finds a quarter more hits!</li>
 <li>Stemming would find fewer: the stem <em>nation</em> matches, but <em>govern</em> does not match <em>government</em> in the list</li>
 <li>Do not remove stop words before a sentiment list: <em>no</em>, <em>not</em>, <em>never</em> are the words you will need in a moment</li>
 </ul>
@@ -1109,7 +1148,7 @@
 <li>Each dot is one speech; the smooth line is a loess fit through them</li>
 </ul>
 <div class="cadc-take">
-<p>Before you believe the trend: what else changed in 230 years? The English language did.</p>
+<p>Before you believe the trend: what else changed in 230 years?</p>
 </div>
 </div><div class="column" style="width:54%;">
 <div class="cell">
@@ -1136,22 +1175,22 @@
           display:block!important;
       }</style></aside>
 </section>
-<section id="what-the-line-does-not-tell-you" class="slide level2" data-background-color="#faf8f4">
-<h2>What the line does not tell you</h2>
+<section id="what-a-dictionary-score-leaves-open" class="slide level2" data-background-color="#faf8f4">
+<h2>What a dictionary score leaves open</h2>
 <ul>
-<li>Whether <em>died</em> in “four people died in Japan” is a negative <strong>opinion</strong> or a negative <strong>fact</strong></li>
+<li>Whether <em>died</em> in “three people died in the crash” is a negative <strong>opinion</strong> or a negative <strong>fact</strong></li>
 <li>Whether the texts with no word on the list are neutral, or just use other words</li>
-<li>Whether “if the masks work, why the 6 feet?” is positive, as the list says, or hostile, as you read it</li>
+<li>Whether “great, another delay” is positive, as the list says, or sarcastic, as you read it</li>
 <li>Whether a list built from product reviews in 2004 or rated in 2011 is about the same thing as your construct</li>
 </ul>
 <div class="cadc-take">
-<p>The line is a number. Whether it measures anything cannot be read off the line.</p>
+<p>A dictionary returns a number for every text. Whether the number measures anything cannot be read off the number.</p>
 </div>
 <div class="cadc-ref">
 <p>Hu, M., &amp; Liu, B. (2004). Mining and summarizing customer reviews. <em>Proceedings of the 10th ACM SIGKDD International Conference on Knowledge Discovery and Data Mining</em>, 168–177. https://doi.org/10.1145/1014052.1014073</p>
 </div>
 <aside class="notes">
-<p>Every bullet is a construct-validity question, and every one is answerable only by comparing the list’s verdicts with a human’s. Break here for five minutes, then open Part III with the gold standard.</p>
+<p>These are general limits of dictionaries, not of one data set. The emotion lines on the last two slides have all four: the lexicon was rated in 2011, many speeches have words it does not know, and <em>anger</em> in a war speech can be a fact about the enemy. Every bullet is a construct-validity question, and every one is answerable only by comparing the list’s verdicts with a human’s. Break here for five minutes, then open Part III with the gold standard.</p>
 <style type="text/css">
         span.MJX_Assistive_MathML {
           position:absolute!important;
@@ -1226,76 +1265,40 @@
 <section id="cohens-κ" class="slide level2" data-background-color="#faf8f4">
 <h2>Cohen’s κ</h2>
 <div class="columns">
-<div class="column" style="width:55%;">
+<div class="column" style="width:48%;">
+<ul>
+<li>Agreement between two coders, corrected for the agreement they would reach by luck</li>
+<li>p<sub>o</sub>: the share of items both coders label the same, here 13 of 20 = .65</li>
+<li>p<sub>e</sub>: the agreement luck gives when each coder keeps their own label shares, here .33</li>
+<li>1 is perfect agreement, 0 is no better than luck</li>
+</ul>
+<div class="cadc-label">
+<p>Formula</p>
+</div>
+<p>κ = (p<sub>o</sub> − p<sub>e</sub>) / (1 − p<sub>e</sub>) = (.65 − .33) / (1 − .33) = .48</p>
+</div><div class="column" style="width:52%;">
 <div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb30"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb30-1"><a aria-label="1"></a>coded <span class="ot">&lt;-</span> <span class="fu">tibble</span>(<span class="at">item =</span> <span class="dv">1</span><span class="sc">:</span><span class="dv">20</span>, coder_a, coder_b)</span>
 <span id="cb30-2"><a aria-label="2"></a></span>
-<span id="cb30-3"><a aria-label="3"></a>p_o <span class="ot">&lt;-</span> <span class="fu">mean</span>(coded<span class="sc">$</span>coder_a <span class="sc">==</span> coded<span class="sc">$</span>coder_b)   <span class="co"># observed</span></span>
-<span id="cb30-4"><a aria-label="4"></a></span>
-<span id="cb30-5"><a aria-label="5"></a>marg_a <span class="ot">&lt;-</span> <span class="fu">prop.table</span>(<span class="fu">table</span>(coded<span class="sc">$</span>coder_a))    <span class="co"># A's label shares</span></span>
-<span id="cb30-6"><a aria-label="6"></a>marg_b <span class="ot">&lt;-</span> <span class="fu">prop.table</span>(<span class="fu">table</span>(coded<span class="sc">$</span>coder_b))    <span class="co"># B's label shares</span></span>
-<span id="cb30-7"><a aria-label="7"></a>p_e <span class="ot">&lt;-</span> <span class="fu">sum</span>(marg_a <span class="sc">*</span> marg_b[<span class="fu">names</span>(marg_a)])    <span class="co"># by chance</span></span>
-<span id="cb30-8"><a aria-label="8"></a></span>
-<span id="cb30-9"><a aria-label="9"></a>kappa <span class="ot">&lt;-</span> (p_o <span class="sc">-</span> p_e) <span class="sc">/</span> (<span class="dv">1</span> <span class="sc">-</span> p_e)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<span id="cb30-3"><a aria-label="3"></a><span class="fu">library</span>(yardstick)        <span class="co"># part of tidymodels</span></span>
+<span id="cb30-4"><a aria-label="4"></a>coded <span class="sc">|&gt;</span> <span class="fu">kap</span>(coder_a, coder_b)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cadc-label">
 <p>Output</p>
 </div>
 <div class="cell">
 <div class="cell-output cell-output-stdout">
-<pre><code>  p_o   p_e kappa 
-0.650 0.328 0.480 </code></pre>
+<pre><code># A tibble: 1 × 3
+  .metric .estimator .estimate
+  &lt;chr&gt;   &lt;chr&gt;          &lt;dbl&gt;
+1 kap     multiclass     0.480</code></pre>
 </div>
 </div>
-</div><div class="column" style="width:45%;">
-<ul>
-<li>κ = (p<sub>o</sub> − p<sub>e</sub>) / (1 − p<sub>e</sub>): the agreement you got, minus the agreement chance alone gives, as a share of the agreement chance leaves to be earned</li>
-<li>1 is perfect; 0 is no better than guessing from the marginals; below 0 is worse than that</li>
-<li>Chance here means each coder reproducing their <strong>own</strong> label frequencies at random</li>
-</ul>
 <div class="cadc-take">
-<p>The same twenty reviews the explainer just showed: 65% agreement is a κ of .48.</p>
+<p>The twenty reviews of the explainer: 65% agreement is a κ of .48.</p>
 </div>
 </div></div>
-<div class="cadc-ref">
-<p>Cohen, J. (1960). A coefficient of agreement for nominal scales. <em>Educational and Psychological Measurement, 20</em>(1), 37–46. https://doi.org/10.1177/001316446002000104</p>
-</div>
-</section>
-<section id="krippendorffs-α" class="slide level2" data-background-color="#faf8f4">
-<h2>Krippendorff’s α</h2>
-<div class="columns">
-<div class="column" style="width:55%;">
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb32"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb32-1"><a aria-label="1"></a>values <span class="ot">&lt;-</span> <span class="fu">c</span>(coded<span class="sc">$</span>coder_a, coded<span class="sc">$</span>coder_b)   <span class="co"># pool all values</span></span>
-<span id="cb32-2"><a aria-label="2"></a>N      <span class="ot">&lt;-</span> <span class="fu">length</span>(values)                    <span class="co"># 40 on 20 units</span></span>
-<span id="cb32-3"><a aria-label="3"></a>n_c    <span class="ot">&lt;-</span> <span class="fu">table</span>(values)                     <span class="co"># uses per label</span></span>
-<span id="cb32-4"><a aria-label="4"></a></span>
-<span id="cb32-5"><a aria-label="5"></a>D_o <span class="ot">&lt;-</span> <span class="fu">mean</span>(coded<span class="sc">$</span>coder_a <span class="sc">!=</span> coded<span class="sc">$</span>coder_b) <span class="co"># observed</span></span>
-<span id="cb32-6"><a aria-label="6"></a>D_e <span class="ot">&lt;-</span> (N<span class="sc">^</span><span class="dv">2</span> <span class="sc">-</span> <span class="fu">sum</span>(n_c<span class="sc">^</span><span class="dv">2</span>)) <span class="sc">/</span> (N <span class="sc">*</span> (N <span class="sc">-</span> <span class="dv">1</span>))   <span class="co"># expected</span></span>
-<span id="cb32-7"><a aria-label="7"></a></span>
-<span id="cb32-8"><a aria-label="8"></a>alpha <span class="ot">&lt;-</span> <span class="dv">1</span> <span class="sc">-</span> D_o <span class="sc">/</span> D_e</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<div class="cadc-label">
-<p>Output</p>
-</div>
-<div class="cell">
-<div class="cell-output cell-output-stdout">
-<pre><code>  D_o   D_e alpha 
-0.350 0.642 0.455 </code></pre>
-</div>
-</div>
-</div><div class="column" style="width:45%;">
-<ul>
-<li>α = 1 − D<sub>o</sub> / D<sub>e</sub>: one minus the disagreement you observed over the disagreement chance would produce</li>
-<li>Chance is built from <strong>all values pooled</strong>, not from each coder’s marginals, so it does not matter who coded what</li>
-<li>Works for any number of coders, with missing codes, and for nominal, ordinal, interval or ratio categories: the metric changes what counts as a disagreement</li>
-</ul>
-<div class="cadc-take">
-<p>.46 against κ’s .48: nearly the same here, and the reason they differ is the seven <em>mixed</em> codes only one coder used.</p>
-</div>
-</div></div>
-<div class="cadc-ref">
-<p>Krippendorff, K. (2011). <em>Computing Krippendorff’s alpha-reliability</em>. University of Pennsylvania. https://repository.upenn.edu/asc_papers/43</p>
-</div>
 <aside class="notes">
-<p>The formula on the slide is the two-coder, no-missing-data case, which is why it fits in five lines; the general version builds a coincidence matrix and the R package <code>irr</code> does that. Worth saying: D<sub>o</sub> is simply the share of units the coders disagreed on. Everything that makes α general is in D<sub>e</sub>.</p>
-<p>Why the two differ: κ asks “how often would A and B agree if each kept their own habits”; α asks “how often would two values drawn from this pile of 40 disagree”. A’s seven <em>mixed</em> codes inflate A’s marginal for κ and are diluted in the pooled pile for α. With one coder never using a category, that gap is the whole story.</p>
+<p>Three steps, in the order of the explainer. p<sub>o</sub> is the plain percent agreement, the thirteen ticks. p<sub>e</sub> is what the shuffle gave: for each label, coder A’s share times coder B’s share, added up over the labels (.35 × .55 + .30 × .45 + .35 × 0 = .33). κ is how far the coders got from .33 towards 1, the ruler.</p>
+<p>In practice nobody computes this by hand: <code>kap()</code> from yardstick (installed with tidymodels) takes the two columns. It treats the first as “truth”, but κ is symmetric, so the order does not matter. Thursday’s lab computes p<sub>e</sub> and κ by hand once, so the formula is not a black box.</p>
 <style type="text/css">
         span.MJX_Assistive_MathML {
           position:absolute!important;
@@ -1307,6 +1310,62 @@
           overflow: hidden!important;
           display:block!important;
       }</style></aside>
+<div class="cadc-ref">
+<p>Cohen, J. (1960). A coefficient of agreement for nominal scales. <em>Educational and Psychological Measurement, 20</em>(1), 37–46. https://doi.org/10.1177/001316446002000104</p>
+</div>
+</section>
+<section id="krippendorffs-α" class="slide level2" data-background-color="#faf8f4">
+<h2>Krippendorff’s α</h2>
+<div class="columns">
+<div class="column" style="width:48%;">
+<ul>
+<li>Disagreement between coders, compared with the disagreement expected by luck</li>
+<li>D<sub>o</sub>: the share of items the coders disagree on, here 7 of 20 = .35</li>
+<li>D<sub>e</sub>: how often two codes drawn at random from all codes pooled differ, here .64</li>
+<li>Works for any number of coders, with missing codes, and for ordinal or interval scales</li>
+</ul>
+<div class="cadc-label">
+<p>Formula</p>
+</div>
+<p>α = 1 − D<sub>o</sub> / D<sub>e</sub> = 1 − .35 / .64 = .46</p>
+</div><div class="column" style="width:52%;">
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb32"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb32-1"><a aria-label="1"></a>codes <span class="ot">&lt;-</span> <span class="fu">c</span>(coded<span class="sc">$</span>coder_a, coded<span class="sc">$</span>coder_b)</span>
+<span id="cb32-2"><a aria-label="2"></a>n_c <span class="ot">&lt;-</span> <span class="fu">table</span>(codes)                 <span class="co"># 18, 15, 7</span></span>
+<span id="cb32-3"><a aria-label="3"></a>N   <span class="ot">&lt;-</span> <span class="fu">length</span>(codes)                <span class="co"># 40</span></span>
+<span id="cb32-4"><a aria-label="4"></a></span>
+<span id="cb32-5"><a aria-label="5"></a>D_o <span class="ot">&lt;-</span> <span class="fu">mean</span>(coded<span class="sc">$</span>coder_a <span class="sc">!=</span> coded<span class="sc">$</span>coder_b)</span>
+<span id="cb32-6"><a aria-label="6"></a>D_e <span class="ot">&lt;-</span> <span class="dv">1</span> <span class="sc">-</span> <span class="fu">sum</span>(n_c <span class="sc">*</span> (n_c <span class="sc">-</span> <span class="dv">1</span>)) <span class="sc">/</span> (N <span class="sc">*</span> (N <span class="sc">-</span> <span class="dv">1</span>))</span>
+<span id="cb32-7"><a aria-label="7"></a><span class="fu">round</span>(<span class="dv">1</span> <span class="sc">-</span> D_o <span class="sc">/</span> D_e, <span class="dv">2</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cadc-label">
+<p>Output</p>
+</div>
+<div class="cell">
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 0.46</code></pre>
+</div>
+</div>
+<div class="cadc-take">
+<p>.46 against κ’s .48. They differ because only one coder used <em>mixed</em>.</p>
+</div>
+</div></div>
+<aside class="notes">
+<p>α counts disagreement instead of agreement. D<sub>o</sub> is the seven crosses of the explainer. D<sub>e</sub> has a simple reading: put all forty codes of both coders on one pile, draw two at random, and ask how often their labels differ. Of the 1,560 ordered pairs in the pile, 558 carry the same label, so two random draws differ 64 per cent of the time. The coders disagreed 35 per cent of the time, so α = 1 − .35 / .64.</p>
+<p>The code is the two-coder, no-missing-data case. For more coders or missing codes the general version builds a coincidence matrix; the R package <code>irr</code> does that with <code>kripp.alpha()</code>.</p>
+<p>Why α and κ differ: κ builds chance from each coder’s own habits, α from the pooled pile. A’s seven <em>mixed</em> codes inflate A’s share for κ and are diluted in the pile for α.</p>
+<style type="text/css">
+        span.MJX_Assistive_MathML {
+          position:absolute!important;
+          clip: rect(1px, 1px, 1px, 1px);
+          padding: 1px 0 0 0!important;
+          border: 0!important;
+          height: 1px!important;
+          width: 1px!important;
+          overflow: hidden!important;
+          display:block!important;
+      }</style></aside>
+<div class="cadc-ref">
+<p>Krippendorff, K. (2011). <em>Computing Krippendorff’s alpha-reliability</em>. University of Pennsylvania. https://repository.upenn.edu/asc_papers/43</p>
+</div>
 </section>
 <section id="κ-and-α-side-by-side" class="slide level2" data-background-color="#faf8f4">
 <h2>κ and α side by side</h2>
@@ -1430,30 +1489,101 @@
 <p>Kotzias, D., Denil, M., de Freitas, N., &amp; Smyth, P. (2015). From group to individual labels using deep features. <em>Proceedings of the 21st ACM SIGKDD International Conference on Knowledge Discovery and Data Mining</em>, 597–606. https://doi.org/10.1145/2783258.2783380</p>
 </div>
 </section>
-<section id="scoring-the-sentences" class="slide level2" data-background-color="#faf8f4">
-<h2>Scoring the sentences</h2>
+<section id="scoring-the-sentences-1-a-score-per-sentence" class="slide level2" data-background-color="#faf8f4">
+<h2>Scoring the sentences · 1 · a score per sentence</h2>
 <div class="columns">
-<div class="column" style="width:55%;">
+<div class="column" style="width:50%;">
 <div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb37"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb37-1"><a aria-label="1"></a>scored <span class="ot">&lt;-</span> yelp <span class="sc">|&gt;</span></span>
-<span id="cb37-2"><a aria-label="2"></a>  <span class="fu">unnest_tokens</span>(word, text) <span class="sc">|&gt;</span>          <span class="co"># 1 · tokens</span></span>
-<span id="cb37-3"><a aria-label="3"></a>  <span class="fu">inner_join</span>(bing, <span class="at">by =</span> <span class="st">"word"</span>) <span class="sc">|&gt;</span>      <span class="co"># 2 · listed words</span></span>
-<span id="cb37-4"><a aria-label="4"></a>  <span class="fu">count</span>(id, sentiment) <span class="sc">|&gt;</span>               <span class="co"># 3 · hits</span></span>
-<span id="cb37-5"><a aria-label="5"></a>  <span class="fu">pivot_wider</span>(<span class="at">names_from =</span> sentiment,</span>
-<span id="cb37-6"><a aria-label="6"></a>              <span class="at">values_from =</span> n, <span class="at">values_fill =</span> <span class="dv">0</span>) <span class="sc">|&gt;</span></span>
-<span id="cb37-7"><a aria-label="7"></a>  <span class="fu">mutate</span>(<span class="at">score =</span> positive <span class="sc">-</span> negative)   <span class="co"># 4 · score</span></span>
-<span id="cb37-8"><a aria-label="8"></a></span>
-<span id="cb37-9"><a aria-label="9"></a>verdicts <span class="ot">&lt;-</span> yelp <span class="sc">|&gt;</span></span>
-<span id="cb37-10"><a aria-label="10"></a>  <span class="fu">left_join</span>(scored, <span class="at">by =</span> <span class="st">"id"</span>) <span class="sc">|&gt;</span>       <span class="co"># keep silent ones</span></span>
-<span id="cb37-11"><a aria-label="11"></a>  <span class="fu">mutate</span>(<span class="at">verdict =</span> <span class="fu">case_when</span>(score <span class="sc">&gt;</span> <span class="dv">0</span> <span class="sc">~</span> <span class="st">"positive"</span>,</span>
-<span id="cb37-12"><a aria-label="12"></a>                             score <span class="sc">&lt;</span> <span class="dv">0</span> <span class="sc">~</span> <span class="st">"negative"</span>,</span>
-<span id="cb37-13"><a aria-label="13"></a>                             <span class="cn">TRUE</span>      <span class="sc">~</span> <span class="st">"no call"</span>))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-</div><div class="column" style="width:45%;">
+<span id="cb37-2"><a aria-label="2"></a>  <span class="fu">unnest_tokens</span>(word, text) <span class="sc">|&gt;</span>         <span class="co"># 1</span></span>
+<span id="cb37-3"><a aria-label="3"></a>  <span class="fu">inner_join</span>(bing, <span class="at">by =</span> <span class="st">"word"</span>) <span class="sc">|&gt;</span>     <span class="co"># 2</span></span>
+<span id="cb37-4"><a aria-label="4"></a>  <span class="fu">count</span>(id, sentiment) <span class="sc">|&gt;</span>              <span class="co"># 3</span></span>
+<span id="cb37-5"><a aria-label="5"></a>  <span class="fu">pivot_wider</span>(<span class="at">names_from =</span> sentiment,  <span class="co"># 4</span></span>
+<span id="cb37-6"><a aria-label="6"></a>              <span class="at">values_from =</span> n,</span>
+<span id="cb37-7"><a aria-label="7"></a>              <span class="at">values_fill =</span> <span class="dv">0</span>) <span class="sc">|&gt;</span></span>
+<span id="cb37-8"><a aria-label="8"></a>  <span class="fu">mutate</span>(<span class="at">score =</span> positive <span class="sc">-</span> negative)  <span class="co"># 5</span></span>
+<span id="cb37-9"><a aria-label="9"></a></span>
+<span id="cb37-10"><a aria-label="10"></a><span class="fu">print</span>(scored, <span class="at">n =</span> <span class="dv">5</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<ol type="1">
+<li>One row per word of each sentence</li>
+<li>Keep only the words on the Bing list, each with its sentiment</li>
+<li>Count the positive and the negative words per sentence</li>
+<li>Back to one row per sentence, with 0 where a sentiment is missing</li>
+<li>The score: positive words minus negative words</li>
+</ol>
+</div><div class="column" style="width:50%;">
 <div class="cadc-label">
 <p>Output</p>
 </div>
 <div class="cell">
 <div class="cell-output cell-output-stdout">
-<pre><code># A tibble: 3 × 2
+<pre><code># A tibble: 782 × 4
+     id positive negative score
+  &lt;dbl&gt;    &lt;int&gt;    &lt;int&gt; &lt;int&gt;
+1     1        2        0     2
+2     2        1        0     1
+3     3        0        1    -1
+4     4        2        0     2
+5     5        1        0     1
+# ℹ 777 more rows</code></pre>
+</div>
+</div>
+<div class="cadc-take">
+<p>782 of the 1,000 sentences contain a word on the list. The other 218 are not in <code>scored</code> at all.</p>
+</div>
+</div></div>
+<aside class="notes">
+<p>The same recipe as the speeches, line by line. Follow sentence 1, “Wow… Loved this place.”: step 1 splits it into four words, step 2 keeps <em>wow</em> and <em>loved</em> (both positive on the Bing list), step 3 counts two positive words, step 4 adds a zero for negative, step 5 gives a score of 2.</p>
+<p>The header of the output is the point to stop at: 782 rows, not 1,000. <code>inner_join()</code> drops every word the list does not know, and a sentence with no known word drops out entirely. The next slide brings them back.</p>
+<style type="text/css">
+        span.MJX_Assistive_MathML {
+          position:absolute!important;
+          clip: rect(1px, 1px, 1px, 1px);
+          padding: 1px 0 0 0!important;
+          border: 0!important;
+          height: 1px!important;
+          width: 1px!important;
+          overflow: hidden!important;
+          display:block!important;
+      }</style></aside>
+</section>
+<section id="scoring-the-sentences-2-from-score-to-verdict" class="slide level2" data-background-color="#faf8f4">
+<h2>Scoring the sentences · 2 · from score to verdict</h2>
+<div class="columns">
+<div class="column" style="width:50%;">
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb39"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb39-1"><a aria-label="1"></a>verdicts <span class="ot">&lt;-</span> yelp <span class="sc">|&gt;</span></span>
+<span id="cb39-2"><a aria-label="2"></a>  <span class="fu">left_join</span>(scored, <span class="at">by =</span> <span class="st">"id"</span>) <span class="sc">|&gt;</span>     <span class="co"># 1</span></span>
+<span id="cb39-3"><a aria-label="3"></a>  <span class="fu">mutate</span>(<span class="at">verdict =</span> <span class="fu">case_when</span>(         <span class="co"># 2</span></span>
+<span id="cb39-4"><a aria-label="4"></a>    score <span class="sc">&gt;</span> <span class="dv">0</span> <span class="sc">~</span> <span class="st">"positive"</span>,</span>
+<span id="cb39-5"><a aria-label="5"></a>    score <span class="sc">&lt;</span> <span class="dv">0</span> <span class="sc">~</span> <span class="st">"negative"</span>,</span>
+<span id="cb39-6"><a aria-label="6"></a>    <span class="cn">TRUE</span>      <span class="sc">~</span> <span class="st">"no call"</span>))           <span class="co"># 3</span></span>
+<span id="cb39-7"><a aria-label="7"></a></span>
+<span id="cb39-8"><a aria-label="8"></a>verdicts <span class="sc">|&gt;</span></span>
+<span id="cb39-9"><a aria-label="9"></a>  <span class="fu">filter</span>(id <span class="sc">%in%</span> <span class="fu">c</span>(<span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">12</span>, <span class="dv">18</span>, <span class="dv">32</span>)) <span class="sc">|&gt;</span></span>
+<span id="cb39-10"><a aria-label="10"></a>  <span class="fu">select</span>(text, score, verdict)</span>
+<span id="cb39-11"><a aria-label="11"></a></span>
+<span id="cb39-12"><a aria-label="12"></a><span class="fu">count</span>(verdicts, verdict)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<ol type="1">
+<li>Back to all 1,000 sentences: the 218 without a listed word get <code>NA</code> as score</li>
+<li>The decision rule: above 0 is positive, below 0 is negative</li>
+<li>Everything else is “no call”: 60 ties and the 218 with <code>NA</code></li>
+</ol>
+</div><div class="column" style="width:50%;">
+<div class="cadc-label">
+<p>Output</p>
+</div>
+<div class="cell">
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 5 × 3
+  text                                   score verdict 
+  &lt;chr&gt;                                  &lt;int&gt; &lt;chr&gt;   
+1 Wow... Loved this place.                   2 positive
+2 Crust is not good.                         1 positive
+3 Would not go back.                        NA no call 
+4 Waitress was a little slow in service.    -1 negative
+5 This was like the final blow!              0 no call 
+
+
+# A tibble: 3 × 2
   verdict      n
   &lt;chr&gt;    &lt;int&gt;
 1 negative   224
@@ -1461,14 +1591,24 @@
 3 positive   498</code></pre>
 </div>
 </div>
-<ul>
-<li>Same recipe as the speeches, with a decision rule at the end</li>
-<li>Note the third row: for 278 sentences the list has nothing to say</li>
-</ul>
 <div class="cadc-take">
 <p>Every sentence now has two labels: the human’s and the list’s. Validation is the comparison.</p>
 </div>
 </div></div>
+<aside class="notes">
+<p>Read the five example sentences. “Wow… Loved this place.” is positive, as it should be. “Crust is not good.” is also positive: the list sees <em>good</em> and nothing else, which is the negation slide coming up. “Would not go back.” has no word on the list, so its score is <code>NA</code> and it gets no call. “Waitress was a little slow in service.” is negative through <em>slow</em>. “This was like the final blow!” has one positive (<em>like</em>) and one negative (<em>blow</em>) word, a tie, so no call either.</p>
+<p><code>left_join()</code> instead of <code>inner_join()</code> is the important choice here: it keeps the sentences the list could not score, so we can count them later instead of silently losing them.</p>
+<style type="text/css">
+        span.MJX_Assistive_MathML {
+          position:absolute!important;
+          clip: rect(1px, 1px, 1px, 1px);
+          padding: 1px 0 0 0!important;
+          border: 0!important;
+          height: 1px!important;
+          width: 1px!important;
+          overflow: hidden!important;
+          display:block!important;
+      }</style></aside>
 </section>
 <section id="the-confusion-matrix" class="slide level2" data-background-color="#faf8f4">
 <h2>The confusion matrix</h2>
@@ -1495,12 +1635,12 @@
 <h2>The confusion matrix, on the real data</h2>
 <div class="columns">
 <div class="column" style="width:46%;">
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb39"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb39-1"><a aria-label="1"></a>called <span class="ot">&lt;-</span> verdicts <span class="sc">|&gt;</span></span>
-<span id="cb39-2"><a aria-label="2"></a>  <span class="fu">filter</span>(verdict <span class="sc">!=</span> <span class="st">"no call"</span>) <span class="sc">|&gt;</span></span>
-<span id="cb39-3"><a aria-label="3"></a>  <span class="fu">mutate</span>(<span class="fu">across</span>(<span class="fu">c</span>(label, verdict), factor,</span>
-<span id="cb39-4"><a aria-label="4"></a>                <span class="at">levels =</span> <span class="fu">c</span>(<span class="st">"positive"</span>, <span class="st">"negative"</span>)))</span>
-<span id="cb39-5"><a aria-label="5"></a></span>
-<span id="cb39-6"><a aria-label="6"></a><span class="fu">with</span>(called, <span class="fu">table</span>(<span class="at">human =</span> label, <span class="at">list =</span> verdict))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb41"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb41-1"><a aria-label="1"></a>called <span class="ot">&lt;-</span> verdicts <span class="sc">|&gt;</span></span>
+<span id="cb41-2"><a aria-label="2"></a>  <span class="fu">filter</span>(verdict <span class="sc">!=</span> <span class="st">"no call"</span>) <span class="sc">|&gt;</span></span>
+<span id="cb41-3"><a aria-label="3"></a>  <span class="fu">mutate</span>(<span class="fu">across</span>(<span class="fu">c</span>(label, verdict), factor,</span>
+<span id="cb41-4"><a aria-label="4"></a>                <span class="at">levels =</span> <span class="fu">c</span>(<span class="st">"positive"</span>, <span class="st">"negative"</span>)))</span>
+<span id="cb41-5"><a aria-label="5"></a></span>
+<span id="cb41-6"><a aria-label="6"></a><span class="fu">with</span>(called, <span class="fu">table</span>(<span class="at">human =</span> label, <span class="at">list =</span> verdict))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <ul>
 <li>722 sentences the list was willing to judge</li>
 <li><strong>397</strong> positive sentences it called positive; <strong>210</strong> negative ones it called negative</li>
@@ -1526,11 +1666,11 @@
 <h2>Accuracy, precision, recall, F1</h2>
 <div class="columns">
 <div class="column" style="width:50%;">
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb40"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb40-1"><a aria-label="1"></a>class_metrics <span class="ot">&lt;-</span> <span class="fu">metric_set</span>(accuracy, precision,</span>
-<span id="cb40-2"><a aria-label="2"></a>                            recall, f_meas, kap)</span>
-<span id="cb40-3"><a aria-label="3"></a></span>
-<span id="cb40-4"><a aria-label="4"></a>called <span class="sc">|&gt;</span></span>
-<span id="cb40-5"><a aria-label="5"></a>  <span class="fu">class_metrics</span>(<span class="at">truth =</span> label, <span class="at">estimate =</span> verdict)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb42"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb42-1"><a aria-label="1"></a>class_metrics <span class="ot">&lt;-</span> <span class="fu">metric_set</span>(accuracy, precision,</span>
+<span id="cb42-2"><a aria-label="2"></a>                            recall, f_meas, kap)</span>
+<span id="cb42-3"><a aria-label="3"></a></span>
+<span id="cb42-4"><a aria-label="4"></a>called <span class="sc">|&gt;</span></span>
+<span id="cb42-5"><a aria-label="5"></a>  <span class="fu">class_metrics</span>(<span class="at">truth =</span> label, <span class="at">estimate =</span> verdict)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cadc-label">
 <p>Output</p>
 </div>
@@ -1573,49 +1713,132 @@
 <p>The right metric follows from what an error costs in your study. Decide that in the specification, not after seeing the results.</p>
 </div>
 </section>
-<section id="the-278-silent-sentences" class="slide level2" data-background-color="#faf8f4">
-<h2>The 278 silent sentences</h2>
+<section id="sentences-the-list-cannot-call" class="slide level2" data-background-color="#faf8f4">
+<h2>Sentences the list cannot call</h2>
 <div class="columns">
-<div class="column" style="width:55%;">
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb42"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb42-1"><a aria-label="1"></a><span class="co"># rule 1: only judge the sentences the list scored</span></span>
-<span id="cb42-2"><a aria-label="2"></a>called <span class="sc">|&gt;</span> <span class="fu">class_metrics</span>(<span class="at">truth =</span> label, <span class="at">estimate =</span> verdict)</span>
-<span id="cb42-3"><a aria-label="3"></a></span>
-<span id="cb42-4"><a aria-label="4"></a><span class="co"># rule 2: a sentence with no listed word is "negative"</span></span>
-<span id="cb42-5"><a aria-label="5"></a>verdicts <span class="sc">|&gt;</span></span>
-<span id="cb42-6"><a aria-label="6"></a>  <span class="fu">mutate</span>(<span class="at">verdict =</span> <span class="fu">if_else</span>(verdict <span class="sc">==</span> <span class="st">"positive"</span>,</span>
-<span id="cb42-7"><a aria-label="7"></a>                           <span class="st">"positive"</span>, <span class="st">"negative"</span>)) <span class="sc">|&gt;</span></span>
-<span id="cb42-8"><a aria-label="8"></a>  <span class="fu">class_metrics</span>(<span class="at">truth =</span> label, <span class="at">estimate =</span> verdict)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="column" style="width:50%;">
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb44"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb44-1"><a aria-label="1"></a>no_call <span class="ot">&lt;-</span> verdicts <span class="sc">|&gt;</span></span>
+<span id="cb44-2"><a aria-label="2"></a>  <span class="fu">filter</span>(verdict <span class="sc">==</span> <span class="st">"no call"</span>) <span class="sc">|&gt;</span></span>
+<span id="cb44-3"><a aria-label="3"></a>  <span class="fu">mutate</span>(<span class="at">why =</span> <span class="fu">if_else</span>(<span class="fu">is.na</span>(score),</span>
+<span id="cb44-4"><a aria-label="4"></a>                       <span class="st">"no listed word"</span>, <span class="st">"tie"</span>))</span>
+<span id="cb44-5"><a aria-label="5"></a></span>
+<span id="cb44-6"><a aria-label="6"></a><span class="fu">count</span>(no_call, why, label)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<ul>
+<li><strong>No call</strong> means the list has nothing to say: none of the words is on the list, or the positive and negative words cancel out</li>
+<li><em>“Would not go back.”</em> has no listed word; <em>“This was like the final blow!”</em> is a tie, <em>like</em> against <em>blow</em></li>
+</ul>
+</div><div class="column" style="width:50%;">
 <div class="cadc-label">
 <p>Output</p>
 </div>
 <div class="cell">
 <div class="cell-output cell-output-stdout">
-<pre><code># A tibble: 2 × 6
-  rule                          accuracy precision recall f_meas   kap
-  &lt;chr&gt;                            &lt;dbl&gt;     &lt;dbl&gt;  &lt;dbl&gt;  &lt;dbl&gt; &lt;dbl&gt;
-1 scored only (n = 722)             0.84       0.8   0.97   0.87  0.66
-2 silence = negative (n = 1000)     0.8        0.8   0.79   0.8   0.59</code></pre>
+<pre><code># A tibble: 4 × 3
+  why            label        n
+  &lt;chr&gt;          &lt;chr&gt;    &lt;int&gt;
+1 no listed word negative   144
+2 no listed word positive    74
+3 tie            negative    45
+4 tie            positive    15</code></pre>
 </div>
 </div>
-</div><div class="column" style="width:45%;">
 <ul>
-<li>Recall drops from .97 to .79 the moment you count the sentences the list could not see</li>
-<li>Neither rule is wrong; they answer different questions, and the paper has to say which</li>
-<li>A <strong>silent</strong> instrument is not a neutral one: 189 of the 278 are labelled negative, among them <em>“We’ll never go again.”</em> and <em>“Will never, ever go back.”</em></li>
+<li>278 of 1,000 sentences: 218 without a listed word, 60 ties</li>
+<li>They are not neutral: the human labels say 189 of them are negative and 89 positive</li>
 </ul>
+<div class="cadc-take">
+<p>No call is still an outcome. Before you report a number, decide what happens to these 278 sentences.</p>
+</div>
+</div></div>
+<aside class="notes">
+<p>Define the term before the numbers. A sentence gets no call in two ways: the list knows none of its words (218 sentences, “Would not go back.”), or it knows some, and they cancel out (60 sentences, <em>like</em> plus <em>blow</em>). The human labels show that silence is not neutrality: two thirds of these sentences are negative. Many are negative complaints phrased without any evaluative word, “Would not go back”, “They never brought a salad we asked for”.</p>
+<style type="text/css">
+        span.MJX_Assistive_MathML {
+          position:absolute!important;
+          clip: rect(1px, 1px, 1px, 1px);
+          padding: 1px 0 0 0!important;
+          border: 0!important;
+          height: 1px!important;
+          width: 1px!important;
+          overflow: hidden!important;
+          display:block!important;
+      }</style></aside>
+</section>
+<section id="three-ways-to-count-the-no-call-sentences" class="slide level2" data-background-color="#faf8f4">
+<h2>Three ways to count the no-call sentences</h2>
+<div class="columns">
+<div class="column" style="width:54%;">
+<div class="cell">
+<div class="cell-output-display">
+<table class="caption-top">
+<thead>
+<tr class="header">
+<th style="text-align: left;">Rule</th>
+<th style="text-align: right;">Sentences</th>
+<th style="text-align: right;">Precision</th>
+<th style="text-align: right;">Recall</th>
+<th style="text-align: right;">F1</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">Leave them out</td>
+<td style="text-align: right;">722</td>
+<td style="text-align: right;">0.80</td>
+<td style="text-align: right;">0.97</td>
+<td style="text-align: right;">0.87</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Count as negative</td>
+<td style="text-align: right;">1,000</td>
+<td style="text-align: right;">0.80</td>
+<td style="text-align: right;">0.79</td>
+<td style="text-align: right;">0.80</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Count as positive</td>
+<td style="text-align: right;">1,000</td>
+<td style="text-align: right;">0.63</td>
+<td style="text-align: right;">0.97</td>
+<td style="text-align: right;">0.76</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
 <div class="cadc-take">
 <p>Coverage, the share of texts an instrument says anything about, is a validity number too. Report it.</p>
 </div>
+</div><div class="column" style="width:46%;">
+<ul>
+<li><strong>Leave them out</strong>: the list is judged only where it found words, which flatters it</li>
+<li><strong>Count as negative</strong>: the 89 positive reviews among them become misses, so recall falls</li>
+<li><strong>Count as positive</strong>: the 189 negative ones become false alarms, so precision falls</li>
+<li>Negative is the usual default, because the question is whether the list finds the positive reviews, and saying nothing does not find them. It remains a decision, and the paper has to state it</li>
+</ul>
 </div></div>
+<aside class="notes">
+<p>Precision and recall here are for the positive class. Each rule moves the same 278 sentences into a different cell of the confusion matrix: out of the matrix, into the “said negative” column, or into the “said positive” column. Leaving them out gives the best numbers and describes only 722 of 1,000 sentences. Counting them as negative is the convention when the instrument is meant to detect positive texts: no evidence for positive counts as not positive, and the cost shows up in recall. Counting them as positive is just as possible and moves the cost to precision. Thursday’s lab adds a fourth option for the tweets: call them neutral. Whatever the rule, the methods section has to name it and report the coverage, 722 of 1,000.</p>
+<style type="text/css">
+        span.MJX_Assistive_MathML {
+          position:absolute!important;
+          clip: rect(1px, 1px, 1px, 1px);
+          padding: 1px 0 0 0!important;
+          border: 0!important;
+          height: 1px!important;
+          width: 1px!important;
+          overflow: hidden!important;
+          display:block!important;
+      }</style></aside>
 </section>
 <section id="where-it-goes-wrong-negation" class="slide level2" data-background-color="#faf8f4">
 <h2>Where it goes wrong: negation</h2>
 <div class="columns">
 <div class="column" style="width:52%;">
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb44"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb44-1"><a aria-label="1"></a>verdicts <span class="sc">|&gt;</span></span>
-<span id="cb44-2"><a aria-label="2"></a>  <span class="fu">filter</span>(<span class="fu">str_detect</span>(text, <span class="st">"</span><span class="sc">\\</span><span class="st">bnot</span><span class="sc">\\</span><span class="st">b|n't"</span>),</span>
-<span id="cb44-3"><a aria-label="3"></a>         verdict <span class="sc">==</span> <span class="st">"positive"</span>, label <span class="sc">==</span> <span class="st">"negative"</span>) <span class="sc">|&gt;</span></span>
-<span id="cb44-4"><a aria-label="4"></a>  <span class="fu">select</span>(text)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb46"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb46-1"><a aria-label="1"></a>verdicts <span class="sc">|&gt;</span></span>
+<span id="cb46-2"><a aria-label="2"></a>  <span class="fu">filter</span>(<span class="fu">str_detect</span>(text, <span class="st">"</span><span class="sc">\\</span><span class="st">bnot</span><span class="sc">\\</span><span class="st">b|n't"</span>),</span>
+<span id="cb46-3"><a aria-label="3"></a>         verdict <span class="sc">==</span> <span class="st">"positive"</span>, label <span class="sc">==</span> <span class="st">"negative"</span>) <span class="sc">|&gt;</span></span>
+<span id="cb46-4"><a aria-label="4"></a>  <span class="fu">select</span>(text)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <ul>
 <li>The word list has no entry for <em>not</em>: <em>good</em> scores +1 whether or not it is negated, and the matrix cannot say what the <em>not</em> was attached to</li>
 <li>Fifty-eight of the 101 false positives contain <em>not</em> or <em>n’t</em></li>
@@ -1648,16 +1871,22 @@
 <section id="more-than-two-classes-macro-and-micro" class="slide level2" data-background-color="#faf8f4">
 <h2>More than two classes: macro and micro</h2>
 <div class="columns">
-<div class="column" style="width:52%;">
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb46"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb46-1"><a aria-label="1"></a><span class="co"># verdicts against 48 hand-coded reviews,</span></span>
-<span id="cb46-2"><a aria-label="2"></a><span class="co"># three classes: positive, negative, mixed</span></span>
-<span id="cb46-3"><a aria-label="3"></a><span class="fu">with</span>(three, <span class="fu">table</span>(<span class="at">human =</span> gold, <span class="at">list =</span> verdict))</span>
-<span id="cb46-4"><a aria-label="4"></a></span>
-<span id="cb46-5"><a aria-label="5"></a>macro <span class="ot">&lt;-</span> <span class="fu">precision</span>(three, gold, verdict,</span>
-<span id="cb46-6"><a aria-label="6"></a>                   <span class="at">estimator =</span> <span class="st">"macro"</span>)</span>
-<span id="cb46-7"><a aria-label="7"></a>micro <span class="ot">&lt;-</span> <span class="fu">precision</span>(three, gold, verdict,</span>
-<span id="cb46-8"><a aria-label="8"></a>                   <span class="at">estimator =</span> <span class="st">"micro"</span>)</span>
-<span id="cb46-9"><a aria-label="9"></a><span class="fu">bind_rows</span>(macro, micro)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="column" style="width:50%;">
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb48"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb48-1"><a aria-label="1"></a><span class="fu">with</span>(three, <span class="fu">table</span>(<span class="at">human =</span> gold, <span class="at">list =</span> verdict))</span>
+<span id="cb48-2"><a aria-label="2"></a></span>
+<span id="cb48-3"><a aria-label="3"></a>per_class <span class="ot">&lt;-</span> three <span class="sc">|&gt;</span></span>
+<span id="cb48-4"><a aria-label="4"></a>  <span class="fu">group_by</span>(verdict) <span class="sc">|&gt;</span></span>
+<span id="cb48-5"><a aria-label="5"></a>  <span class="fu">summarise</span>(<span class="at">precision =</span> <span class="fu">mean</span>(gold <span class="sc">==</span> verdict))</span>
+<span id="cb48-6"><a aria-label="6"></a>per_class</span>
+<span id="cb48-7"><a aria-label="7"></a></span>
+<span id="cb48-8"><a aria-label="8"></a><span class="fu">round</span>(<span class="fu">c</span>(<span class="at">macro =</span> <span class="fu">mean</span>(per_class<span class="sc">$</span>precision),</span>
+<span id="cb48-9"><a aria-label="9"></a>        <span class="at">micro =</span> <span class="fu">mean</span>(three<span class="sc">$</span>gold <span class="sc">==</span> three<span class="sc">$</span>verdict)), <span class="dv">2</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<ul>
+<li>Per class: of the reviews the list called <em>positive</em>, all were right (1.00); of those it called <em>mixed</em>, .65</li>
+<li><strong>Macro</strong> averages the three precisions: every class counts equally</li>
+<li><strong>Micro</strong> pools all reviews first: every review counts equally, and for precision that is simply accuracy</li>
+</ul>
+</div><div class="column" style="width:50%;">
 <div class="cadc-label">
 <p>Output</p>
 </div>
@@ -1670,26 +1899,25 @@ human      positive negative mixed
   mixed           0        2    13</code></pre>
 </div>
 <div class="cell-output cell-output-stdout">
-<pre><code># A tibble: 2 × 3
-  .metric   .estimator .estimate
-  &lt;chr&gt;     &lt;chr&gt;          &lt;dbl&gt;
-1 precision macro          0.825
-2 precision micro          0.792</code></pre>
+<pre><code># A tibble: 3 × 2
+  verdict  precision
+  &lt;fct&gt;        &lt;dbl&gt;
+1 positive     1    
+2 negative     0.824
+3 mixed        0.65 </code></pre>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>macro micro 
+ 0.82  0.79 </code></pre>
 </div>
 </div>
-</div><div class="column" style="width:48%;">
-<ul>
-<li>With three classes there are three precisions and three recalls, one per class</li>
-<li><strong>Macro</strong> averages them: every class counts equally, however small</li>
-<li><strong>Micro</strong> pools the cells first: every text counts equally, so the big classes dominate</li>
-<li>Here <em>positive</em> has precision 1.00 and <em>mixed</em> .65; the macro figure sits between them, the micro figure is just accuracy</li>
-</ul>
 <div class="cadc-take">
-<p>Report per class, and say which average you used. A single macro F1 hides the class your instrument cannot see.</p>
+<p>Report per class, and say which average you used. A single macro figure hides the class your instrument cannot see.</p>
 </div>
 </div></div>
 <aside class="notes">
-<p>The instrument here is a language model prompted with the codebook (you meet it in week 4). It is used only because the course has a three-class gold set for it (<code>data/prompt-lab/</code>). The point is the arithmetic, not the model.</p>
+<p>48 hand-coded film reviews in three classes, and an instrument’s verdicts on them. The instrument here is a language model prompted with the codebook (you meet it in week 4). It is used only because the course has a three-class gold set for it (<code>data/prompt-lab/</code>). The point is the arithmetic, not the model.</p>
+<p>Read the table by column: the list called 11 reviews positive and all 11 were positive; it called 20 mixed and 13 of those were. Precision per class is the share correct within each column, which is what <code>group_by(verdict)</code> computes. Macro is the plain mean of the three, (1.00 + .82 + .65) / 3 = .82. Micro counts every correct review once, 38 of 48 = .79. yardstick gives the same with <code>precision(three, gold, verdict, estimator = "macro")</code> or <code>"micro"</code>.</p>
 <style type="text/css">
         span.MJX_Assistive_MathML {
           position:absolute!important;
@@ -1705,71 +1933,84 @@ human      positive negative mixed
 <section id="class-imbalance" class="slide level2" data-background-color="#faf8f4">
 <h2>Class imbalance</h2>
 <div class="columns">
-<div class="column" style="width:42%;">
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb49"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb49-1"><a aria-label="1"></a><span class="co"># the same instrument: it finds 79% of positives</span></span>
-<span id="cb49-2"><a aria-label="2"></a><span class="co"># and correctly rejects 80% of negatives</span></span>
-<span id="cb49-3"><a aria-label="3"></a>sens <span class="ot">&lt;-</span> .<span class="dv">79</span>; spec <span class="ot">&lt;-</span> .<span class="dv">80</span></span>
-<span id="cb49-4"><a aria-label="4"></a></span>
-<span id="cb49-5"><a aria-label="5"></a><span class="fu">tibble</span>(<span class="at">base_rate =</span> <span class="fu">c</span>(.<span class="dv">50</span>, .<span class="dv">20</span>, .<span class="dv">05</span>)) <span class="sc">|&gt;</span></span>
-<span id="cb49-6"><a aria-label="6"></a>  <span class="fu">mutate</span>(<span class="at">tp =</span> base_rate <span class="sc">*</span> sens,</span>
-<span id="cb49-7"><a aria-label="7"></a>         <span class="at">fn =</span> base_rate <span class="sc">*</span> (<span class="dv">1</span> <span class="sc">-</span> sens),</span>
-<span id="cb49-8"><a aria-label="8"></a>         <span class="at">tn =</span> (<span class="dv">1</span> <span class="sc">-</span> base_rate) <span class="sc">*</span> spec,</span>
-<span id="cb49-9"><a aria-label="9"></a>         <span class="at">fp =</span> (<span class="dv">1</span> <span class="sc">-</span> base_rate) <span class="sc">*</span> (<span class="dv">1</span> <span class="sc">-</span> spec),</span>
-<span id="cb49-10"><a aria-label="10"></a>         <span class="at">accuracy  =</span> tp <span class="sc">+</span> tn,</span>
-<span id="cb49-11"><a aria-label="11"></a>         <span class="at">precision =</span> tp <span class="sc">/</span> (tp <span class="sc">+</span> fp),</span>
-<span id="cb49-12"><a aria-label="12"></a>         <span class="at">f1 =</span> <span class="dv">2</span> <span class="sc">*</span> tp <span class="sc">/</span> (<span class="dv">2</span> <span class="sc">*</span> tp <span class="sc">+</span> fp <span class="sc">+</span> fn))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<ul>
-<li>Nothing about the instrument changes across the three columns; only how common the positive class is</li>
-<li>Accuracy stays at .80 while precision collapses, and “always say negative” beats the instrument at 5%</li>
-</ul>
-<div class="cadc-take">
-<p>At 5% prevalence, four out of five texts the list flags are false. Accuracy will not tell you.</p>
-</div>
-</div><div class="column" style="width:58%;">
+<div class="column" style="width:58%;">
 <div class="cell">
 <div class="cell-output-display">
 <div>
 <figure>
-<p><img data-src="02_dictionaries_files/figure-revealjs/plot-imbalance-1.png" width="614"></p>
+<p><img data-src="02_dictionaries_files/figure-revealjs/plot-imbalance-1.png" width="633"></p>
 </figure>
 </div>
 </div>
 </div>
+</div><div class="column" style="width:42%;">
+<ul>
+<li>The same dictionary, used on corpora where positive texts are more or less common</li>
+<li>Its accuracy stays at 80% everywhere, so it looks equally good in all of them</li>
+<li>When positive texts are rare, most of what it flags is wrong: at 5% positives, only 17% of the flagged texts are positive</li>
+<li>A useless rule, “always say negative”, would even beat it on accuracy</li>
+</ul>
+<div class="cadc-take">
+<p>When a class is rare, accuracy says almost nothing. Look at precision and recall.</p>
+</div>
 </div></div>
+<aside class="notes">
+<p>Nothing about the instrument changes along the x-axis: it always catches 79 per cent of the positive texts and correctly rejects 80 per cent of the negative ones (the dictionary’s numbers from a few slides back). What changes is how many positive texts there are to catch.</p>
+<p>Walk the vertical line at 5 per cent. In a corpus of 1,000 texts, 50 are positive and the list flags 40 of them. Of the 950 negative texts it wrongly flags 20 per cent, 190. So it flags 230 texts, and only 40 of those are right: precision 17 per cent. Accuracy still reads 80 per cent, because most of the 950 negative texts are correctly left alone. A lazy instrument that calls every text negative reaches 95 per cent accuracy and finds nothing.</p>
+<p>This is the situation of most real measurement tasks in communication research: hate speech, misinformation, a rare frame. The thing you look for is rare.</p>
+<style type="text/css">
+        span.MJX_Assistive_MathML {
+          position:absolute!important;
+          clip: rect(1px, 1px, 1px, 1px);
+          padding: 1px 0 0 0!important;
+          border: 0!important;
+          height: 1px!important;
+          width: 1px!important;
+          overflow: hidden!important;
+          display:block!important;
+      }</style></aside>
 </section>
 <section id="how-sure-are-you" class="slide level2" data-background-color="#faf8f4">
 <h2>How sure are you?</h2>
 <div class="columns">
-<div class="column" style="width:42%;">
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb50"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb50-1"><a aria-label="1"></a>boot_f1 <span class="ot">&lt;-</span> <span class="cf">function</span>(n, <span class="at">times =</span> <span class="dv">1000</span>) {</span>
-<span id="cb50-2"><a aria-label="2"></a>  <span class="fu">replicate</span>(times, {</span>
-<span id="cb50-3"><a aria-label="3"></a>    s <span class="ot">&lt;-</span> <span class="fu">slice_sample</span>(all_1000, <span class="at">n =</span> n,</span>
-<span id="cb50-4"><a aria-label="4"></a>                      <span class="at">replace =</span> <span class="cn">TRUE</span>)</span>
-<span id="cb50-5"><a aria-label="5"></a>    <span class="fu">f_meas_vec</span>(s<span class="sc">$</span>label, s<span class="sc">$</span>verdict)</span>
-<span id="cb50-6"><a aria-label="6"></a>  })</span>
-<span id="cb50-7"><a aria-label="7"></a>}</span>
-<span id="cb50-8"><a aria-label="8"></a></span>
-<span id="cb50-9"><a aria-label="9"></a><span class="fu">map</span>(<span class="fu">c</span>(<span class="dv">50</span>, <span class="dv">100</span>, <span class="dv">1000</span>), boot_f1) <span class="sc">|&gt;</span></span>
-<span id="cb50-10"><a aria-label="10"></a>  <span class="fu">map</span>(quantile, <span class="fu">c</span>(.<span class="dv">025</span>, .<span class="dv">5</span>, .<span class="dv">975</span>))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<ul>
-<li>The same instrument, the same corpus; only the size of the validation sample changes</li>
-<li>Fifty hand-coded texts put F1 somewhere between .65 and .91; that interval spans “unusable” to “good”</li>
-<li>A thousand texts pin it to two decimals</li>
-</ul>
-<div class="cadc-take">
-<p>A validation set of 50 is a rumour about your instrument. Code more, or report the interval.</p>
-</div>
-</div><div class="column" style="width:58%;">
+<div class="column" style="width:58%;">
 <div class="cell">
 <div class="cell-output-display">
 <div>
 <figure>
-<p><img data-src="02_dictionaries_files/figure-revealjs/plot-bootstrap-1.png" width="595"></p>
+<p><img data-src="02_dictionaries_files/figure-revealjs/plot-bootstrap-1.png" width="614"></p>
 </figure>
 </div>
 </div>
 </div>
+<div class="cadc-aside">
+<p>Bars: 95% bootstrap confidence intervals, from 1,000 resamples of each size drawn from the 1,000 coded sentences. Dots: median F1.</p>
+</div>
+</div><div class="column" style="width:42%;">
+<ul>
+<li>The same dictionary, checked against hand-coded samples of different sizes</li>
+<li>With 50 coded texts, its F1 could be anywhere between .65 and .91: from unusable to good</li>
+<li>With 1,000 coded texts, it is pinned between .77 and .82</li>
+<li>The smaller the validation sample, the less a validation score tells you</li>
+</ul>
+<div class="cadc-take">
+<p>A validation set of 50 is a rumour about your instrument. Code more, or report the interval.</p>
+</div>
 </div></div>
+<aside class="notes">
+<p>The dictionary and the corpus stay the same; only the number of hand-coded texts changes. To see what a small validation sample would have told us, we draw many random samples from the 1,000 coded sentences (with replacement, a bootstrap) and compute F1 in each. The spread of those values is the uncertainty you live with when you code only that many texts.</p>
+<p>With 50 texts the same instrument could look unusable or good, depending on which 50 you happened to code. With 1,000 the estimate is pinned down. This is the practical answer to “how many texts should we hand-code”: enough that the interval is narrow for the decision you have to make.</p>
+<style type="text/css">
+        span.MJX_Assistive_MathML {
+          position:absolute!important;
+          clip: rect(1px, 1px, 1px, 1px);
+          padding: 1px 0 0 0!important;
+          border: 0!important;
+          height: 1px!important;
+          width: 1px!important;
+          overflow: hidden!important;
+          display:block!important;
+      }</style></aside>
 </section>
 <section id="do-dictionaries-measure-sentiment" class="slide level2" data-background-color="#faf8f4">
 <h2>Do dictionaries measure sentiment?</h2>
@@ -1973,14 +2214,50 @@ human      positive negative mixed
           overflow: hidden!important;
           display:block!important;
       }</style></aside>
+</section>
+<section id="conclusion-what-a-dictionary-is" class="slide level2" data-background-color="#faf8f4">
+<h2>Conclusion: what a dictionary is</h2>
+<div class="columns">
+<div class="column" style="width:55%;">
+<ul>
+<li>A dictionary stores what people know about words: which words signal a category</li>
+<li>Applying it means looking words up, the way you look up an entry in a reference book</li>
+<li>So it is only as good as that knowledge: who wrote the list, for which texts, and when</li>
+<li>That is why it has to be validated on your own texts, against human judgement</li>
+</ul>
+<div class="cadc-take">
+<p>A dictionary hands human knowledge about words to the computer. Validation checks whether that knowledge fits your texts.</p>
+</div>
+</div><div class="column" style="width:45%;">
+<p><img data-src="img/britannica-micropedia.jpg" style="width:100.0%" alt="Volumes of the Encyclopaedia Britannica on a library shelf: two index volumes, the Propaedia and Micropaedia volumes 1 to 7"></p>
+<div class="cadc-aside">
+<p>The <em>Encyclopædia Britannica</em>, one of the largest reference works in English: knowledge written down by people, to be looked up.</p>
+</div>
+</div></div>
+<div class="cadc-ref">
+<p>Photo: TSTPL Pedia (2007). <em>Britannica Micropedia Ready Reference Index 1–7</em>. Wikimedia Commons, CC BY-SA 3.0. https://commons.wikimedia.org/wiki/File:HK_Britannica_Micropedia_Ready_Reference_Index_1-7.JPG</p>
+</div>
+<aside class="notes">
+<p>The one sentence to leave the room with before the week overview. Everything in Part II was lookup: a list of words that people judged to be positive, fearful or about migration, applied to new text. Like an encyclopedia, the list holds knowledge that people wrote down for others to look up, and like an encyclopedia it is written at a time, for a purpose, by particular people. Part III was about checking whether that knowledge fits the texts at hand. Week 3 changes who writes the list: the computer learns the word weights from labelled examples instead.</p>
+<style type="text/css">
+        span.MJX_Assistive_MathML {
+          position:absolute!important;
+          clip: rect(1px, 1px, 1px, 1px);
+          padding: 1px 0 0 0!important;
+          border: 0!important;
+          height: 1px!important;
+          width: 1px!important;
+          overflow: hidden!important;
+          display:block!important;
+      }</style></aside>
 </section></section>
 <section>
 <section id="v-this-week" class="title-slide slide level1 center dark" data-background-color="#0d1e30">
 <h1>V · This week</h1>
 
 </section>
-<section id="what-you-can-now-do" class="slide level2" data-background-color="#faf8f4">
-<h2>What you can now do</h2>
+<section id="what-you-can-do-after-this-week." class="slide level2" data-background-color="#faf8f4">
+<h2>What you can do after this week.</h2>
 <ul>
 <li>Turn a corpus into counts, weight them, and say what a count can and cannot claim</li>
 <li>Apply a dictionary as a join, and name the preprocessing decisions that change its result</li>
@@ -1996,7 +2273,7 @@ human      positive negative mixed
 <section id="this-week" class="slide level2" data-background-color="#faf8f4">
 <h2>This week</h2>
 <ul>
-<li><strong>Tuesday · Lab A</strong>: score the #corona tweets with a dictionary and decide what the line means</li>
+<li><strong>Tuesday · Lab A</strong>: score the #corona tweets with a dictionary</li>
 <li><strong>Thursday · Lab B</strong>: code 40 tweets with a partner, compute κ, then precision, recall and F1 on Yelp sentences</li>
 <li><strong>Sunday · homework 2</strong>: Tuesday’s Bing list against your gold standard, started in Lab B</li>
 <li><strong>Before Thursday · Playground</strong>: <em>Two coders, one codebook</em> and <em>Build-a-dictionary</em>, ten minutes each</li>

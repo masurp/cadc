@@ -394,9 +394,9 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <h3 class="anchored" data-anchor-id="from-the-lecture-to-the-lab">From the lecture to the lab</h3>
 <ul>
 <li><em>Where a gold standard comes from</em> and <em>Two coders, twenty reviews</em>: sections 1 to 3. Today you are the two coders.</li>
-<li><em>Cohen’s κ</em>: section 4 uses the lecture’s code.</li>
+<li><em>Cohen’s κ</em>: section 4 computes it by hand, with the lecture’s formula.</li>
 <li><em>Agreement is not correctness</em>: sections 5 and 6, where you read your disagreements and turn two codings into one gold standard.</li>
-<li><em>The confusion matrix</em>, <em>Accuracy, precision, recall, F1</em> and <em>The 278 silent sentences</em>: section 7, on the lecture’s own data.</li>
+<li><em>The confusion matrix</em>, <em>Accuracy, precision, recall, F1</em> and <em>Three ways to count the no-call sentences</em>: section 7, on the lecture’s own data.</li>
 <li><em>Which number do you report?</em>: the trap in section 7, and Part 2.</li>
 </ul>
 </section>
@@ -409,7 +409,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <p>BEFORE YOU START</p>
 </div>
 <ol type="1">
-<li>Download <strong>the lab folder from Canvas</strong> (Modules › Lab folders, version aac61583) and unzip it. It holds the Part 1 script, the Part 2 skeleton, the tweets and the Yelp sentences.</li>
+<li>Download <strong>the lab folder from Canvas</strong> (Modules › Lab folders, version 2b0fd7bb) and unzip it. It holds the Part 1 script, the Part 2 skeleton, the tweets and the Yelp sentences.</li>
 <li>Find a partner. You code the same tweets, separately.</li>
 </ol>
 <p>Trouble with the download, the zip, or a file R cannot find? See <a href="../setup.html#zip">Setup help</a>.</p>
@@ -492,7 +492,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>p_o</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <p>As the lecture showed, this number cannot be read on its own: two coders who guess at random, each with their own label frequencies, also agree sometimes.</p>
-<p><strong>Exercise 1:</strong> Compute the agreement you would expect by chance (<code>p_e</code>) and Cohen’s κ, using the code from the lecture. Before you run it: will κ be higher or lower than <code>p_o</code>?</p>
+<p><strong>Exercise 1:</strong> Compute the agreement you would expect by chance (<code>p_e</code>) and Cohen’s κ, using the formula from the lecture: for each label, multiply the two coders’ shares, and add up the products. Before you run it: will κ be higher or lower than <code>p_o</code>?</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="co"># your code here</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
