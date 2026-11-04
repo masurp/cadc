@@ -402,15 +402,15 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="the-data" class="level3">
 <h3 class="anchored" data-anchor-id="the-data">The data</h3>
-<p><strong>Parts 1 and 2</strong> use 40 of Tuesday’s #corona tweets: each pair draws its own sample, after removing repeated copies of the same tweet. You and your partner code the same 40.</p>
+<p><strong>Parts 1 and 2</strong> use 50 of Tuesday’s #corona tweets: each pair draws its own sample, after removing repeated copies of the same tweet. You and your partner code the same 50.</p>
 <p><strong>Section 7</strong> uses the lecture’s Yelp data: 1,000 single sentences from restaurant reviews on Yelp, each labelled positive or negative by the researchers who published the set (Kotzias et al., 2015). Exactly half are positive. One row is one sentence.</p>
 <div class="cadc-note">
 <div class="cadc-note__label">
 <p>BEFORE YOU START</p>
 </div>
 <ol type="1">
-<li>Download <strong>the lab folder from Canvas</strong> (Modules › Lab folders, version 2b0fd7bb) and unzip it. It holds the Part 1 script, the Part 2 skeleton, the tweets and the Yelp sentences.</li>
-<li>Find a partner. You code the same tweets, separately.</li>
+<li>Download <strong>the lab folder from Canvas</strong> (Modules › Lab folders, version 602ccebb) and unzip it. It holds the Part 1 script, the Part 2 skeleton, the tweets and the Yelp sentences.</li>
+<li>Find a partner. You code the same tweets, separately. Pick a number for your pair. You will have to use it as the seed for the random draw further below.</li>
 </ol>
 <p>Trouble with the download, the zip, or a file R cannot find? See <a href="../setup.html#zip">Setup help</a>.</p>
 </div>
@@ -435,9 +435,9 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </div>
 <p>Together with your partner, and <strong>before</strong> you look at any tweet, write a short codebook:</p>
 <ol type="1">
-<li>Three labels, <code>pos</code>, <code>neg</code> and <code>neu</code>, each defined in one sentence.</li>
-<li>One rule for a tweet that contains both praise and criticism.</li>
-<li>One rule for a tweet that only reports a fact (<em>“500 new cases today”</em>).</li>
+<li>Three labels, <code>pos</code> = positive, <code>neg</code> = negative and <code>neu</code> = neutral, each defined in one sentence.</li>
+<li>Formulate a rule for a tweet that contains both praise and criticism.</li>
+<li>Also find a rule for a tweet that only reports a fact (<em>“500 new cases today”</em>). This should help you decide on ambiguous cases.</li>
 </ol>
 <div class="cadc-paper__foot">
 <p>Take ten minutes at most. You will have to code by these rules.</p>
@@ -446,7 +446,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="draw-your-tweets" class="level3">
 <h3 class="anchored" data-anchor-id="draw-your-tweets">2 · Draw your tweets</h3>
-<p>Use your pair number as the seed, so that you and your partner draw the same 40 tweets, and other pairs draw different ones. We first remove exact duplicates: on Tuesday you saw that some tweets were posted dozens of times.</p>
+<p>Use your pair number as the seed, so that you and your partner draw the same 50 tweets, and other pairs draw different ones. We first remove exact duplicates: on Tuesday you saw that some tweets were posted dozens of times.</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(tidyverse)</span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(tidytext)</span>
@@ -454,29 +454,30 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>tweets <span class="ot">&lt;-</span> <span class="fu">read_csv</span>(<span class="st">"corona-tweets.csv"</span>)</span>
 <span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">1</span>)                                    <span class="co"># change 1 to your pair number</span></span>
-<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>sample_40 <span class="ot">&lt;-</span> tweets <span class="sc">|&gt;</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>sample_50 <span class="ot">&lt;-</span> tweets <span class="sc">|&gt;</span></span>
 <span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">distinct</span>(text, <span class="at">.keep_all =</span> <span class="cn">TRUE</span>) <span class="sc">|&gt;</span></span>
-<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">slice_sample</span>(<span class="at">n =</span> <span class="dv">40</span>) <span class="sc">|&gt;</span></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">slice_sample</span>(<span class="at">n =</span> <span class="dv">50</span>) <span class="sc">|&gt;</span></span>
 <span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(id, text)</span>
 <span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="fu">paste0</span>(<span class="dv">1</span><span class="sc">:</span><span class="dv">40</span>, <span class="st">". "</span>, sample_40<span class="sc">$</span>text), <span class="at">sep =</span> <span class="st">"</span><span class="sc">\n\n</span><span class="st">"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="fu">paste0</span>(<span class="dv">1</span><span class="sc">:</span><span class="dv">50</span>, <span class="st">". "</span>, sample_50<span class="sc">$</span>text), <span class="at">sep =</span> <span class="st">"</span><span class="sc">\n\n</span><span class="st">"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <p><code>cat()</code> prints the tweets as plain, numbered text, which is easier to read than a table.</p>
 </section>
 <section id="code-on-your-own" class="level3">
 <h3 class="anchored" data-anchor-id="code-on-your-own">3 · Code on your own</h3>
-<p>Fill in your 40 labels in the order the tweets are numbered. Do not talk to your partner and do not look at their screen. Once you have coded a tweet, do not go back and change it.</p>
+<p>Fill in your 50 labels in the order the tweets are numbered. Do not talk to your partner and do not look at their screen. Once you have coded a tweet, do not go back and change it.</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>coder_a <span class="ot">&lt;-</span> <span class="fu">c</span>(</span>
 <span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>  <span class="st">""</span>, <span class="st">""</span>, <span class="st">""</span>, <span class="st">""</span>, <span class="st">""</span>, <span class="st">""</span>, <span class="st">""</span>, <span class="st">""</span>, <span class="st">""</span>, <span class="st">""</span>,      <span class="co"># tweets 1-10</span></span>
 <span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>  <span class="st">""</span>, <span class="st">""</span>, <span class="st">""</span>, <span class="st">""</span>, <span class="st">""</span>, <span class="st">""</span>, <span class="st">""</span>, <span class="st">""</span>, <span class="st">""</span>, <span class="st">""</span>,      <span class="co"># tweets 11-20</span></span>
 <span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>  <span class="st">""</span>, <span class="st">""</span>, <span class="st">""</span>, <span class="st">""</span>, <span class="st">""</span>, <span class="st">""</span>, <span class="st">""</span>, <span class="st">""</span>, <span class="st">""</span>, <span class="st">""</span>,      <span class="co"># tweets 21-30</span></span>
-<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>  <span class="st">""</span>, <span class="st">""</span>, <span class="st">""</span>, <span class="st">""</span>, <span class="st">""</span>, <span class="st">""</span>, <span class="st">""</span>, <span class="st">""</span>, <span class="st">""</span>, <span class="st">""</span>       <span class="co"># tweets 31-40</span></span>
-<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>  <span class="st">""</span>, <span class="st">""</span>, <span class="st">""</span>, <span class="st">""</span>, <span class="st">""</span>, <span class="st">""</span>, <span class="st">""</span>, <span class="st">""</span>, <span class="st">""</span>, <span class="st">""</span>,      <span class="co"># tweets 31-40</span></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>  <span class="st">""</span>, <span class="st">""</span>, <span class="st">""</span>, <span class="st">""</span>, <span class="st">""</span>, <span class="st">""</span>, <span class="st">""</span>, <span class="st">""</span>, <span class="st">""</span>, <span class="st">""</span>       <span class="co"># tweets 41-50</span></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <p>When you are both done, send your partner your <code>coder_a &lt;- c(...)</code> lines. Paste theirs into your script and rename it to <code>coder_b</code>. Then put everything in one table:</p>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>coded <span class="ot">&lt;-</span> sample_40 <span class="sc">|&gt;</span></span>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>coded <span class="ot">&lt;-</span> sample_50 <span class="sc">|&gt;</span></span>
 <span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">coder_a =</span> coder_a,</span>
 <span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>         <span class="at">coder_b =</span> coder_b)</span>
 <span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a></span>
@@ -565,29 +566,30 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <div class="cadc-note__label">
 <p>START IN THE ROOM · FINISH AT HOME · AI PERMITTED, DISCLOSE IT</p>
 </div>
-<p>Open <code>week02-lab-b-part2.qmd</code> from the lab folder. Part 1 saved your <code>gold-corona.csv</code> in the same folder, with your labels, your partner’s labels and the resolved gold label. Use the rest of the session for the first steps, and finish at home.</p>
+<p>Open <code>week02-lab-b-part2.qmd</code> from the lab folder. Part 1 saved your <code>gold-corona.csv</code> in the same folder (if that is not the case, create it!), with your labels, your partner’s labels and the resolved gold label. Try to reach the confusion matrix (step 5) before the session ends. That way, your teacher can still help. Then finish at home.</p>
 </div>
 <p><strong>Your question:</strong> How well does the Bing dictionary measure the sentiment of #corona tweets, judged against your own gold standard?</p>
-<p>Your gold standard has three labels; the dictionary has <em>positive</em>, <em>negative</em> and <em>no call</em>. Deciding how these relate is part of the task, and there is more than one defensible answer.</p>
-<p>The skeleton takes you through nine steps:</p>
+<p>Your gold standard has three labels; the dictionary has <em>positive</em>, <em>negative</em> and <em>no call</em>. You first count a no call as <code>neu</code>. Later you decide which accuracy you would report: with these tweets or without them. Be careful: there is more than one defensible answer.</p>
+<p>That decision and your explanation of the errors are what you have to explain. What each step has to show is described in the skeleton script. You and your partner share the gold standard, but the decision, the code and the reflections should be your own!</p>
+<p>The skeleton takes you through eight steps:</p>
 <ol type="1">
 <li>Load your gold standard and the dictionary.</li>
-<li>Your gold standard: how often each label, and your κ with your partner.</li>
-<li>Score the 40 tweets with Bing, as on Tuesday.</li>
-<li>A verdict per tweet, with your decision on what a <em>no call</em> and a tie mean.</li>
-<li>The confusion matrix.</li>
-<li>Accuracy, and precision and recall per class.</li>
-<li>The other decision: recompute the accuracy with the opposite rule for <em>no call</em>.</li>
-<li>You or your partner? The dictionary’s agreement with each of you separately.</li>
-<li>The errors: every tweet the dictionary got wrong, with the words it matched.</li>
+<li>Describe your gold standard: how often does each label occur, and also compute <code>p_o</code> and κ with your partner’s codings.</li>
+<li>Score the 50 tweets with Bing (using the code we created and used on Tuesday).</li>
+<li>Produce a verdict per tweet, in the codes of your gold standard (we used <code>pos</code>, <code>neg</code>, and <code>neu</code>!). Tweets the dictionary cannot judge (score <code>NA</code> or 0) get the verdict <code>neu</code>.</li>
+<li>Now, we test the dictionary’s performance. Create the confusion matrix, with the gold labels in the rows and the dictionary verdicts in the columns.</li>
+<li>Compute accuracy on all 50 tweets, and also precision and recall for each class.</li>
+<li>Remove the tweets the dictionary cannot judge, and compute the accuracy again. How many tweets are left?</li>
+<li>Go back to all 50 tweets, with the verdicts from step 4. Describe and evaluate the errors: identify every tweet the dictionary got wrong, with its <code>id</code>, text, gold label, verdict and the words it matched.</li>
 </ol>
-<p>Then three short reflections on your own results, and your AI disclosure.</p>
+<p>Then write three reflections on your own results, and your AI disclosure. B1 says which of the two accuracies you would report, and why. B2 explains three errors and names their types. B3 judges whether Bing is good enough for a study like Tuesday’s, with your accuracy, <code>p_o</code> and the weakest class. The skeleton lists the points each one has to cover.</p>
 <div class="cadc-note cadc-note--check">
 <div class="cadc-note__label">
 <p>HANDING IN HOMEWORK 2</p>
 </div>
 <ul>
-<li><strong>What:</strong> the skeleton, completed and rendered to HTML: your code, its output, the three reflections (B) and your AI disclosure (C).</li>
+<li><strong>What:</strong> the skeleton, completed and rendered to one HTML file: your code, its output, the three reflections (B) and your AI disclosure (C).</li>
+<li><strong>Before you upload:</strong> open the HTML file and check that all eight steps show output, that step 8 shows the full tweets, and that the reflections give numbers and tweet ids.</li>
 <li><strong>Where and when:</strong> on Canvas, by Sunday 23:59 (the date is on the <a href="../weeks/index.html">schedule</a>). <strong>Required to pass the course.</strong></li>
 <li><strong>How it is graded:</strong> Excellent, Good, Sufficient or Insufficient: <a href="../homework.html">what each means</a>. The reflections count most: they must be about <strong>your</strong> output, with specific texts and numbers.</li>
 <li><strong>AI disclosure:</strong> follow <a href="../ai.html#how-to-disclose">the template and the examples</a>.</li>

@@ -429,7 +429,7 @@ ul.task-list li input[type="checkbox"] {
 </div>
 <section id="assistant-and-thinking-partner" class="level3">
 <h3 data-anchor-id="assistant-and-thinking-partner">Assistant and thinking partner</h3>
-<p><strong>Assistant.</strong> Claude (20 Nov), to write the <code>pivot_wider()</code> call in step 6. I kept its code, checked the table against the confusion matrix by hand (the four cells add up to my 40 tweets), and rejected its suggestion to drop the neutral tweets, because my codebook defines neutral explicitly.</p>
+<p><strong>Assistant.</strong> Claude (20 Nov), to write the <code>pivot_wider()</code> call in step 6. I kept its code, checked the table against the confusion matrix by hand (the four cells add up to my 50 tweets), and rejected its suggestion to drop the neutral tweets, because my codebook defines neutral explicitly.</p>
 <p><strong>Thinking partner.</strong> After writing my error types in B2, I asked Claude whether it saw others. It suggested <em>sarcasm</em>; I checked tweets 12, 31 and 40 and it fits only 31, which I added as an example. The error types are mine.</p>
 <p><strong>Not used for:</strong> B1 and B3. Prompts in the appendix.</p>
 </section>
@@ -440,7 +440,7 @@ ul.task-list li input[type="checkbox"] {
 </div>
 <section id="when-the-model-is-your-method" class="level3">
 <h3 data-anchor-id="when-the-model-is-your-method">When the model is your method</h3>
-<p><strong>Instrument.</strong> <code>llama3.2:3b</code> through Ollama, run on 19 Nov on my laptop, temperature 0, with a JSON schema. The prompt is my week 2 codebook, verbatim in step 2; all 40 replies are in my file. Validated against my gold standard (κ = .58, against .71 between my partner and me).</p>
+<p><strong>Instrument.</strong> <code>llama3.2:3b</code> through Ollama, run on 19 Nov on my laptop, temperature 0, with a JSON schema. The prompt is my week 2 codebook, verbatim in step 2; all 50 replies are in my file. Validated against my gold standard (κ = .58, against .71 between my partner and me).</p>
 <p><strong>Assistant.</strong> ChatGPT (20 Nov), to turn my codebook into a prompt. It added an instruction to “be careful with sarcasm”, which I removed: it is not in my codebook, and the comparison with my partner’s coding would no longer be fair.</p>
 <p><strong>Not used for:</strong> the reflections.</p>
 </section>
