@@ -409,7 +409,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <p>BEFORE YOU START</p>
 </div>
 <ol type="1">
-<li>Download <strong>the lab folder from Canvas</strong> (Modules › Lab folders, version 602ccebb) and unzip it. It holds the Part 1 script, the Part 2 skeleton, the tweets and the Yelp sentences.</li>
+<li>Download <strong>the lab folder from Canvas</strong> (Modules › Lab folders, version ffcbe9ef) and unzip it. It holds the Part 1 script, the Part 2 skeleton, the tweets and the Yelp sentences.</li>
 <li>Find a partner. You code the same tweets, separately. Pick a number for your pair. You will have to use it as the seed for the random draw further below.</li>
 </ol>
 <p>Trouble with the download, the zip, or a file R cannot find? See <a href="../setup.html#zip">Setup help</a>.</p>
@@ -501,24 +501,27 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="read-the-disagreements" class="level3">
 <h3 class="anchored" data-anchor-id="read-the-disagreements">5 · Read the disagreements</h3>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>coded <span class="sc">|&gt;</span></span>
-<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(coder_a <span class="sc">!=</span> coder_b) <span class="sc">|&gt;</span></span>
-<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(text, coder_a, coder_b)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>disagreements <span class="ot">&lt;-</span> coded <span class="sc">|&gt;</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(coder_a <span class="sc">!=</span> coder_b)</span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="fu">paste0</span>(disagreements<span class="sc">$</span>id, <span class="st">" ("</span>, disagreements<span class="sc">$</span>coder_a, <span class="st">" / "</span>, disagreements<span class="sc">$</span>coder_b, <span class="st">"): "</span>,</span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>           disagreements<span class="sc">$</span>text), <span class="at">sep =</span> <span class="st">"</span><span class="sc">\n\n</span><span class="st">"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p>Read every disagreement out loud with your partner. For each one, decide: was it a <strong>slip</strong>, or a case the <strong>codebook</strong> did not cover? Count the second kind, and change the codebook so that it covers them.</p>
+<p>Each entry shows the tweet’s <code>id</code>, your label and your partner’s label, and then the tweet. Read every disagreement out loud with your partner. For each one, decide: was it a <strong>slip</strong>, or a case the <strong>codebook</strong> did not cover? Count the second kind, and change the codebook so that it covers them.</p>
 </section>
 <section id="your-gold-standard" class="level3">
 <h3 class="anchored" data-anchor-id="your-gold-standard">6 · Your gold standard</h3>
-<p>Agree on one label for every tweet you disagreed on, using your improved codebook. Start from coder A’s labels and overwrite the ones you changed, by their row number:</p>
+<p>Agree on one label for every tweet you disagreed on, using your improved codebook. Start from coder A’s labels. Write one line for each tweet you changed, with its <code>id</code> and the label you agreed on:</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>gold <span class="ot">&lt;-</span> coded <span class="sc">|&gt;</span></span>
-<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">label =</span> coder_a) <span class="sc">|&gt;</span></span>
-<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(id, text, coder_a, coder_b, label)    <span class="co"># keep both coders: Homework 2 needs them</span></span>
-<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>gold<span class="sc">$</span>label[<span class="fu">c</span>(<span class="dv">3</span>, <span class="dv">17</span>)] <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">"neg"</span>, <span class="st">"neu"</span>)        <span class="co"># your resolved rows and labels</span></span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">label =</span> <span class="fu">case_when</span>(id <span class="sc">==</span> <span class="dv">1234</span> <span class="sc">~</span> <span class="st">"neg"</span>,     <span class="co"># replace with your own: one line per tweet,</span></span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>                           id <span class="sc">==</span> <span class="dv">567</span>  <span class="sc">~</span> <span class="st">"neu"</span>,     <span class="co"># its id and the label you agreed on</span></span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>                           <span class="cn">TRUE</span>       <span class="sc">~</span> coder_a)) <span class="sc">|&gt;</span></span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(id, text, coder_a, coder_b, label)        <span class="co"># keep both coders: Homework 2 needs them</span></span>
 <span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a>gold <span class="sc">|&gt;</span> <span class="fu">count</span>(label)</span>
-<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a><span class="fu">write_csv</span>(gold, <span class="st">"gold-corona.csv"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a>gold <span class="sc">|&gt;</span> <span class="fu">filter</span>(coder_a <span class="sc">!=</span> coder_b) <span class="sc">|&gt;</span> <span class="fu">select</span>(id, coder_a, coder_b, label)   <span class="co"># check your decisions</span></span>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a>gold <span class="sc">|&gt;</span> <span class="fu">count</span>(label)</span>
+<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a><span class="fu">write_csv</span>(gold, <span class="st">"gold-corona.csv"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <p>Keep <code>gold-corona.csv</code> safe. You need it for the homework, and it comes back in week 4, when a language model codes the same tweets with your codebook.</p>
 </section>
@@ -574,7 +577,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <p>The skeleton takes you through eight steps:</p>
 <ol type="1">
 <li>Load your gold standard and the dictionary.</li>
-<li>Describe your gold standard: how often does each label occur, and also compute <code>p_o</code> and κ with your partner’s codings.</li>
+<li>Describe your gold standard: how often does each label occur, and also compute <code>p_o</code> and κ with your partner’s codings. Then run <code>gold |&gt; filter(coder_a == coder_b, label != coder_a)</code>, which should return no rows. If it returns a row, redo section 6 of Part 1.</li>
 <li>Score the 50 tweets with Bing (using the code we created and used on Tuesday).</li>
 <li>Produce a verdict per tweet, in the codes of your gold standard (we used <code>pos</code>, <code>neg</code>, and <code>neu</code>!). Tweets the dictionary cannot judge (score <code>NA</code> or 0) get the verdict <code>neu</code>.</li>
 <li>Now, we test the dictionary’s performance. Create the confusion matrix, with the gold labels in the rows and the dictionary verdicts in the columns.</li>
