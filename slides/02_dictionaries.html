@@ -100,7 +100,7 @@
     code span.vs { color: #da4453; } /* VerbatimString */
     code span.wa { color: #da4453; } /* Warning */
   </style>
-  <link rel="stylesheet" href="../site_libs/revealjs/dist/theme/quarto-adcfead8d0bef5f85aa5c503482f1c87.css">
+  <link rel="stylesheet" href="../site_libs/revealjs/dist/theme/quarto-94b4848de00492c23d336e315f7314df.css">
   <link href="../site_libs/revealjs/plugin/quarto-line-highlight/line-highlight.css" rel="stylesheet">
   <link href="../site_libs/revealjs/plugin/reveal-menu/menu.css" rel="stylesheet">
   <link href="../site_libs/revealjs/plugin/reveal-menu/quarto-menu.css" rel="stylesheet">
@@ -2769,6 +2769,31 @@ human      positive negative mixed
         var tries = 0;
         var t = setInterval(function () { if (bind() || ++tries > 100) clearInterval(t); }, 50);
       }
+    })();
+
+    // ---------------------------------------------------------------------------
+    // 4. THE MENU'S PDF ITEM. Quarto's "PDF Export Mode" only switches to reveal's
+    //    print layout and leaves the rest to the browser's print dialog, which on a
+    //    tablet looks like nothing happened (a student's question, 2026-11-05). Where
+    //    a PDF of this deck exists (the public build, _scripts/build_slide_pdfs.py),
+    //    the item downloads it instead. Elsewhere the item stays as Quarto made it.
+    // ---------------------------------------------------------------------------
+    (function () {
+      if (!/^https?:$/.test(location.protocol)) return;
+      var pdf = location.pathname.split("/").pop().replace(/\.html$/, "") + ".pdf";
+      fetch(pdf, { method: "HEAD" }).then(function (r) {
+        if (!r.ok) return;
+        var tries = 0;
+        var t = setInterval(function () {
+          var a = document.querySelector('.slide-tool-item a[onclick*="togglePdfExport"]');
+          if (!a) { if (++tries > 100) clearInterval(t); return; }
+          clearInterval(t);
+          a.removeAttribute("onclick");
+          a.setAttribute("href", pdf);
+          a.setAttribute("download", "");
+          a.textContent = "Download PDF";
+        }, 100);
+      }).catch(function () {});
     })();
     </script>
     

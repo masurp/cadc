@@ -1,0 +1,195 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>A machine that learns by doing</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="../shared/net3d.css">
+</head>
+<!-- ===========================================================================
+  WEEK 3 — cold open, for the dark title band. A biological neuron, shaded,
+  with signals arriving on the dendrites and a pulse firing down the axon; the
+  1943 unit laid over it; then the cell unfolds into a three-dimensional
+  network (explainers/shared/net3d.js) that turns slowly while the twenty
+  reviews pulse through it one at a time. The training is real
+  (explainers/shared/mlp.js, seeded): the edges are the weights, the spheres
+  colour by activation, the verdicts flip as the loss falls.
+  Steps: neuron → the unit → the network and the reviews → its verdicts →
+  training to epoch 53, two still wrong → on to 65, all right → the hidden unit
+  that tells "Not good at all" from "Not boring at all" → the question.
+  Forward and back: explainers/shared/stepnav.js; #N opens at step N.
+  Cousin: explainers/network/ takes the same network apart on one review.
+=========================================================================== -->
+<body>
+<div class="stage">
+  <canvas id="c"></canvas>
+  <svg id="o" viewBox="0 0 1000 440" preserveAspectRatio="xMidYMid meet" role="img"
+       aria-label="A biological neuron becomes an artificial unit. A small three-dimensional network with random weights labels twenty film reviews, half of them wrong; it trains, the weights change, a loss curve falls, and the verdicts flip to right. One hidden unit has learned to react to not together with good.">
+    <g id="neuronLabels" class="fade"></g>
+    <g id="unit" class="fade hid"></g>
+    <g id="netLabels" class="fade hid"></g>
+    <g id="reviews" class="fade hid"></g>
+    <g id="loss" class="fade hid"></g>
+    <g id="callout" class="fade hid"></g>
+    <g id="question" class="fade hid"></g>
+    <g id="hud"></g>
+  </svg>
+</div>
+<noscript><p style="max-width:34em;margin:2em;font-family:sans-serif;color:#fff">Needs JavaScript: a small
+neural network learning twenty film reviews.</p></noscript>
+
+<script src="../shared/mlp.js"></script>
+<script src="../shared/net3d.js"></script>
+<script src="../shared/neuron.js"></script>
+<script src="../shared/stepnav.js"></script>
+<script>
+(function () {
+  "use strict";
+  var NS = "http://www.w3.org/2000/svg";
+  function el(t, a) { var e = document.createElementNS(NS, t); for (var k in a) if (a[k] != null) e.setAttribute(k, a[k]); return e; }
+  function txt(p, s, a) { var t = el("text", a || {}); t.textContent = s; p.appendChild(t); return t; }
+  function tsp(t, s, a) { var x = el("tspan", a || {}); x.textContent = s; t.appendChild(x); return x; }
+  function g(p, a) { var e = el("g", a || {}); p.appendChild(e); return e; }
+  function clear(n) { while (n.firstChild) n.removeChild(n.firstChild); }
+  function $(id) { return document.getElementById(id); }
+  function wrap(parent, parts, o) {
+    var words = []; parts.forEach(function (p) { p[0].split(/\s+/).forEach(function (w) { if (w) words.push([w, p[1]]); }); });
+    var probe = txt(parent, "", { x: -9999, y: -9999, "class": o.cls || "sm" });
+    function width(str) { probe.textContent = str; return typeof probe.getComputedTextLength === "function" ? probe.getComputedTextLength() : str.length * 6; }
+    var lines = [[]], cur = "";
+    words.forEach(function (w) { var t = cur ? cur + " " + w[0] : w[0]; if (cur && width(t) > o.width) { lines.push([]); cur = w[0]; } else cur = t; lines[lines.length - 1].push(w); });
+    parent.removeChild(probe);
+    lines.forEach(function (ln, i) { var t = txt(parent, "", { x: o.x, y: o.y + i * o.lh, "class": o.cls || "sm" }); ln.forEach(function (w, k) { tsp(t, (k ? " " : "") + w[0], w[1] ? { "class": w[1] } : {}); }); });
+  }
+  var M = CADCMLP, N3 = CADCNet3D, COL = N3.COL, rgba = N3.rgba, mix = N3.mix, ease = N3.ease;
+  var reduced = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  var HIST = M.train({ hidden: 4, lr: 0.6, epochs: 65, seed: 1 });
+  var NG = M.REVIEWS.findIndex(function (r) { return r[0] === "Not good at all."; });
+  var NB = M.REVIEWS.findIndex(function (r) { return r[0] === "Not boring at all."; });
+  /* the first pass stops at the last epoch with exactly two reviews wrong; the second learns them */
+  var EP_ALL = HIST.findIndex(function (s) { return s.right === 20; }), EP_END = EP_ALL;
+  var EP_TWO = EP_ALL; while (EP_TWO > 1 && HIST[EP_TWO - 1].right >= 18) EP_TWO--;   /* from here on, two or fewer wrong */
+  var UNIT = M.decisiveUnit(HIST[EP_ALL].params, M.X[NG], 0);
+  var iNot = M.VOCAB.indexOf("not"), iGood = M.VOCAB.indexOf("good"), iBoring = M.VOCAB.indexOf("boring");
+
+  var cv = $("c"), ctx = cv.getContext("2d"), W = 1000, H = 440;
+  function resize() { var dpr = window.devicePixelRatio || 1, r = cv.getBoundingClientRect(); cv.width = Math.round(r.width * dpr); cv.height = Math.round(r.height * dpr); ctx.setTransform(cv.width / W, 0, 0, cv.height / H, 0, 0); }
+  window.addEventListener("resize", resize); resize();
+
+  /* ---- scene B: the network ---------------------------------------------------- */
+  var SOMA = [440, 216];
+  var net = N3.create({ ctx: ctx, vocab: M.VOCAB, hidden: 4, cam: { cx: 292, cy: 198, S: 72, f: 7.5, pitch: .16 }, origin: SOMA, nodeR: { in: 6.5, hid: 10.5, out: 14 } });
+  var neuron = CADCNeuron.create({ ctx: ctx, net: net });
+  var yaw = 0, unfold = 0, neuronA = 1, netA = 0, cur = { params: HIST[0].params, epoch: 0 }, pulse = { i: 0, t: 0, period: 1100, on: false, x: null, hid: null, out: null, list: null }, highlight = null;
+
+  /* ---- SVG layer ---------------------------------------------------------------- */
+  (function () {
+    var L = $("neuronLabels");
+    txt(g(L, { id: "neuronTitle", "class": "fade" }), "A NEURON", { x: 40, y: 30, "class": "lab" });
+    [["DENDRITES", "signals arrive", 200], ["CELL BODY", "they are summed", 405], ["AXON", "it fires past a threshold", 640]].forEach(function (a) { txt(L, a[0], { x: a[2], y: 392, "class": "lab" }); txt(L, a[1], { x: a[2], y: 408, "class": "sm" }); });
+    var U = $("unit");
+    neuron.overlay(U);
+    txt(U, "THE UNIT, 1943", { x: 40, y: 30, "class": "lab", fill: "#4fc08d" });
+    var N = $("netLabels");
+    txt(N, "INPUT · 15 WORDS", { x: 40, y: 30, "class": "lab" }); txt(N, "HIDDEN · 4 UNITS", { x: 292, y: 30, "class": "lab", "text-anchor": "middle" }); txt(N, "OUTPUT", { x: 465, y: 30, "class": "lab", "text-anchor": "middle" });
+  })();
+  var RX = 600, RY0 = 50, RDY = 14.2, rows;
+  (function () {
+    var R = $("reviews");
+    txt(R, "TWENTY REVIEWS", { x: RX, y: 30, "class": "lab" }); txt(R, "HUMAN", { x: 878, y: 30, "class": "lab", "text-anchor": "middle" });
+    var nh = txt(R, "NETWORK", { x: 926, y: 30, "class": "lab fade hid", "text-anchor": "middle" });
+    rows = M.REVIEWS.map(function (r, i) {
+      var y = RY0 + i * RDY, row = g(R, {});
+      var band = row.appendChild(el("rect", { x: RX - 6, y: y - 6.6, width: 372, height: RDY - .8, rx: 3, "class": "band" }));
+      var t = txt(row, r[0], { x: RX, y: y + 3.5, "class": "rev" });
+      var hc = g(row, { "class": "chip " + (r[1] ? "pos" : "neg") }); hc.appendChild(el("rect", { x: 868, y: y - 5.5, width: 20, height: 11.5 })); txt(hc, r[1] ? "+" : "−", { x: 878, y: y + 3.4 });
+      var vc = g(row, { "class": "chip pos fade hid" }); vc.appendChild(el("rect", { x: 916, y: y - 5.5, width: 20, height: 11.5 })); var vt = txt(vc, "", { x: 926, y: y + 3.4 });
+      var mk = txt(row, "", { x: 960, y: y + 3.6, "class": "tick fade hid" });
+      return { text: t, vc: vc, vt: vt, mk: mk, band: band };
+    });
+    rows.head = nh;
+  })();
+  var LX0 = 600, LX1 = 915, LY0 = 362, LY1 = 428, curve, mark, epochLab, countLab, maxLoss = HIST[0].loss;
+  (function () {
+    var Lg = $("loss");
+    txt(Lg, "LOSS", { x: LX0, y: 350, "class": "lab" }); countLab = txt(Lg, "", { x: LX0 + 46, y: 350, "class": "sm" }); epochLab = txt(Lg, "", { x: LX1, y: 350, "class": "lab", "text-anchor": "end" });
+    Lg.appendChild(el("line", { "class": "axis", x1: LX0, y1: LY1, x2: LX1, y2: LY1 })); Lg.appendChild(el("line", { "class": "axis", x1: LX0, y1: LY0, x2: LX0, y2: LY1 }));
+    [0, 20, 40, 60].forEach(function (e) { var x = LX0 + (LX1 - LX0) * e / EP_END; txt(Lg, e, { x: x, y: LY1 + 10, "class": "tickl", "text-anchor": "middle" }); });
+    txt(Lg, maxLoss.toFixed(2), { x: LX0 - 4, y: LY0 + 4, "class": "tickl", "text-anchor": "end" }); txt(Lg, "0", { x: LX0 - 4, y: LY1 + 3, "class": "tickl", "text-anchor": "end" });
+    curve = Lg.appendChild(el("path", { "class": "curve", d: "" })); mark = Lg.appendChild(el("circle", { "class": "marker", r: 3 }));
+  })();
+  function lossPath(upto) {
+    var d = ""; for (var e = 0; e <= upto; e++) { var x = LX0 + (LX1 - LX0) * e / EP_END, y = LY1 - (LY1 - LY0) * HIST[e].loss / maxLoss; d += (e ? " L" : "M") + x.toFixed(1) + "," + y.toFixed(1); }
+    mark.setAttribute("cx", (LX0 + (LX1 - LX0) * upto / EP_END).toFixed(1)); mark.setAttribute("cy", (LY1 - (LY1 - LY0) * HIST[upto].loss / maxLoss).toFixed(1)); return d;
+  }
+  (function () { var Q = $("question"); txt(Q, "20 of 20.", { x: 40, y: 390, "class": "big" }); wrap(Q, [["It has seen these twenty reviews " + EP_END + " times. "], ["Would it get the next twenty?", "k"]], { x: 40, y: 410, width: 500, lh: 15 }); })();
+  (function () {
+    var Cg = $("callout"), t = txt(Cg, "", { x: 40, y: 400, "class": "callout" });
+    tsp(t, "This unit turns "); tsp(t, "red", { "class": "n" }); tsp(t, " for “Not good at all.” and "); tsp(t, "blue", { "class": "p" }); tsp(t, " for “Not boring at all.”");
+  })();
+
+  function showEpoch(ep, verdicts) {
+    var s = HIST[ep]; cur = { params: s.params, epoch: ep };
+    rows.forEach(function (r, i) { var v = s.outs[i] >= .5 ? 1 : 0, ok = v === M.Y[i];
+      r.vc.setAttribute("class", "chip " + (v ? "pos" : "neg") + " fade" + (verdicts ? "" : " hid")); r.vt.textContent = v ? "+" : "−";
+      r.mk.textContent = ok ? "✓" : "✕"; r.mk.setAttribute("class", (ok ? "tick" : "cross") + " fade" + (verdicts ? "" : " hid")); r.text.setAttribute("class", "rev" + (verdicts && !ok ? " wrong" : ""));
+      r.band.setAttribute("class", "band" + (verdicts && !ok ? " err" : "") + (pulse.list && pulse.list[pulse.k] === i ? " cur" : "")); });
+    rows.head.setAttribute("class", "lab fade" + (verdicts ? "" : " hid"));
+    clear(countLab); if (verdicts) tsp(countLab, s.right + " of 20 right", { "class": s.right === 20 ? "a" : "k" });
+    curve.setAttribute("d", lossPath(ep)); epochLab.textContent = "EPOCH " + ep;
+  }
+
+  var state = 0, prev = -1, anim = null, last = 0;
+  function frame(now) {
+    var dt = Math.min(50, now - last || 16); last = now;
+    if (!reduced) yaw = .3 * Math.sin(now / 5200);
+    var wantNet = state >= 2;
+    netA += ((wantNet ? 1 : 0) - netA) * Math.min(1, dt / 350); neuronA += ((wantNet ? 0 : (state === 1 ? .45 : 1)) - neuronA) * Math.min(1, dt / 350); unfold += ((wantNet ? 1 : 0) - unfold) * Math.min(1, dt / 420);
+    if (anim) { var k = Math.min(1, (now - anim.t0) / anim.dur), ep = Math.round(anim.from + (anim.to - anim.from) * ease(k)); if (ep !== cur.epoch) showEpoch(ep, true); if (k >= 1) anim = null; }
+    if (pulse.on && reduced && pulse.list && !pulse.x) {   /* held still: the first of the pair, fully through */
+      pulse.k = 0; pulse.i = pulse.list[0]; pulse.x = M.X[pulse.i]; var f0 = M.forward(cur.params, pulse.x);
+      pulse.hid = f0.a1; pulse.out = f0.out; pulse.t = 1; showEpoch(cur.epoch, true);
+    }
+    if (pulse.on && !reduced) {
+      pulse.t += dt / pulse.period;
+      if (pulse.t >= 1 || !pulse.x) {
+        pulse.t = pulse.x ? 0 : pulse.t;
+        if (pulse.list) { pulse.k = pulse.x ? (pulse.k + 1) % pulse.list.length : 0; pulse.i = pulse.list[pulse.k]; showEpoch(cur.epoch, true); }
+        else pulse.i = pulse.x ? (pulse.i + 1) % M.REVIEWS.length : 0;
+        pulse.x = M.X[pulse.i]; var f = M.forward(cur.params, pulse.x); pulse.hid = f.a1; pulse.out = f.out; }
+      else if (pulse.t > .5) { var f2 = M.forward(cur.params, pulse.x); pulse.hid = f2.a1; pulse.out = f2.out; }
+    }
+    ctx.clearRect(0, 0, W, H);
+    neuron.draw(now, neuronA, reduced);
+    var unitText = null;
+    if (highlight != null && pulse.hid && pulse.t >= .5) { unitText = {}; unitText[highlight] = (pulse.hid[highlight] > 0 ? "+" : "") + pulse.hid[highlight].toFixed(2); }
+    net.draw(now, { alpha: netA, yaw: yaw, unfold: unfold, params: cur.params, pulse: pulse.on ? pulse : null, highlight: highlight, hidText: unitText,
+                    litEdges: highlight != null ? { h: highlight, inputs: [iNot, iGood, iBoring], out: true } : null, labels: { words: true, out: true, size: 10.5 } });
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+
+  function show(id, on) { $(id).setAttribute("class", "fade" + (on ? "" : " hid")); }
+  var MAX = 7;
+  function go(n, from) {
+    state = n; prev = from; anim = null;
+    show("neuronLabels", state <= 1); $("neuronTitle").setAttribute("class", "fade" + (state === 0 ? "" : " hid"));
+    show("unit", state === 1); show("netLabels", state >= 2); show("reviews", state >= 2);
+    show("loss", state >= 4); show("callout", state === 6); show("question", state === 7);
+    highlight = state === 6 ? UNIT : null; pulse.on = state >= 2; pulse.period = state === 4 || state === 5 ? 420 : (state === 6 ? 2200 : 1100);
+    pulse.list = state === 6 ? [NG, NB] : null; pulse.x = null; pulse.k = 0;
+    if (state <= 2) showEpoch(0, false);
+    else if (state === 3) showEpoch(0, true);
+    else if (state === 4) { if (prev === 3) { showEpoch(0, true); anim = { from: 0, to: EP_TWO, t0: performance.now(), dur: reduced ? 600 : 5200 }; } else showEpoch(EP_TWO, true); }
+    else if (state === 5) { if (prev === 4) { showEpoch(EP_TWO, true); anim = { from: EP_TWO, to: EP_ALL, t0: performance.now(), dur: reduced ? 600 : 3600 }; } else showEpoch(EP_ALL, true); }
+    else showEpoch(EP_ALL, true);
+  }
+  if ((parseInt((location.hash || "").slice(1), 10) || 0) >= 2) { unfold = 1; netA = 1; neuronA = 0; }
+  CADCStepNav.attach({ max: MAX, go: go, hud: $("hud"), x: 980, y: 432 });
+  if (document.fonts && document.fonts.load) document.fonts.load("11px 'Space Grotesk'");
+})();
+</script>
+</body>
+</html>

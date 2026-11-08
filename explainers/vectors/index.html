@@ -1,0 +1,245 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Words as vectors</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&display=swap">
+<style>
+  /* ==========================================================================
+     Week 3 lecture explainer: six words as points in a space, and what the sum
+     king − man + woman does there. The numbers are REAL: the 50 GloVe numbers
+     of each word, drawn as a strip of 50 cells beside the scene, and the scene
+     is those six words projected onto the three directions in which they differ
+     most (94% of their spread). Steps: man → woman → the arrow woman − man →
+     uncle and aunt along the same arrow → king, and the question → the same
+     arrow from king → queen next to where it lands → what the drawing leaves out.
+     The scene sways a little so it reads as 3-D; it holds still under reduced
+     motion (and so in the slide PDFs). Click / Enter / space advances; #N opens
+     at step N. No caption band: the narration is in the slide's speaker notes.
+     Data: _scripts/build_vectors_explainer.py prints the arrays below.
+     ========================================================================== */
+  :root{
+    --ink:#1a1a17; --ink-3:#5a5a52; --muted:#7a7a70; --faint:#c9c5ba; --paper:#faf8f4;
+    --m:#2678b0; --f:#6f5aa8; --dir:#b84a27;
+    --font:"Space Grotesk", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0; height:100%}
+  body{font-family:var(--font); background:transparent; color:var(--ink);
+       display:flex; align-items:center; justify-content:center;
+       overflow:hidden; cursor:pointer; -webkit-tap-highlight-color:transparent}
+  svg{width:100%; height:100%; display:block}
+  text{font-family:var(--font); fill:var(--ink); font-variant-numeric:tabular-nums}
+  .box{stroke:#ddd8cc; stroke-width:1.1; fill:none}
+  .floor{fill:#f1eee6; stroke:none}
+  .stem{stroke:#cdc8bb; stroke-width:1.2; stroke-dasharray:3 3}
+  .shadow{fill:#d9d4c7}
+  .vec{fill:none; stroke-width:2.6; stroke-linecap:round}
+  .vec.m{stroke:var(--m)} .vec.f{stroke:var(--f)}
+  .dir{fill:none; stroke:var(--dir); stroke-width:3; stroke-linecap:round}
+  .dot.m{fill:var(--m)} .dot.f{fill:var(--f)}
+  .origin{fill:var(--ink-3)}
+  .land{fill:var(--paper); stroke:var(--dir); stroke-width:2.6}
+  .word{font-size:20px; font-weight:700; paint-order:stroke; stroke:var(--paper); stroke-width:5px; stroke-linejoin:round}
+  .word.m{fill:var(--m)} .word.f{fill:var(--f)}
+  .dlab{font-size:16px; font-weight:700; fill:var(--dir); paint-order:stroke; stroke:var(--paper); stroke-width:5px; stroke-linejoin:round}
+  .head{font-size:13px; font-weight:500; letter-spacing:.06em; text-transform:uppercase; fill:var(--muted)}
+  .row{font-size:17px; font-weight:700}
+  .row.m{fill:var(--m)} .row.f{fill:var(--f)} .row.d{fill:var(--dir)} .row.k{fill:var(--ink)}
+  .sum{font-size:20px; font-weight:700}
+  .rule{stroke:var(--ink-3); stroke-width:1.2}
+  .note{font-size:15px; fill:var(--ink-3)}
+  .cell-edge{fill:none; stroke:var(--faint); stroke-width:.8}
+  .step{font-size:12px; fill:#b6b2a8; text-anchor:end}
+  .fade{transition:opacity .45s ease}
+  .hid{opacity:0}
+  @media (prefers-reduced-motion: reduce){ .fade{transition:none} }
+</style>
+</head>
+<body>
+<svg id="chart" viewBox="0 0 1000 440" preserveAspectRatio="xMidYMid meet" role="img"
+     aria-label="Six words as points in a three-dimensional space, each beside a strip of its fifty numbers. The arrow from man to woman runs parallel to the arrow from uncle to aunt. The same arrow placed at king lands next to queen, which is what king minus man plus woman computes over all fifty numbers.">
+  <defs>
+    <marker id="hm" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#2678b0"/></marker>
+    <marker id="hf" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#6f5aa8"/></marker>
+    <marker id="hd" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="4.5" markerHeight="4.5" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#b84a27"/></marker>
+    <marker id="ha" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#c9c5ba"/></marker>
+  </defs>
+  <g id="space"></g>
+  <g id="words"></g>
+  <g id="panel"></g>
+  <g id="hud"></g>
+</svg>
+<noscript><p style="max-width:34em;margin:2em;font-family:sans-serif">Needs JavaScript: six words as
+vectors in a three-dimensional space.</p></noscript>
+
+<script>
+(function () {
+  "use strict";
+  var NS = "http://www.w3.org/2000/svg";
+  function el(t, a) { var e = document.createElementNS(NS, t); for (var k in a) if (a[k] != null) e.setAttribute(k, a[k]); return e; }
+  function txt(p, s, a) { var t = el("text", a || {}); t.textContent = s; p.appendChild(t); return t; }
+  function g(p, a) { var e = el("g", a || {}); p.appendChild(e); return e; }
+  var gS = document.getElementById("space"), gW = document.getElementById("words"), gP = document.getElementById("panel"), gHud = document.getElementById("hud");
+
+  /* ---- the data: real GloVe 50d vectors, and their projection to 3-D -------- */
+  var P = {"man":[2.33,1.31,-0.95],"woman":[2.94,0.16,0.75],"uncle":[-0.97,-0.91,-1.77],"aunt":[-0.22,-2.76,0.37],"king":[-2.64,1.54,-0.61],"queen":[-1.45,0.66,2.21],"result":[-2.03,0.39,1.09]};
+  var NUM = {"man":[-0.09,0.43,-0.17,-0.46,1.64,0.4,-0.37,0.25,-0.11,0.11,-0.11,0.15,-0.65,0.55,0.6,-0.46,0.12,0.64,-0.71,0.24,-0.83,1.27,0.03,0.29,0.39,-2.81,-0.71,0.41,0.39,-0.29,2.61,-0.35,-0.17,0.25,0.31,0.32,0.13,-0.01,0.22,-0.57,-0.09,0.63,-0.06,0.29,0.66,-0.53,-0.48,-0.98,0.53,-0.12],"woman":[-0.18,0.65,-0.58,-0.49,1.54,1.34,-0.43,0.58,0.36,-0.25,0.2,-0.72,0.31,0.56,0.84,-0.38,-0.91,0.43,-0.01,0.24,-0.54,1.78,-0.07,0.7,0.69,-2.67,-0.77,0.34,0.2,-0.35,2.29,-0.27,-0.3,0.0,0.17,0.09,-0.02,0.04,0.34,-0.84,-0.25,0.42,0.49,0.02,0.56,-0.85,-0.23,-1.31,0.49,-0.1],"uncle":[0.31,0.51,-0.02,-0.66,0.96,0.44,-0.69,0.74,-0.88,0.03,-0.13,1.59,-0.13,-0.4,0.75,-0.1,-0.34,0.3,0.24,0.44,-0.23,0.22,-0.14,0.27,0.64,-1.67,-0.52,-1.08,0.43,0.14,0.98,-0.27,-0.32,0.47,0.58,0.51,-0.18,0.21,0.39,0.11,-0.05,0.96,-1.0,-0.14,0.47,-0.09,-0.64,-1.87,0.02,0.39],"aunt":[0.71,1.09,-0.46,-0.51,0.34,1.16,-0.91,0.69,-0.09,0.01,-0.3,1.11,0.62,-0.44,0.72,0.14,-1.09,-0.08,0.9,0.56,-0.02,1.2,0.27,0.4,1.2,-1.12,-0.82,-0.14,0.57,-0.53,0.54,0.16,-0.03,0.74,0.42,-0.0,-0.39,0.13,0.86,-0.45,-0.14,0.67,-0.16,-0.65,0.25,-0.15,-0.28,-1.95,0.41,0.4],"king":[0.5,0.69,-0.6,-0.02,0.6,-0.13,-0.09,0.47,-0.62,-0.31,-0.08,1.49,-0.03,-0.98,0.68,0.82,-0.52,-0.32,-0.56,0.66,0.2,-0.13,-0.11,-0.3,0.41,-2.22,-1.08,-1.08,-0.34,0.34,1.99,-0.04,-0.64,0.71,0.49,0.17,0.34,-0.26,-0.85,0.17,0.4,1.17,-1.01,-0.22,-0.15,0.78,-0.91,-1.61,-0.64,-0.51],"queen":[0.38,1.82,-1.26,-0.1,0.36,0.6,-0.18,0.84,-0.06,-0.76,0.23,0.99,0.61,-0.31,0.29,0.56,-0.77,0.07,-0.57,0.21,0.58,0.39,-0.13,0.28,0.28,-1.81,-1.04,-0.19,-0.55,-0.05,1.56,0.39,-0.25,0.34,0.45,0.16,0.52,-0.07,-0.84,-1.03,0.46,0.25,-0.18,-0.73,-0.2,0.23,-0.56,-2.28,0.01,-0.6],"result":[0.42,0.9,-1.01,-0.06,0.5,0.81,-0.15,0.8,-0.16,-0.67,0.23,0.62,0.93,-0.97,0.93,0.9,-1.55,-0.53,0.14,0.66,0.49,0.37,-0.21,0.1,0.71,-2.09,-1.14,-1.15,-0.54,0.27,1.67,0.03,-0.78,0.46,0.35,-0.06,0.19,-0.21,-0.73,-0.11,0.24,0.96,-0.47,-0.49,-0.25,0.46,-0.66,-1.95,-0.69,-0.5]};
+  var COS_QUEEN = ".86";
+  function minus(a, b) { return a.map(function (x, i) { return x - b[i]; }); }
+  NUM.wm = minus(NUM.woman, NUM.man); NUM.au = minus(NUM.aunt, NUM.uncle);
+
+  /* ---- the view: a turn and a tilt, and a slight sway so depth reads -------- */
+  var YAW = 25, PITCH = 25 * Math.PI / 180, SWAY = 6, PERIOD = 18000;
+  var still = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  function view(p, yawDeg) {
+    var y = yawDeg * Math.PI / 180, cy = Math.cos(y), sy = Math.sin(y);
+    var x1 = cy * p[0] - sy * p[1], y1 = sy * p[0] + cy * p[1];
+    return [x1, p[2] * Math.cos(PITCH) - y1 * Math.sin(PITCH), y1 * Math.cos(PITCH) + p[2] * Math.sin(PITCH)];
+  }
+  /* a box around the six words: its floor and edges are what make the space read as 3-D */
+  var LO = [0, 1, 2].map(function (i) { return Math.min.apply(null, Object.keys(P).map(function (k) { return P[k][i]; })) - 0.3; });
+  var HI = [0, 1, 2].map(function (i) { return Math.max.apply(null, Object.keys(P).map(function (k) { return P[k][i]; })) + 0.3; });
+  var CORNER = [];
+  [0, 1].forEach(function (a) { [0, 1].forEach(function (b) { [0, 1].forEach(function (c) {
+    CORNER.push([a ? HI[0] : LO[0], b ? HI[1] : LO[1], c ? HI[2] : LO[2]]); }); }); });
+  var EDGE = [[0, 1], [2, 3], [4, 5], [6, 7], [0, 2], [1, 3], [4, 6], [5, 7], [0, 4], [1, 5], [2, 6], [3, 7]];
+  /* fit the box into the left part of the canvas, once, at the resting view */
+  var B = { x0: 1e9, x1: -1e9, y0: 1e9, y1: -1e9 };
+  CORNER.forEach(function (c) { var v = view(c, YAW); B.x0 = Math.min(B.x0, v[0]); B.x1 = Math.max(B.x1, v[0]); B.y0 = Math.min(B.y0, v[1]); B.y1 = Math.max(B.y1, v[1]); });
+  var AREA = { x0: 24, x1: 610, y0: 22, y1: 418 };
+  var S = Math.min((AREA.x1 - AREA.x0) / (B.x1 - B.x0), (AREA.y1 - AREA.y0) / (B.y1 - B.y0));
+  var CX = (AREA.x0 + AREA.x1) / 2 - S * (B.x0 + B.x1) / 2, CY = (AREA.y0 + AREA.y1) / 2 + S * (B.y0 + B.y1) / 2;
+  function scr(p, yawDeg) { var v = view(p, yawDeg); return [CX + v[0] * S, CY - v[1] * S, v[2]]; }
+
+  /* ---- the scene's parts; positions are set in place() on every frame -------- */
+  var O = [0, 0, 0];
+  var floor = gS.appendChild(el("polygon", { "class": "floor" }));
+  var edges = EDGE.map(function () { return gS.appendChild(el("line", { "class": "box" })); });
+  function line(cls, marker) { return el("line", { "class": cls, "marker-end": marker ? "url(#" + marker + ")" : null }); }
+  var parts = {};
+  function part(key, nodes) { var k = g(gW, {}); nodes.forEach(function (n) { k.appendChild(n); }); parts[key] = k; return k; }
+  part("origin", [el("circle", { "class": "origin", r: 3.5 })]);
+  part("aMan", [line("vec m", "hm")]);
+  part("aWoman", [line("vec f", "hf")]);
+  part("gdir", [line("dir", "hd")]);
+  part("gdirLab", [el("text", { "class": "dlab", "text-anchor": "start" })]);
+  part("gdir2", [line("dir", "hd")]);
+  part("gdir3", [line("dir", "hd")]);
+  part("land", [el("circle", { "class": "land", r: 7 })]);
+  parts.gdirLab.firstChild.textContent = "woman − man";
+  /* a word: a point, a label beside it (never on a line), its colour */
+  var WORD = {
+    man:   { cls: "m", dx: 13, dy: 7, anchor: "start" },
+    woman: { cls: "f", dx: 0, dy: -15, anchor: "middle" },
+    uncle: { cls: "m", dx: -13, dy: 7, anchor: "end" },
+    aunt:  { cls: "f", dx: 0, dy: -15, anchor: "middle" },
+    king:  { cls: "m", dx: 13, dy: 7, anchor: "start" },
+    queen: { cls: "f", dx: 13, dy: -6, anchor: "start" }
+  };
+  Object.keys(WORD).forEach(function (w) {
+    var d = WORD[w];
+    var stem = el("line", { "class": "stem" }), shadow = el("ellipse", { "class": "shadow", rx: 5, ry: 2.2 });
+    var dot = el("circle", { "class": "dot " + d.cls, r: 6 });
+    var lab = el("text", { "class": "word " + d.cls, "text-anchor": d.anchor }); lab.textContent = w;
+    part(w, [stem, shadow, dot, lab]);
+  });
+
+  function setLine(node, a, b) { node.setAttribute("x1", a[0]); node.setAttribute("y1", a[1]); node.setAttribute("x2", b[0]); node.setAttribute("y2", b[1]); }
+  /* shorten a line so its arrowhead stops at the edge of the point it points to */
+  function toward(a, b, gap) { var dx = b[0] - a[0], dy = b[1] - a[1], L = Math.sqrt(dx * dx + dy * dy) || 1; return [b[0] - dx / L * gap, b[1] - dy / L * gap]; }
+  function place(yawDeg) {
+    var s = {}; Object.keys(P).forEach(function (k) { s[k] = scr(P[k], yawDeg); });
+    var o = scr(O, yawDeg);
+    parts.origin.firstChild.setAttribute("cx", o[0]); parts.origin.firstChild.setAttribute("cy", o[1]);
+    setLine(parts.aMan.firstChild, o, toward(o, s.man, 7));
+    setLine(parts.aWoman.firstChild, o, toward(o, s.woman, 7));
+    setLine(parts.gdir.firstChild, s.man, toward(s.man, s.woman, 8));
+    setLine(parts.gdir2.firstChild, s.uncle, toward(s.uncle, s.aunt, 8));
+    var landing = [s.king[0] + s.woman[0] - s.man[0], s.king[1] + s.woman[1] - s.man[1]];
+    setLine(parts.gdir3.firstChild, s.king, toward(s.king, landing, 9));
+    parts.land.firstChild.setAttribute("cx", landing[0]); parts.land.firstChild.setAttribute("cy", landing[1]);
+    var mid = [(s.man[0] + s.woman[0]) / 2, (s.man[1] + s.woman[1]) / 2];
+    var lab = parts.gdirLab.firstChild; lab.setAttribute("x", mid[0] + 14); lab.setAttribute("y", mid[1] + 10);
+    var c = CORNER.map(function (k) { return scr(k, yawDeg); });
+    EDGE.forEach(function (e, i) { setLine(edges[i], c[e[0]], c[e[1]]); });
+    floor.setAttribute("points", [0, 2, 6, 4].map(function (i) { return c[i][0] + "," + c[i][1]; }).join(" "));
+    Object.keys(WORD).forEach(function (w) {
+      var d = WORD[w], p = s[w], kids = parts[w].childNodes, ground = scr([P[w][0], P[w][1], LO[2]], yawDeg);
+      var r = 6 * (1 + 0.04 * p[2]);         // nearer points a little larger
+      setLine(kids[0], ground, p);
+      kids[1].setAttribute("cx", ground[0]); kids[1].setAttribute("cy", ground[1]);
+      kids[2].setAttribute("cx", p[0]); kids[2].setAttribute("cy", p[1]); kids[2].setAttribute("r", r.toFixed(2));
+      kids[3].setAttribute("x", p[0] + d.dx); kids[3].setAttribute("y", p[1] + d.dy);
+    });
+  }
+
+  /* ---- the numbers beside the drawing: each word as a strip of fifty cells --- */
+  var PX = 640, SX = 800, CW = 3.8, CH = 18, ROW = 34;
+  function colour(v) {
+    var t = Math.max(-1, Math.min(1, v / 1.2)), a = [244, 241, 234];
+    var b = t < 0 ? [38, 120, 176] : [196, 127, 23], k = Math.pow(Math.abs(t), 0.8);
+    return "rgb(" + a.map(function (x, i) { return Math.round(x + (b[i] - x) * k); }).join(",") + ")";
+  }
+  function strip(parent, y, values) {
+    values.forEach(function (v, i) { parent.appendChild(el("rect", { x: SX + i * CW, y: y - CH + 4, width: CW, height: CH, fill: colour(v) })); });
+    parent.appendChild(el("rect", { "class": "cell-edge", x: SX, y: y - CH + 4, width: CW * values.length, height: CH }));
+  }
+  var PN = {};
+  function block(key) { PN[key] = g(gP, {}); return PN[key]; }
+  function row(key, y, label, cls, values) { var b = block(key); txt(b, label, { x: PX, y: y, "class": "row " + cls }); strip(b, y, values); return b; }
+  txt(block("pHead"), "each word: 50 numbers", { x: SX, y: 36, "class": "head" });
+  row("pMan", 76, "man", "m", NUM.man);
+  row("pWoman", 76 + ROW, "woman", "f", NUM.woman);
+  row("pDiff", 76 + 2 * ROW + 14, "woman − man", "d", NUM.wm);
+  row("pAunt", 76 + 3 * ROW + 14, "aunt − uncle", "d", NUM.au);
+  txt(block("pAsk"), "king − man + woman", { x: PX, y: 76, "class": "sum" });
+  row("pKing", 76 + ROW + 10, "king", "m", NUM.king);
+  (function () {
+    var b = row("pAdd", 76 + 2 * ROW + 10, "+ woman − man", "d", NUM.wm);
+    b.appendChild(el("line", { "class": "rule", x1: PX, y1: 76 + 2 * ROW + 24, x2: SX + 50 * CW, y2: 76 + 2 * ROW + 24 }));
+    txt(b, "=", { x: PX, y: 76 + 3 * ROW + 20, "class": "row k" }); strip(b, 76 + 3 * ROW + 20, NUM.result);
+  })();
+  row("pQueen", 76 + 4 * ROW + 30, "queen", "f", NUM.queen);
+  txt(PN.pQueen, "the nearest word apart from the three, cosine " + COS_QUEEN, { x: PX, y: 76 + 5 * ROW + 22, "class": "note" });
+  (function () {
+    var b = block("pCave");
+    txt(b, "The drawing projects the six words onto three", { x: PX, y: 360, "class": "note" });
+    txt(b, "directions. The sum runs over all fifty numbers.", { x: PX, y: 382, "class": "note" });
+  })();
+
+  var SHOW = [
+    ["origin", "aMan", "man", "pHead", "pMan"],
+    ["origin", "aMan", "man", "aWoman", "woman", "pHead", "pMan", "pWoman"],
+    ["man", "woman", "gdir", "gdirLab", "pHead", "pMan", "pWoman", "pDiff"],
+    ["man", "woman", "gdir", "gdirLab", "uncle", "aunt", "gdir2", "pHead", "pMan", "pWoman", "pDiff", "pAunt"],
+    ["man", "woman", "gdir", "gdirLab", "king", "pAsk", "pKing"],
+    ["man", "woman", "gdir", "gdirLab", "king", "gdir3", "land", "pAsk", "pKing", "pAdd"],
+    ["man", "woman", "gdir", "gdirLab", "king", "gdir3", "land", "queen", "pAsk", "pKing", "pAdd", "pQueen"],
+    ["man", "woman", "gdir", "gdirLab", "king", "gdir3", "land", "queen", "pAsk", "pKing", "pAdd", "pQueen", "pCave"]
+  ];
+  var counter = txt(gHud, "", { x: 992, y: 434, "class": "step" });
+  var MAX = SHOW.length - 1;
+  var state = Math.max(0, Math.min(MAX, parseInt((location.hash || "").slice(1), 10) || 0));
+  function render() {
+    var k;
+    for (k in parts) parts[k].setAttribute("class", "fade" + (SHOW[state].indexOf(k) >= 0 ? "" : " hid"));
+    for (k in PN) PN[k].setAttribute("class", "fade" + (SHOW[state].indexOf(k) >= 0 ? "" : " hid"));
+    counter.textContent = (state + 1) + " / " + (MAX + 1);
+  }
+  function advance() { if (state >= MAX) return; state += 1; render(); }
+  place(YAW); render();
+  if (!still) {
+    var t0 = performance.now();
+    (function frame(now) { place(YAW + SWAY * Math.sin(2 * Math.PI * (now - t0) / PERIOD)); requestAnimationFrame(frame); })(t0);
+  }
+  window.addEventListener("hashchange", function () {
+    state = Math.max(0, Math.min(MAX, parseInt((location.hash || "").slice(1), 10) || 0)); render();
+  });
+  document.body.addEventListener("click", advance);
+  document.body.addEventListener("keydown", function (e) { if (e.key === "Enter" || e.key === " ") advance(); });
+})();
+</script>
+</body>
+</html>

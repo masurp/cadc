@@ -40,7 +40,16 @@
       return { x: CAM.cx + ox + x1 * CAM.S * k, y: CAM.cy + oy + y2 * CAM.S * k, k: k, z: z2 };
     }
 
-    /* o2: { alpha, yaw, unfold, params, pulse:{x,hid,out,t}, highlight, focus:[i], grad:{g1,g2,now}, labels:{words,out,hid,counts}, outGlow:[rgb] } */
+    /* a number on a line or a node: a dark pill behind it, so it reads over the edges */
+    function pill(text, x, y, col, size) {
+      ctx.font = "700 " + (size || 11) + "px 'Space Grotesk', system-ui, sans-serif"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+      var w = ctx.measureText(text).width + 9, h = (size || 11) + 6;
+      ctx.fillStyle = "rgba(16,36,58,.88)"; ctx.beginPath(); ctx.roundRect(x - w / 2, y - h / 2, w, h, h / 2); ctx.fill();
+      ctx.fillStyle = rgba(col || COL.ink, 1); ctx.fillText(text, x, y + .5);
+    }
+
+    /* o2: { alpha, yaw, unfold, params, pulse:{x,hid,out,t}, highlight, focus:[i], grad:{g1,g2,now,phase}, labels:{words,out,hid,counts},
+             outGlow:[rgb], unitNames:[...], hidText:{h: text}, edgeLabels:[{a, b, t, text, col}] (a, b: node indices) } */
     function draw(now, d) {
       if (d.alpha <= 0) return null;
       var yaw = d.yaw || 0, unfold = d.unfold == null ? 1 : d.unfold, p = d.params;
@@ -69,13 +78,15 @@
         G.g2.forEach(function (v) { gm = Math.max(gm, Math.abs(v)); });
         G.g1.forEach(function (r, hh) { (G.inputs || []).forEach(function (ii) { gm = Math.max(gm, Math.abs(r[ii])); }); });
         ctx.setLineDash([6, 5]); ctx.lineDashOffset = ((now || 0) / 40) % 11;
+        /* phase 0…1: the output's lines first, then the lines into the hidden units */
+        var ph1 = G.phase == null ? 1 : Math.min(1, G.phase * 2), ph2 = G.phase == null ? 1 : Math.max(0, G.phase * 2 - 1);
         for (var h2 = 0; h2 < HN; h2++) {
           var o1 = P[V + HN], h1 = P[V + h2];
-          ctx.strokeStyle = rgba(COL.amber, .95); ctx.lineWidth = .8 + 2.6 * Math.abs(G.g2[h2]) / gm;
-          ctx.beginPath(); ctx.moveTo(o1.x, o1.y); ctx.lineTo(h1.x, h1.y); ctx.stroke();
-          (G.inputs || []).forEach(function (ii) {
-            var q = P[ii]; ctx.lineWidth = .8 + 2.6 * Math.abs(G.g1[h2][ii]) / gm;
-            ctx.beginPath(); ctx.moveTo(h1.x, h1.y); ctx.lineTo(q.x, q.y); ctx.stroke();
+          ctx.strokeStyle = rgba(COL.amber, .95 * ph1); ctx.lineWidth = .8 + 2.6 * Math.abs(G.g2[h2]) / gm;
+          ctx.beginPath(); ctx.moveTo(o1.x, o1.y); ctx.lineTo(o1.x + (h1.x - o1.x) * ph1, o1.y + (h1.y - o1.y) * ph1); ctx.stroke();
+          if (ph2 > 0) (G.inputs || []).forEach(function (ii) {
+            var q = P[ii]; ctx.strokeStyle = rgba(COL.amber, .95 * ph2); ctx.lineWidth = .8 + 2.6 * Math.abs(G.g1[h2][ii]) / gm;
+            ctx.beginPath(); ctx.moveTo(h1.x, h1.y); ctx.lineTo(h1.x + (q.x - h1.x) * ph2, h1.y + (q.y - h1.y) * ph2); ctx.stroke();
           });
         }
         ctx.setLineDash([]);
@@ -95,7 +106,14 @@
         if (n.layer === 1 && pulse && pulse.hid && pulse.t >= .5) { var a = pulse.hid[n.i]; base = mix(COL.slate, a > 0 ? COL.pos : COL.neg, Math.min(1, Math.abs(a))); }
         if (n.layer === 2 && pulse && pulse.out != null && pulse.t >= .98) { base = mix(COL.slate, pulse.out > .5 ? COL.pos : COL.neg, Math.abs(pulse.out - .5) * 2); glow = true; }
         if (n.layer === 2 && d.outGlow) { base = d.outGlow; glow = true; }
-        if (hi != null && n.layer === 1) { if (n.i === hi) { base = COL.acc; glow = true; r *= 1.15; } else base = COL.deep; }
+        if (hi != null && n.layer === 1) {
+          if (n.i === hi) {
+            /* the unit in focus: coloured by what it sends when a review is passing, green otherwise */
+            if (pulse && pulse.hid && pulse.t >= .5) { var ah = pulse.hid[n.i]; base = mix(COL.slate, ah > 0 ? COL.pos : COL.neg, Math.min(1, .25 + Math.abs(ah))); }
+            else base = COL.acc;
+            glow = true; r *= 1.15;
+          } else base = COL.deep;
+        }
         sphere(q.x, q.y, r, base, glow);
         if (d.labels && d.labels.hid && n.layer === 1 && pulse && pulse.hid && pulse.t >= .5) {
           ctx.font = "700 9px 'Space Grotesk', system-ui, sans-serif"; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillStyle = rgba(COL.ink, 1);
@@ -113,6 +131,16 @@
       var qo = P[V + HN];
       if (L.out) { ctx.textAlign = "center"; ctx.font = "700 9.5px 'Space Grotesk', system-ui, sans-serif"; ctx.fillStyle = rgba([125, 155, 181], 1); ctx.fillText("p(positive)", qo.x, qo.y + (nodes[V + HN].r + 13) * unfold); }
       if (pulse && pulse.out != null && pulse.t >= .98) { ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.font = "700 11px 'Space Grotesk', system-ui, sans-serif"; ctx.fillStyle = rgba(COL.ink, .98); ctx.fillText(pulse.out.toFixed(2), qo.x, qo.y); }
+      /* names of the hidden units, numbers on chosen nodes, numbers on chosen lines */
+      if (d.unitNames) {
+        ctx.font = "700 13px 'Space Grotesk', system-ui, sans-serif"; ctx.textAlign = "center"; ctx.textBaseline = "alphabetic";
+        for (var h5 = 0; h5 < HN; h5++) { var qn = P[V + h5]; ctx.fillStyle = rgba(hi === h5 ? COL.acc : [125, 155, 181], 1); ctx.fillText(d.unitNames[h5], qn.x, qn.y - nodes[V + h5].r * qn.k - 6); }
+      }
+      if (d.hidText) Object.keys(d.hidText).forEach(function (h6) { var qh = P[V + Number(h6)]; pill(d.hidText[h6], qh.x + nodes[V + Number(h6)].r * qh.k + 22, qh.y, COL.ink, 12); });
+      (d.edgeLabels || []).forEach(function (lb) {
+        var a3 = P[lb.a], b3 = P[lb.b], t3 = lb.t == null ? .5 : lb.t;
+        pill(lb.text, a3.x + (b3.x - a3.x) * t3, a3.y + (b3.y - a3.y) * t3, lb.col, lb.size || 11.5);
+      });
       ctx.restore();
       return P;
     }

@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The pipeline with a supervised classifier</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&display=swap">
+<link rel="stylesheet" href="../shared/pipeline.css">
+<style>:root{ --accent:var(--era3) }</style>
+</head>
+<!-- ===========================================================================
+  WEEK 3a — the same pipeline, with labelled data and a learning algorithm.
+  Redraw of text_analysis_fundamentals/Slide03.
+
+  Two things are new, and the second is the one students miss: the method now
+  needs an INPUT it did not need before (texts you coded yourself), and that
+  input has to be SPLIT before anyone looks at it. The split is drawn reaching
+  all the way across to step 04, because the test set is what step 04 scores.
+=========================================================================== -->
+<body>
+<svg id="chart" viewBox="-8 -10 996 440" preserveAspectRatio="xMidYMid meet" role="img"
+     aria-label="The text classification pipeline with supervised machine learning: hand coded examples split into a training and a test set, a learning algorithm fitting the classifier, the test set scored in step 04. Click to step through."></svg>
+<noscript><p style="max-width:34em;margin:2em;font-family:sans-serif">Needs JavaScript: the text
+classification pipeline, with a supervised classifier.</p></noscript>
+
+<script src="../shared/pipeline.js"></script>
+<script>
+(function () {
+  "use strict";
+  var P = CADCPipeline.build({
+    matrix: { kind: "counts", label: "texts × words" }
+  });
+  var G = P.G, S = P.layer.slot;
+
+  /* -- the new input: texts you coded yourself ------------------------------ */
+  var gold = P.g(S, {});
+  P.card(gold, { x: 40, y: 294, w: 200, h: 100, icon: "handcode",
+                 chip: "NEW INPUT", chipW: 72,
+                 title: "Hand coded examples",
+                 sub: "a sample of your own texts, labelled by you — the expensive part" });
+  P.show(gold, false, true);
+
+  /* -- the split, and the half that is sealed ------------------------------- */
+  var split = P.g(S, {});
+  (function () {
+    P.arrow(split, 246, 336, 264, 310);
+    P.arrow(split, 246, 352, 264, 378);
+    P.card(split, { x: 270, y: 274, w: 150, h: 52, pad: 10, cls: "tint",
+                    icon: "train", iconSize: 16,
+                    title: "Training set", sub: "the model sees these" });
+    P.card(split, { x: 270, y: 356, w: 150, h: 52, pad: 10, cls: "sunk",
+                    icon: "sealed", iconSize: 16, iconCls: "faint",
+                    title: "Test set", sub: "sealed until step 04" });
+    /* into the LEFT edge of the hand coded subset, at x = 852: coming up from
+       underneath would run straight through that box's label. */
+    P.elbow(split, [[425, 382], [852, 382], [852, 249], [G.CX[3] - 26, 249]], "dashed");
+    P.txt(split, "step 04 has been scoring the model on this half all along",
+          { x: 440, y: 372, "class": "lbl left" });
+    P.show(split, false, true);
+  })();
+
+  /* -- the algorithm, under step 03, exactly where the dictionary was ------- */
+  var algo = P.g(S, {});
+  (function () {
+    P.arrow(algo, 428, 300, 560, 300);
+    P.oval(algo, G.CX[2], 300, 112, 50, "A learning algorithm",
+           "Naive Bayes · logistic regression · SVM", "weights");
+    P.arrow(algo, G.CX[2], 248, G.CX[2], G.BY + G.BH + 4, "feed flow");
+    P.txt(algo, "fits the weights", { x: G.CX[2] + 12, y: 232, "class": "lbl left" });
+    P.show(algo, false, true);
+  })();
+
+  /* -- scenes: what each click puts on screen ---------------------------
+     (the lecturer narrates these; nothing is printed under the figure) 
+       0. Last week's pipeline, unchanged.
+       1. Nobody writes the word list any more. It is learned — so you need examples.
+       2. Split them before you look at them.
+       3. The algorithm finds which words predict which label.
+       4. Two things changed, and neither of them is a step.
+     -------------------------------------------------------------------- */
+  var SCENES = 5;
+  CADCPipeline.run(P, SCENES, function (s) {
+    P.setSteps([ "", "", s >= 3 ? "on accent" : "", s === 2 ? "on accent" : "" ]);
+    [P.art.docs, P.art.mat, P.art.lab, P.art.gold, P.fb].forEach(function (n) { P.show(n, true); });
+    P.show(gold, s >= 1, true); P.show(split, s >= 2, true); P.show(algo, s >= 3, true);
+    if (s === 3) P.travel(G.ART[1], G.MID, G.ART[2], G.MID);
+  });
+})();
+</script>
+</body>
+</html>

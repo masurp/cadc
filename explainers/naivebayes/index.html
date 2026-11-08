@@ -1,0 +1,561 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Let the data write the dictionary — CADC</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&display=swap">
+<style>
+  /* --- tokens -------------------------------------------------------------
+     Same system as build-a-dictionary, deliberately one era on: the chrome
+     accent is the Week 3 (classifier) hue, so the tool reads as the next step
+     rather than a reskin of the Week 2 one.
+
+     The class encoding is unchanged on purpose — blue is still the positive
+     class, orange-red still the negative one — so a student carries one
+     colour meaning across both tools. The accent is chrome only (band,
+     section labels, controls) and never appears on a data mark, so it can
+     never be misread as a third class. */
+  :root{
+    --paper:#faf8f4; --surface:#fff; --panel:#fdfcf9; --strip:#f2f0ea;
+    --hairline:#e7e3d9; --border:#e0dcd0;
+    --ink:#1a1a17; --ink-2:#3a3a34; --ink-3:#5a5a52; --muted:#7a7a70; --faint:#9a9a90;
+    --blue:#0077B3;
+    --accent:#8a6410; --accent-tint:#f6efdd;      /* week 3 era hue, chrome only */
+    --pos:#2678b0; --pos-tint:#e8f1f8;
+    --neg:#b84a27; --neg-tint:#fbeee8;
+    --font:"Space Grotesk", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+    --mono:ui-monospace,SFMono-Regular,Menlo,monospace;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --paper:#10243a; --surface:#16304a; --panel:#142c44; --strip:#16304a;
+      --hairline:#2c4560; --border:#2c4560;
+      --ink:#e8eaec; --ink-2:#cfd6de; --ink-3:#a8c0d4; --muted:#7d9bb5; --faint:#6d8ba6;
+      --blue:#4aa8dc;
+      --accent:#d9a63f; --accent-tint:#2e2717;
+      --pos:#3291d1; --pos-tint:#14304a;
+      --neg:#d26a49; --neg-tint:#3a2118;
+    }
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{font-family:var(--font); background:var(--paper); color:var(--ink);
+       font-size:14px; line-height:1.5; padding:0 20px 20px}
+
+  /* the band + eyebrow are the "this is a new tool" signal */
+  .band{height:3px; background:var(--accent); margin:0 -20px 13px; opacity:.9}
+  .eyebrow{font-size:10px; font-weight:700; letter-spacing:.1em; text-transform:uppercase;
+           color:var(--accent); margin-bottom:5px}
+  h1{font-size:15px; font-weight:700; margin:0}
+  .sub{font-size:12px; color:var(--ink-3); margin:4px 0 14px; max-width:70ch}
+  .sub b{color:var(--ink-2); font-weight:500}
+
+  .grid{display:grid; grid-template-columns:minmax(0,304px) minmax(0,1fr); gap:20px}
+  @media (max-width:720px){ .grid{grid-template-columns:1fr} }
+
+  h2{font-size:10.5px; font-weight:700; letter-spacing:.08em; text-transform:uppercase;
+     color:var(--accent); margin:0 0 8px}
+  h2 .n{color:var(--faint); font-weight:400; letter-spacing:0; text-transform:none}
+
+  .panel{border:1px solid var(--border); border-radius:9px; padding:11px 12px;
+         background:var(--panel); margin-bottom:12px}
+
+  /* --- sliders --- */
+  .f{margin-bottom:11px}
+  .f:last-child{margin-bottom:2px}
+  .f .top{display:flex; justify-content:space-between; align-items:baseline; gap:8px}
+  .f label{font-size:12px; color:var(--ink-2)}
+  .f .v{font-family:var(--mono); font-size:12px; font-weight:500; color:var(--accent);
+        font-variant-numeric:tabular-nums}
+  .f input[type=range]{width:100%; margin:5px 0 0; accent-color:var(--accent); cursor:pointer}
+  .f .hint{font-size:10.5px; color:var(--faint); line-height:1.35; margin-top:2px}
+  .warn{font-size:10.5px; color:var(--neg); line-height:1.4; margin-top:6px}
+  .reset{background:none; border:0; font:inherit; font-size:12px; color:var(--muted);
+         cursor:pointer; padding:2px 0 0; text-decoration:underline}
+  .reset:hover{color:var(--accent)}
+
+  /* --- learned weights: the visual signature of this tool ------------------ */
+  .wq{display:flex; align-items:center; gap:6px; margin:0 0 3px; font-size:11.5px}
+  .wq .w{flex:0 0 84px; text-align:right; color:var(--ink-2); overflow:hidden;
+         text-overflow:ellipsis; white-space:nowrap}
+  .wq .track{flex:1; height:12px; position:relative; background:var(--strip); border-radius:3px}
+  .wq .bar{position:absolute; top:0; bottom:0; border-radius:3px}
+  .wq .bar.p{left:50%; background:var(--pos)}
+  .wq .bar.n{right:50%; background:var(--neg)}
+  .wq .track::before{content:""; position:absolute; left:50%; top:-2px; bottom:-2px;
+                     width:1px; background:var(--border)}
+  .wq .num{flex:0 0 38px; font-family:var(--mono); font-size:10.5px; color:var(--faint);
+           text-align:right; font-variant-numeric:tabular-nums}
+  .wsep{display:flex; align-items:center; gap:7px; margin:9px 0 7px; font-size:9.5px;
+        letter-spacing:.06em; text-transform:uppercase; color:var(--faint)}
+  .wsep::before,.wsep::after{content:""; flex:1; height:1px; background:var(--hairline)}
+  .vocab{font-size:10.5px; color:var(--faint); margin-top:9px; line-height:1.4}
+
+  /* --- stat tiles (two numbers each: test / train) ------------------------- */
+  .tiles{display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:8px; margin-bottom:13px}
+  .tile{position:relative; border:1px solid var(--border); border-radius:8px;
+        padding:8px 10px 7px; background:var(--surface); cursor:help}
+  .tile:hover,.tile:focus-visible{border-color:var(--accent); outline:none}
+  .tile .lab{font-size:9.5px; letter-spacing:.06em; text-transform:uppercase; color:var(--muted)}
+  .tile .pair{display:flex; align-items:baseline; gap:4px; margin-top:2px}
+  .tile .val{font-size:19px; font-weight:700; font-variant-numeric:tabular-nums; color:var(--ink)}
+  .tile .sl{font-size:13px; color:var(--faint)}
+  .tile .val2{font-size:13px; font-weight:500; font-variant-numeric:tabular-nums; color:var(--faint)}
+  .tile .cap{font-size:9px; color:var(--faint); letter-spacing:.03em; margin-top:1px}
+  /* test as a filled bar, train as a tick: the gap between them is the thing to watch */
+  .tile .gap{position:relative; height:4px; margin-top:6px; border-radius:2px; background:var(--strip)}
+  .tile .gap i{position:absolute; left:0; top:0; bottom:0; width:0; border-radius:2px;
+               background:var(--accent); transition:width .18s ease}
+  .tile .gap u{position:absolute; top:-2px; bottom:-2px; width:2px; left:0; border-radius:1px;
+               background:var(--ink-3); opacity:.55; transition:left .18s ease}
+
+  .tip{position:absolute; top:calc(100% + 7px); left:50%; transform:translateX(-50%);
+       width:262px; z-index:20; padding:10px 12px; text-align:left;
+       background:var(--surface); border:1px solid var(--border); border-radius:9px;
+       box-shadow:0 6px 22px rgba(0,0,0,.13);
+       opacity:0; visibility:hidden; transition:opacity .12s ease}
+  .tile:hover .tip,.tile:focus-within .tip,.tile:focus-visible .tip{opacity:1; visibility:visible}
+  .tip--l{left:0; transform:none}
+  .tip--r{left:auto; right:0; transform:none}
+  .tip b{display:block; font-size:11.5px; color:var(--ink); margin-bottom:3px}
+  .tip .def{display:block; font-size:11.5px; color:var(--ink-3); line-height:1.45}
+  .tip .frm{display:block; margin-top:7px; font-family:var(--mono); font-size:11px; color:var(--muted)}
+  .tip .sub2{display:block; margin-top:2px; font-family:var(--mono); font-size:11.5px;
+             color:var(--accent); font-weight:500}
+
+  /* --- confusion matrix --- */
+  .cm{border-collapse:separate; border-spacing:2px; font-size:11.5px; margin-bottom:13px}
+  .cm th{font-weight:500; color:var(--muted); font-size:9.5px; letter-spacing:.05em;
+         text-transform:uppercase; padding:2px 6px; text-align:left}
+  .cm td{background:var(--strip); border-radius:5px; padding:5px 9px; min-width:72px; color:var(--ink-2)}
+  .cm td.hit{background:var(--pos-tint); color:var(--pos)}
+  .cm td .c{font-size:15px; font-weight:700; font-variant-numeric:tabular-nums; display:block}
+  .cm td .k{font-size:9.5px; color:var(--muted); display:block; margin-top:1px}
+
+  /* --- one-text walkthrough --- */
+  .work{border:1px solid var(--border); border-radius:9px; background:var(--surface);
+        padding:11px 12px; margin-bottom:12px}
+  .work .txt{font-size:13.5px; color:var(--ink); margin-bottom:8px; line-height:1.9}
+  .tk{display:inline-block; padding:1px 5px; border-radius:5px; margin-right:2px;
+      font-size:12.5px; position:relative}
+  .tk.p{background:var(--pos-tint); color:var(--pos)}
+  .tk.n{background:var(--neg-tint); color:var(--neg)}
+  .tk.z{color:var(--ink-3)}
+  .tk sup{font-family:var(--mono); font-size:8.5px; opacity:.9; margin-left:2px;
+          font-variant-numeric:tabular-nums}
+  .tk.z sup{color:var(--faint)}
+  .sumline{display:flex; align-items:baseline; gap:8px; flex-wrap:wrap;
+           font-size:11.5px; color:var(--muted); padding-top:8px;
+           border-top:1px solid var(--hairline)}
+  .sumline .big{font-family:var(--mono); font-size:15px; font-weight:700; color:var(--ink);
+                font-variant-numeric:tabular-nums}
+  .verd{font-size:11.5px; font-weight:700; padding:1px 7px; border-radius:5px}
+  .verd.p{background:var(--pos-tint); color:var(--pos)}
+  .verd.n{background:var(--neg-tint); color:var(--neg)}
+  .verd.bad{outline:1.5px solid var(--neg); outline-offset:1px}
+
+  /* --- test list --- */
+  .listhead{display:flex; justify-content:space-between; align-items:baseline; gap:10px}
+  .ctl{display:flex; align-items:center; gap:6px; font-size:11px; color:var(--ink-3); cursor:pointer}
+  .ctl input{width:13px; height:13px; accent-color:var(--accent); cursor:pointer}
+  .corpus{position:relative; border:1px solid var(--border); border-radius:9px; background:var(--surface);
+          max-height:252px; overflow-y:auto;
+          -webkit-mask-image:linear-gradient(180deg,#000 calc(100% - 20px),transparent);
+                  mask-image:linear-gradient(180deg,#000 calc(100% - 20px),transparent)}
+  .corpus.at-end{-webkit-mask-image:none; mask-image:none}
+  .row{display:flex; gap:9px; padding:5px 11px; border-bottom:1px solid var(--hairline);
+       font-size:12.5px; align-items:baseline; cursor:pointer}
+  .row:last-child{border-bottom:0}
+  .row:hover{background:var(--accent-tint)}
+  .row.sel{background:var(--accent-tint)}
+  .row .mark{flex-shrink:0; width:13px; font-weight:700; font-size:12px}
+  .row .mark.ok{color:var(--muted)}
+  .row .mark.no{color:var(--neg)}
+  .row .t{flex:1; color:var(--ink-2); overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+  .row .s{flex-shrink:0; font-family:var(--mono); font-size:10.5px; color:var(--faint);
+          font-variant-numeric:tabular-nums}
+  .foot{font-size:11px; color:var(--faint); margin-top:7px; line-height:1.45}
+</style>
+</head>
+<body>
+
+<div class="band"></div>
+<div class="eyebrow">Week 3 · learned from data</div>
+<h1>Let the data write the dictionary</h1>
+<p class="sub">Last week you chose the words yourself. Naive Bayes counts how often each word
+shows up in texts a human already coded, and turns those counts into a weight. Same bag of words,
+same metrics — but <b>nobody picks the list</b>. Scored on 100 texts the model has never seen.</p>
+
+<div class="grid">
+  <div>
+    <div class="panel">
+      <h2>Training</h2>
+      <div class="f">
+        <div class="top"><label for="nTrain">Texts it learns from</label><span class="v" id="v-n"></span></div>
+        <input type="range" id="nTrain" min="10" max="400" step="10" value="400">
+        <div class="hint">Held-out test set stays at 100 texts, always the same ones.
+          Drag this down and watch the test number fall.</div>
+      </div>
+      <div class="f">
+        <div class="top"><label for="alpha">Smoothing &alpha;</label><span class="v" id="v-a"></span></div>
+        <input type="range" id="alpha" min="0" max="20" step="1" value="10">
+        <div class="hint">Pretend every word was seen &alpha; extra times in both classes.</div>
+        <div class="warn" id="warn-a" hidden></div>
+      </div>
+      <div class="f">
+        <div class="top"><label for="thr">Decision threshold</label><span class="v" id="v-t"></span></div>
+        <input type="range" id="thr" min="-60" max="60" step="1" value="0">
+        <div class="hint">Score above this is called positive. Trades precision against recall.</div>
+      </div>
+      <button class="reset" id="reset">reset all three</button>
+    </div>
+
+    <div class="panel">
+      <h2>What it learned <span class="n" id="v-v"></span></h2>
+      <div id="wpos"></div>
+      <div class="wsep" id="wsep"></div>
+      <div id="wneg"></div>
+      <div class="vocab" id="vocab"></div>
+    </div>
+  </div>
+
+  <div>
+    <div class="tiles">
+      <div class="tile" tabindex="0"><div class="lab">Precision</div>
+        <div class="pair"><span class="val" id="m-p">—</span><span class="sl">/</span><span class="val2" id="m-p2">—</span></div>
+        <div class="cap">test / train</div>
+        <div class="gap"><i id="m-p-bar"></i><u id="m-p-tick"></u></div>
+        <div class="tip tip--l" role="note"><b>Precision</b>
+          <span class="def">Of the texts it called positive, how many really were.</span>
+          <span class="frm">hits / (hits + false alarms)</span>
+          <span class="sub2" id="t-p"></span></div></div>
+
+      <div class="tile" tabindex="0"><div class="lab">Recall</div>
+        <div class="pair"><span class="val" id="m-r">—</span><span class="sl">/</span><span class="val2" id="m-r2">—</span></div>
+        <div class="cap">test / train</div>
+        <div class="gap"><i id="m-r-bar"></i><u id="m-r-tick"></u></div>
+        <div class="tip tip--l" role="note"><b>Recall</b>
+          <span class="def">Of the texts a human called positive, how many it caught. No &ldquo;no call&rdquo; term this time — the model always decides.</span>
+          <span class="frm">hits / (hits + misses)</span>
+          <span class="sub2" id="t-r"></span></div></div>
+
+      <div class="tile" tabindex="0"><div class="lab">F1</div>
+        <div class="pair"><span class="val" id="m-f">—</span><span class="sl">/</span><span class="val2" id="m-f2">—</span></div>
+        <div class="cap">test / train</div>
+        <div class="gap"><i id="m-f-bar"></i><u id="m-f-tick"></u></div>
+        <div class="tip tip--r" role="note"><b>F1</b>
+          <span class="def">Harmonic mean of the two; punishes a big gap between them.</span>
+          <span class="frm">2 &times; P &times; R / (P + R)</span>
+          <span class="sub2" id="t-f"></span></div></div>
+
+      <div class="tile" tabindex="0"><div class="lab">Accuracy</div>
+        <div class="pair"><span class="val" id="m-a">—</span><span class="sl">/</span><span class="val2" id="m-a2">—</span></div>
+        <div class="cap">test / train</div>
+        <div class="gap"><i id="m-a-bar"></i><u id="m-a-tick"></u></div>
+        <div class="tip tip--r" role="note"><b>Accuracy</b>
+          <span class="def">Verdicts matching the human code. The gap between the two numbers is the model memorising its training texts.</span>
+          <span class="frm">(hits + correct rejections) / all</span>
+          <span class="sub2" id="t-a"></span></div></div>
+    </div>
+
+    <table class="cm">
+      <tr><th></th><th>Model: positive</th><th>Model: negative</th></tr>
+      <tr><th>Human: positive</th>
+        <td class="hit"><span class="c" id="c-tp">0</span><span class="k">hit</span></td>
+        <td><span class="c" id="c-fn">0</span><span class="k">miss</span></td></tr>
+      <tr><th>Human: negative</th>
+        <td><span class="c" id="c-fp">0</span><span class="k">false alarm</span></td>
+        <td><span class="c" id="c-tn">0</span><span class="k">correct</span></td></tr>
+    </table>
+
+    <h2>How it scores one text <span class="n">· click any text below</span></h2>
+    <div class="work">
+      <div class="txt" id="w-txt"></div>
+      <div class="sumline" id="w-sum"></div>
+    </div>
+
+    <div class="listhead">
+      <h2>The 100 held-out texts</h2>
+      <label class="ctl"><input type="checkbox" id="only"> only the ones it got wrong</label>
+    </div>
+    <div class="corpus" id="corpus"></div>
+    <div class="foot" id="foot"></div>
+  </div>
+</div>
+
+<script src="../shared/reviews.js"></script>
+<script>
+(function () {
+  var el = function (id) { return document.getElementById(id); };
+
+  // Fixed split: the same 60 test texts for everyone, so a number that moves
+  // when you drag a slider moved because of the slider.
+  var ALL  = window.CADC_REVIEWS_SHUFFLED(20260902);
+  var TEST = ALL.slice(0, 100);
+  var POOL = ALL.slice(100);
+
+  // A word must appear at least twice in the training texts to become a feature.
+  // Words seen once carry a loud weight and no information; dropping them is the
+  // cheapest regularisation there is, and it is why the train/test gap is small.
+  var MIN_DF = 2;
+
+  function tok(t) { return t.toLowerCase().match(/[\p{L}']+/gu) || []; }
+
+  var TOKENS = new Map();
+  ALL.forEach(function (d) { TOKENS.set(d[0], tok(d[0])); });
+
+  var model = null, sel = null;
+
+  // --- fit multinomial Naive Bayes ----------------------------------------
+  function fit(n, alpha) {
+    var docs = POOL.slice(0, n);
+    var cnt = { pos: Object.create(null), neg: Object.create(null) };
+    var nd = { pos: 0, neg: 0 }, seen = Object.create(null);
+
+    docs.forEach(function (d) {
+      var c = d[1]; nd[c]++;
+      TOKENS.get(d[0]).forEach(function (w) {
+        seen[w] = (seen[w] || 0) + 1;
+        cnt[c][w] = (cnt[c][w] || 0) + 1;
+      });
+    });
+
+    var vocab = Object.create(null), V = 0, tot = { pos: 0, neg: 0 };
+    Object.keys(seen).forEach(function (t) {
+      if (seen[t] < MIN_DF) return;
+      vocab[t] = seen[t]; V++;
+      tot.pos += cnt.pos[t] || 0;
+      tot.neg += cnt.neg[t] || 0;
+    });
+
+    // log P(w|pos) − log P(w|neg). With alpha = 0 a word absent from one class
+    // gives log(0); we floor it so the arithmetic survives, which reproduces
+    // the real pathology (one unseen word swamps every other) instead of NaN.
+    var FLOOR = 1e-12, zeros = 0;
+    var w = Object.create(null);
+    Object.keys(vocab).forEach(function (t) {
+      var pp = ((cnt.pos[t] || 0) + alpha) / (tot.pos + alpha * V);
+      var pn = ((cnt.neg[t] || 0) + alpha) / (tot.neg + alpha * V);
+      if (pp <= 0 || pn <= 0) zeros++;
+      w[t] = Math.log(Math.max(pp, FLOOR)) - Math.log(Math.max(pn, FLOOR));
+    });
+
+    var prior = (nd.pos && nd.neg) ? Math.log(nd.pos / docs.length) - Math.log(nd.neg / docs.length) : 0;
+    return { w: w, vocab: vocab, V: V, prior: prior, docs: docs, nd: nd, zeros: zeros };
+  }
+
+  function scoreDoc(text) {
+    var s = model.prior, parts = [];
+    TOKENS.get(text).forEach(function (t) {
+      var known = (t in model.w);                // unseen word: no evidence either way
+      var v = known ? model.w[t] : 0;
+      s += v;
+      parts.push([t, v, known]);
+    });
+    return { s: s, parts: parts };
+  }
+
+  function evalSet(docs, thr) {
+    var tp = 0, fp = 0, fn = 0, tn = 0;
+    docs.forEach(function (d) {
+      var pred = scoreDoc(d[0]).s > thr ? "pos" : "neg";
+      if (d[1] === "pos") { if (pred === "pos") tp++; else fn++; }
+      else { if (pred === "pos") fp++; else tn++; }
+    });
+    var P = (tp + fp) ? tp / (tp + fp) : null;
+    var R = (tp + fn) ? tp / (tp + fn) : null;
+    var F = (P !== null && R !== null && P + R > 0) ? 2 * P * R / (P + R) : null;
+    var A = docs.length ? (tp + tn) / docs.length : null;
+    return { tp: tp, fp: fp, fn: fn, tn: tn, P: P, R: R, F: F, A: A, n: docs.length };
+  }
+
+  // --- rendering -----------------------------------------------------------
+  var pc = function (v) { return v === null ? "—" : (v * 100).toFixed(0) + "%"; };
+  var sg = function (v) {
+    if (Math.abs(v) < 0.05) return "0.0";          // avoid a signed "−0.0"
+    return (v >= 0 ? "+" : "−") + Math.abs(v).toFixed(1);
+  };
+
+  function setPair(a, b, te, tr) {
+    var x = el(a), y = el(b);
+    x.textContent = pc(te); y.textContent = pc(tr);
+    // bar = test, tick = train; they separate exactly when the model starts memorising
+    var bar = el(a + "-bar"), tick = el(a + "-tick");
+    if (bar) bar.style.width = (te == null ? 0 : Math.max(0, Math.min(1, te)) * 100).toFixed(1) + "%";
+    if (tick) tick.style.left = "calc(" + (tr == null ? 0 : Math.max(0, Math.min(1, tr)) * 100).toFixed(1) + "% - 1px)";
+    var host = x.closest(".tile");
+    if (host && te != null && tr != null) {
+      host.title = "test " + pc(te) + " · train " + pc(tr) +
+                   " · gap " + Math.round((tr - te) * 100) + " points";
+    }
+  }
+
+  function renderWeights() {
+    // Only words with real support get shown; a word seen twice has a loud
+    // weight and means nothing, which is what the smoothing slider is for.
+    var MIN = 4;
+    var rows = Object.keys(model.vocab)
+      .filter(function (t) { return model.vocab[t] >= MIN; })
+      .map(function (t) { return [t, model.w[t]]; })
+      .sort(function (a, b) { return b[1] - a[1]; });
+
+    var max = rows.reduce(function (m, r) { return Math.max(m, Math.abs(r[1])); }, 0.0001);
+    var K = 6;
+    var top = rows.slice(0, K);
+    var bot = rows.slice(-K).reverse();
+    var mid = Math.max(0, rows.length - 2 * K);
+
+    function bars(list) {
+      return list.map(function (r) {
+        var v = r[1], pctw = Math.min(50, Math.abs(v) / max * 50);
+        return '<div class="wq"><span class="w">' + esc(r[0]) + '</span>' +
+          '<span class="track"><span class="bar ' + (v >= 0 ? "p" : "n") + '" style="width:' +
+          pctw.toFixed(1) + '%"></span></span>' +
+          '<span class="num">' + sg(v) + "</span></div>";
+      }).join("");
+    }
+    el("wpos").innerHTML = bars(top);
+    el("wneg").innerHTML = bars(bot);
+    el("wsep").textContent = mid ? mid + " weaker words" : "";
+    el("wsep").style.display = mid ? "" : "none";
+    el("vocab").textContent = rows.length
+      ? "The " + K + " strongest each way, out of " + rows.length + " words seen " + MIN +
+        "+ times. Bar length is how hard the word pushes. Nobody chose these."
+      : "No word appears often enough yet — give it more texts.";
+  }
+
+  function renderWork() {
+    var d = sel || TEST[0];
+    var r = scoreDoc(d[0]);
+    var thr = +el("thr").value / 10;
+    var pred = r.s > thr ? "pos" : "neg";
+    var right = pred === d[1];
+
+    // Colour only the words that actually decided it, but print a weight on every
+    // word the model knows, so the running total can be checked by hand.
+    var strong = r.parts.slice().sort(function (a, b) { return Math.abs(b[1]) - Math.abs(a[1]); });
+    var loud = new Set(strong.slice(0, 4).filter(function (p) { return Math.abs(p[1]) > 0.4; })
+                             .map(function (p) { return p[0]; }));
+
+    el("w-txt").innerHTML = r.parts.map(function (p) {
+      var cls = loud.has(p[0]) ? (p[1] >= 0 ? "p" : "n") : "z";
+      var supx = p[2] ? "<sup>" + sg(p[1]) + "</sup>" : "";
+      var ttl = p[2] ? "" : ' title="not in the training vocabulary — contributes nothing"';
+      return '<span class="tk ' + cls + '"' + ttl + ">" + esc(p[0]) + supx + "</span>";
+    }).join("");
+
+    var prob = 1 / (1 + Math.exp(-r.s));
+    el("w-sum").innerHTML =
+      "prior " + sg(model.prior) + " + every word &nbsp;=&nbsp; " +
+      '<span class="big">' + sg(r.s) + "</span>" +
+      "<span>&nbsp;vs threshold " + sg(thr) + "</span>" +
+      '<span class="verd ' + (pred === "pos" ? "p" : "n") + (right ? "" : " bad") + '">' +
+      (pred === "pos" ? "positive" : "negative") + "</span>" +
+      "<span>human said " + (d[1] === "pos" ? "positive" : "negative") +
+      (right ? "" : " — wrong") + "</span>" +
+      '<span style="color:var(--faint)">P(positive) = ' + (prob * 100).toFixed(1) + "%</span>";
+  }
+
+  function renderList(thr) {
+    var box = el("corpus"), onlyWrong = el("only").checked;
+    box.classList.remove("at-end");
+    box.innerHTML = "";
+    var shown = 0;
+    TEST.forEach(function (d) {
+      var r = scoreDoc(d[0]);
+      var pred = r.s > thr ? "pos" : "neg";
+      var right = pred === d[1];
+      if (onlyWrong && right) return;
+      shown++;
+      var row = document.createElement("div");
+      row.className = "row" + (sel && sel[0] === d[0] ? " sel" : "");
+      row.innerHTML =
+        '<span class="mark ' + (right ? "ok" : "no") + '">' + (right ? "✓" : "✗") + "</span>" +
+        '<span class="t">' + esc(d[0]) + "</span>" +
+        '<span class="s">' + sg(r.s) + "</span>";
+      row.onclick = function () { sel = d; renderWork(); renderList(thr); };
+      box.appendChild(row);
+    });
+    if (!shown) box.innerHTML = '<div class="row"><span class="t" style="color:var(--muted)">' +
+      "Nothing wrong at this setting — every held-out text is correct.</span></div>";
+  }
+
+  function run() {
+    var n = +el("nTrain").value, alpha = +el("alpha").value / 10, thr = +el("thr").value / 10;
+    el("v-n").textContent = n;
+    el("v-a").textContent = alpha.toFixed(1);
+    el("v-t").textContent = sg(thr);
+
+    model = fit(n, alpha);
+    if (!sel || TOKENS.get(sel[0]) === undefined) sel = pickDefault();
+
+    var te = evalSet(TEST, thr), tr = evalSet(model.docs, thr);
+    setPair("m-p", "m-p2", te.P, tr.P);
+    setPair("m-r", "m-r2", te.R, tr.R);
+    setPair("m-f", "m-f2", te.F, tr.F);
+    setPair("m-a", "m-a2", te.A, tr.A);
+
+    el("c-tp").textContent = te.tp; el("c-fn").textContent = te.fn;
+    el("c-fp").textContent = te.fp; el("c-tn").textContent = te.tn;
+
+    el("t-p").textContent = (te.tp + te.fp)
+      ? te.tp + " / (" + te.tp + " + " + te.fp + ") = " + pc(te.P)
+      : "nothing called positive — undefined";
+    el("t-r").textContent = (te.tp + te.fn)
+      ? te.tp + " / (" + te.tp + " + " + te.fn + ") = " + pc(te.R)
+      : "no positive texts — undefined";
+    el("t-f").textContent = (te.F === null) ? "needs both precision and recall"
+      : "2 × " + pc(te.P) + " × " + pc(te.R) + " / (" + pc(te.P) + " + " + pc(te.R) + ") = " + pc(te.F);
+    el("t-a").textContent = "(" + te.tp + " + " + te.tn + ") / " + te.n + " = " + pc(te.A);
+
+    var wa = el("warn-a");
+    if (alpha === 0) {
+      wa.hidden = false;
+      wa.textContent = "α = 0: " + model.zeros + " words appear in only one class, so the other " +
+        "class becomes impossible. One such word now decides the whole text.";
+    } else { wa.hidden = true; }
+
+    renderWeights();
+    renderWork();
+    renderList(thr);
+
+    el("v-v").textContent = "· " + model.V + " words";
+    var gap = (tr.A !== null && te.A !== null) ? (tr.A - te.A) * 100 : 0;
+    el("foot").textContent =
+      "Trained on " + n + " texts (" + model.nd.pos + " positive, " + model.nd.neg + " negative), " +
+      model.V + " words kept as features. Train accuracy beats test by " + gap.toFixed(0) +
+      " points — that gap is memorising these texts, not skill on new ones.";
+  }
+
+  // default walkthrough text: the hardest case that landed in the test set
+  function pickDefault() {
+    var want = ["Not good at all.", "Hardly a masterpiece.", "It wastes a good cast.",
+                "Never boring for a moment.", "Not worth the hype."];
+    for (var i = 0; i < want.length; i++) {
+      var hit = TEST.filter(function (d) { return d[0] === want[i]; })[0];
+      if (hit) return hit;
+    }
+    return TEST[0];
+  }
+
+  function esc(s) { return s.replace(/&/g, "&amp;").replace(/</g, "&lt;"); }
+
+  ["nTrain", "alpha", "thr"].forEach(function (id) { el(id).addEventListener("input", run); });
+  el("only").addEventListener("change", run);
+  el("reset").onclick = function () {
+    el("nTrain").value = 400; el("alpha").value = 10; el("thr").value = 0;
+    el("only").checked = false; sel = null; run();
+  };
+
+  el("corpus").addEventListener("scroll", function () {
+    var b = el("corpus");
+    b.classList.toggle("at-end", b.scrollTop + b.clientHeight >= b.scrollHeight - 2);
+  });
+
+  sel = pickDefault();
+  run();
+})();
+</script>
+</body>
+</html>

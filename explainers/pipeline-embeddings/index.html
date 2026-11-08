@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The pipeline with word embeddings</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&display=swap">
+<link rel="stylesheet" href="../shared/pipeline.css">
+<style>:root{ --accent:var(--era4) }</style>
+</head>
+<!-- ===========================================================================
+  WEEK 3b — the same pipeline, with a pre-trained model feeding STEP 02.
+  Redraw of text_analysis_fundamentals/Slide04.
+
+  The one variant whose arrow does not point at step 03. Embeddings replace the
+  representation, not the classifier: the week 3 classifier sits under step 03
+  untouched, and the document term matrix visibly turns into a matrix of
+  dimensions when the arrow lands. That swap is the whole slide.
+=========================================================================== -->
+<body>
+<svg id="chart" viewBox="-8 -10 996 440" preserveAspectRatio="xMidYMid meet" role="img"
+     aria-label="The text classification pipeline with word embeddings: a model pre-trained on unlabelled text replaces the document term matrix in step 02, while the classifier in step 03 stays as it was. Click to step through."></svg>
+<noscript><p style="max-width:34em;margin:2em;font-family:sans-serif">Needs JavaScript: the text
+classification pipeline, with pre-trained word embeddings in step 02.</p></noscript>
+
+<script src="../shared/pipeline.js"></script>
+<script>
+(function () {
+  "use strict";
+  var P = CADCPipeline.build({
+    matrix: { kind: "counts", label: "texts × words" }
+  });
+  var G = P.G, S = P.layer.slot;
+
+  /* the artefact between 02 and 03 is redrawn when the embeddings arrive ---- */
+  var kind = "counts";
+  function setMatrix(want) {
+    if (want === kind) { P.show(P.art.mat, true); return; }
+    kind = want;
+    P.show(P.art.mat, false);
+    setTimeout(function () {
+      P.clear(P.art.mat);
+      P.matrix(P.art.mat, G.ART[1], G.MID, kind,
+               kind === "embed" ? "texts × 300 dimensions" : "texts × words");
+      P.show(P.art.mat, true);
+    }, 320);
+  }
+
+  /* -- the pile of text nobody labelled, and what is trained on it ---------- */
+  var pre = P.g(S, {});
+  (function () {
+    P.corpus(pre, 40, 274, 7, 4, 13, 13);
+    P.wrap(pre, "text nobody labelled: billions of words, no annotation",
+           { x: 85, y: 348, width: 130, lh: 12, "class": "lbl", anchor: "middle" });
+    P.arrow(pre, 140, 300, 312, 300);
+    P.txt(pre, "pre-training", { x: 226, y: 292, "class": "lbl", "font-style": "italic" });
+    P.oval(pre, G.CX[1], 300, 112, 50, "A pre-trained model", "GloVe · word2vec · BERT", "net");
+    P.show(pre, false, true);
+  })();
+
+  /* -- the arrow that lands on 02 ------------------------------------------- */
+  var into2 = P.g(S, {});
+  P.arrow(into2, G.CX[1], 248, G.CX[1], G.BY + G.BH + 4, "feed flow");
+  P.txt(into2, "replaces the word counts", { x: G.CX[1] + 12, y: 232, "class": "lbl left" });
+  P.show(into2, false, true);
+
+  /* -- what the new space buys you ------------------------------------------ */
+  var near = P.g(S, {});
+  (function () {
+    var x = 300, y = 362, w = 290;   /* wide enough that the title stays on one line */
+    P.card(near, { x: x, y: y, w: w, h: 48, cls: "tint", pad: 11, icon: "near",
+                   title: "great ≈ excellent ≈ fantastic",
+                   sub: "close in the space, though no text used both" });
+    P.show(near, false, true);
+  })();
+
+  /* -- step 03 is untouched: last week's classifier, still there ------------ */
+  var algo = P.g(S, {});
+  (function () {
+    P.card(algo, { x: 575, y: 290, w: 200, h: 60, cls: "sunk", pad: 11,
+                   icon: "weights", iconCls: "faint", iconSize: 16,
+                   title: "The week 3 classifier", sub: "unchanged — same algorithm, same split" });
+    P.arrow(algo, G.CX[2], 286, G.CX[2], G.BY + G.BH + 4, "dashed");
+    P.show(algo, false, true);
+  })();
+
+  /* -- scenes: what each click puts on screen ---------------------------
+     (the lecturer narrates these; nothing is printed under the figure) 
+       0. Where week 3 left it.
+       1. So train a model on text nobody labelled.
+       2. This time the arrow lands on 02.
+       3. Now words that never co-occur can still be close.
+       4. Same classifier. Better input.
+     -------------------------------------------------------------------- */
+  var SCENES = 5;
+  CADCPipeline.run(P, SCENES, function (s) {
+    P.setSteps([ "", s >= 2 ? "on accent" : "", "", "" ]);
+    [P.art.docs, P.art.lab, P.art.gold, P.fb].forEach(function (n) { P.show(n, true); });
+    P.show(algo, true, false);
+    P.show(pre, s >= 1, true); P.show(into2, s >= 2, true); P.show(near, s >= 3, true);
+    setMatrix(s >= 2 ? "embed" : "counts");
+  });
+})();
+</script>
+</body>
+</html>

@@ -95,16 +95,18 @@
       probe.textContent = str;
       return typeof probe.getComputedTextLength === "function" ? probe.getComputedTextLength() : str.length * 6.4;
     }
+    /* punctuation that follows a highlighted word sticks to it, with no space before */
+    function glue(w) { return /^[.,;:!?)…]/.test(w); }
     var lines = [[]], cur = "";
     words.forEach(function (w) {
-      var trial = cur ? cur + " " + w[0] : w[0];
-      if (cur && width(trial) > o.width) { lines.push([]); cur = w[0]; } else cur = trial;
+      var trial = cur ? cur + (glue(w[0]) ? "" : " ") + w[0] : w[0];
+      if (cur && !glue(w[0]) && width(trial) > o.width) { lines.push([]); cur = w[0]; } else cur = trial;
       lines[lines.length - 1].push(w);
     });
     parent.removeChild(probe);
     lines.forEach(function (ln, i) {
       var t = txt(parent, "", { x: o.x, y: o.y + i * (o.lh || 17), "class": o.cls || "sm" });
-      ln.forEach(function (w, k) { var sp = el("tspan", w[1] ? { "class": w[1] } : {}); sp.textContent = (k ? " " : "") + w[0]; t.appendChild(sp); });
+      ln.forEach(function (w, k) { var sp = el("tspan", w[1] ? { "class": w[1] } : {}); sp.textContent = (k && !glue(w[0]) ? " " : "") + w[0]; t.appendChild(sp); });
     });
     return o.y + lines.length * (o.lh || 17);
   }

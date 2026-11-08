@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Hold part back</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&display=swap">
+<link rel="stylesheet" href="../shared/light.css">
+</head>
+<!-- ===========================================================================
+  WEEK 3 — the train/test split, drawn on the deck's own data: 5,250 labelled
+  abstracts, three disciplines, 1,750 each. One tile = 50 abstracts, 105
+  tiles. Steps: the sample sorted by class → shuffled with a seed → cut
+  80/20, the test fifth sealed → stratified: each class keeps its share on
+  both sides → leakage: a setting chosen by peeking at the test set, and the
+  reported score turning into a fiction. Click / Enter / space; #N opens at
+  step N. No caption band: the narration is in the slide's speaker notes.
+=========================================================================== -->
+<body>
+<svg id="chart" viewBox="0 0 1000 440" preserveAspectRatio="xMidYMid meet" role="img"
+     aria-label="Five thousand labelled abstracts as coloured tiles: sorted by class, then shuffled, then cut into a training set of four thousand two hundred and a sealed test set of one thousand and fifty, each class keeping its share on both sides; then the leak: a setting chosen on the test set makes the reported score meaningless.">
+  <g id="tiles"></g>
+  <g id="over"></g>
+  <g id="hud"></g>
+</svg>
+<noscript><p style="max-width:34em;margin:2em;font-family:sans-serif">Needs JavaScript: the train/test split.</p></noscript>
+
+<script>
+(function () {
+  "use strict";
+  var NS = "http://www.w3.org/2000/svg";
+  function el(t, a) { var e = document.createElementNS(NS, t); for (var k in a) if (a[k] != null) e.setAttribute(k, a[k]); return e; }
+  function txt(p, s, a) { var t = el("text", a || {}); t.textContent = s; p.appendChild(t); return t; }
+  function tsp(t, s, a) { var x = el("tspan", a || {}); x.textContent = s; t.appendChild(x); return x; }
+  function g(p, a) { var e = el("g", a || {}); p.appendChild(e); return e; }
+  function clear(n) { while (n.firstChild) n.removeChild(n.firstChild); }
+  function rng(seed) { return function () { seed |= 0; seed = seed + 0x6D2B79F5 | 0; var t = Math.imul(seed ^ seed >>> 15, 1 | seed); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+  var GLYPH = { sealed: '<rect x="4" y="10.5" width="16" height="10.5" rx="2"/><path d="M8 10.5V7a4 4 0 0 1 8 0v3.5"/>', train: '<path d="M22 10 12 5 2 10l10 5z"/><path d="M6 12.2V17c0 1.3 2.7 2.4 6 2.4s6-1.1 6-2.4v-4.8"/>', warn: '<path d="M10.3 3.9 1.9 18.1A2 2 0 0 0 3.6 21h16.8a2 2 0 0 0 1.7-2.9L13.7 3.9a2 2 0 0 0-3.4 0z"/><path d="M12 9.5v4M12 17.2h.01"/>' };
+  function icon(p, name, x, y, size, cls) { var e = el("svg", { x: x, y: y, width: size, height: size, viewBox: "0 0 24 24", "class": "ic " + (cls || ""), fill: "none", stroke: "currentColor", "stroke-width": "1.75", "stroke-linecap": "round", "stroke-linejoin": "round" }); e.innerHTML = GLYPH[name]; p.appendChild(e); return e; }
+  var gT = document.getElementById("tiles"), gO = document.getElementById("over"), gHud = document.getElementById("hud");
+
+  /* 105 tiles, 35 per class; a seeded shuffle; the cut at 84 (80%) */
+  var N = 105, PER = 35, CUT = 84, TW = 8.5, TH = 30, X0 = 40;
+  var cls = []; for (var i = 0; i < N; i++) cls.push("abc"[Math.floor(i / PER)]);
+  var r = rng(42), order = cls.map(function (c, i) { return i; });
+  for (var k = order.length - 1; k > 0; k--) { var j = Math.floor(r() * (k + 1)); var t = order[k]; order[k] = order[j]; order[j] = t; }
+  /* stratify: the first CUT of the shuffled order must hold 28 of each class; the seeded shuffle
+     is close, so nudge by swapping until exact (that is what strata = label does) */
+  function count(ids) { var m = { a: 0, b: 0, c: 0 }; ids.forEach(function (i) { m[cls[i]]++; }); return m; }
+  (function () {
+    for (var guard = 0; guard < 200; guard++) {
+      var tr = count(order.slice(0, CUT)), over = null, under = null;
+      for (var c in tr) { if (tr[c] > 28) over = c; if (tr[c] < 28) under = c; }
+      if (!over) break;
+      var i1 = -1, i2 = -1;
+      for (var a = 0; a < CUT; a++) if (cls[order[a]] === over) { i1 = a; break; }
+      for (var b = CUT; b < N; b++) if (cls[order[b]] === under) { i2 = b; break; }
+      var tmp = order[i1]; order[i1] = order[i2]; order[i2] = tmp;
+    }
+  })();
+  var pos = {};   /* tile id -> slot in the shuffled row */
+  order.forEach(function (id, slot) { pos[id] = slot; });
+
+  var ROW_Y = 176, TEST_DX = 26;   /* the test fifth slides right by TEST_DX when cut */
+  var tiles = cls.map(function (c, i) {
+    var e = el("rect", { "class": "tile " + c, x: X0 + i * TW, y: ROW_Y, width: TW, height: TH });
+    gT.appendChild(e); return e;
+  });
+  function place(state) {
+    tiles.forEach(function (e, i) {
+      var slot = state >= 1 ? pos[i] : i, dx = (slot - i) * TW, dy = 0;
+      if (state >= 2 && slot >= CUT) dx += TEST_DX;
+      e.setAttribute("transform", "translate(" + dx.toFixed(1) + "," + dy + ")");
+      e.setAttribute("class", "tile " + cls[i] + (state === 4 && slot < CUT ? " dim" : ""));
+    });
+  }
+
+  /* overlays per state */
+  function chip(p, x, y, w, s, cl) { var k = g(p, { "class": "chip " + cl }); k.appendChild(el("rect", { x: x, y: y, width: w, height: 18 })); txt(k, s, { x: x + w / 2, y: y + 13 }); return k; }
+  function shares(p, x, y, m, n, label) {
+    var w = 150, xx = x; txt(p, label, { x: x, y: y - 6, "class": "lab" });
+    ["a", "b", "c"].forEach(function (c) { var ww = w * m[c] / n; p.appendChild(el("rect", { "class": "bar " + c, x: xx, y: y, width: ww - 1, height: 9 })); xx += ww; });
+    txt(p, ["a", "b", "c"].map(function (c) { return Math.round(100 * m[c] / n) + "%"; }).join(" · "), { x: x + w + 8, y: y + 8.5, "class": "sm" });
+  }
+  function overlay(state) {
+    clear(gO);
+    txt(gO, "5,250 LABELLED ABSTRACTS · ONE TILE = 50", { x: X0, y: 60, "class": "lab" });
+    if (state === 0) {
+      [["computer science", "a", 0], ["physics", "b", 1], ["statistics", "c", 2]].forEach(function (d) { txt(gO, d[0] + " · 1,750", { x: X0 + (d[2] * PER + PER / 2) * TW, y: ROW_Y + TH + 18, "class": "sm", "text-anchor": "middle" }); });
+      var t = txt(gO, "", { x: X0, y: 262, "class": "sm" }); tsp(t, "As the file came: sorted by discipline. Cut here and the test set would be "); tsp(t, "all statistics", { "class": "k" }); tsp(t, ".");
+    }
+    if (state >= 1 && state <= 3) { var s = txt(gO, "", { x: X0, y: ROW_Y + TH + 18, "class": "sm" }); tsp(s, "set.seed(42)", { "class": "k" }); tsp(s, "   shuffled once, reproducibly"); }
+    if (state >= 2) {
+      var xc = X0 + CUT * TW;
+      gO.appendChild(el("path", { "class": "brace", d: "M" + X0 + "," + (ROW_Y - 10) + " v-6 h" + (CUT * TW - 2) + " v6" }));
+      icon(gO, "train", X0, ROW_Y - 44, 16, "acc"); txt(gO, "TRAIN · 4,200 · 80%", { x: X0 + 22, y: ROW_Y - 31, "class": "lab acc" });
+      var xt = xc + TEST_DX;
+      gO.appendChild(el("path", { "class": "brace", d: "M" + xt + "," + (ROW_Y - 10) + " v-6 h" + ((N - CUT) * TW - 2) + " v6", stroke: "#b84a27" }));
+      icon(gO, "sealed", xt, ROW_Y - 44, 16, "warn"); txt(gO, "TEST · 1,050", { x: xt + 22, y: ROW_Y - 31, "class": "lab warn" });
+      gO.appendChild(el("rect", { "class": "box sealed", x: xt - 4, y: ROW_Y - 4, width: (N - CUT) * TW + 8, height: TH + 8, rx: 4 }));
+    }
+    if (state === 2) { var t2 = txt(gO, "", { x: X0, y: 262, "class": "sm" }); tsp(t2, "Four abstracts in five train the model. The fifth is "); tsp(t2, "sealed", { "class": "n" }); tsp(t2, ": nothing below the cut looks at it until the very end."); }
+    if (state === 3) {
+      shares(gO, X0, 262, count(order.slice(0, CUT)), CUT, "TRAIN, BY CLASS");
+      shares(gO, X0 + 420, 262, count(order.slice(CUT)), N - CUT, "TEST, BY CLASS");
+      var t3 = txt(gO, "", { x: X0, y: 310, "class": "sm" }); tsp(t3, "strata = label", { "class": "k" }); tsp(t3, ": each class keeps its share on both sides, so the test set is a fair sample of the whole.");
+    }
+    if (state === 4) {
+      var xt4 = X0 + CUT * TW + TEST_DX;
+      gO.appendChild(el("rect", { "class": "box tint", x: X0, y: 250, width: 230, height: 54, rx: 6 }));
+      txt(gO, "THE MODEL", { x: X0 + 14, y: 270, "class": "lab acc" });
+      var m = txt(gO, "", { x: X0 + 14, y: 290, "class": "sm" }); tsp(m, "eight settings tried; the best one kept");
+      gO.appendChild(el("path", { "class": "arrow warn", d: "M" + (xt4 + 90) + "," + (ROW_Y + TH + 6) + " C " + (xt4 + 90) + ",270 " + (X0 + 300) + ",277 " + (X0 + 236) + ",277" }));
+      icon(gO, "warn", X0 + 300, 260, 16, "warn"); txt(gO, "best according to the test set", { x: X0 + 322, y: 272, "class": "sm", fill: "#b84a27" });
+      chip(gO, X0 + 322, 282, 130, "accuracy .81", "warn");
+      var t4 = txt(gO, "", { x: X0, y: 338, "class": "sm" }); tsp(t4, "Choosing a setting because it scored best on the test set is "); tsp(t4, "leakage", { "class": "n" }); tsp(t4, ": the test set has quietly become training data,");
+      var t5 = txt(gO, "", { x: X0, y: 356, "class": "sm" }); tsp(t5, "and .81 is no longer an estimate of anything. The score you report has to come from data no decision ever touched.");
+    }
+  }
+
+  var counter = txt(gHud, "", { x: 980, y: 432, "class": "step" });
+  var MAX = 4, state = Math.max(0, Math.min(MAX, parseInt((location.hash || "").slice(1), 10) || 0));
+  function render() { place(state); overlay(state); counter.textContent = (state + 1) + " / " + (MAX + 1); }
+  function advance() { if (state >= MAX) return; state += 1; render(); }
+  render();
+  window.addEventListener("hashchange", function () { state = Math.max(0, Math.min(MAX, parseInt((location.hash || "").slice(1), 10) || 0)); render(); });
+  document.body.addEventListener("click", advance);
+  document.body.addEventListener("keydown", function (e) { if (e.key === "Enter" || e.key === " ") advance(); });
+})();
+</script>
+</body>
+</html>

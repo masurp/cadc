@@ -1,0 +1,177 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Other designs</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&display=swap">
+<link rel="stylesheet" href="../shared/light.css">
+<style>
+  /* read from the back of the room: one or two short lines per step, slide-sized */
+  .say{font-size:17.5px; fill:var(--ink-2)}
+  .say tspan.k{font-weight:700; fill:var(--ink)} .say tspan.a{font-weight:700; fill:var(--accent)} .say tspan.n{font-weight:700; fill:var(--b)}
+  .head{font-size:12.5px; font-weight:700; letter-spacing:.09em; fill:var(--accent)}
+  .fl{font-size:13px; font-weight:700; fill:#fff}
+  .fl.dark{fill:var(--ink-2)}
+  .under{font-size:14px; fill:var(--ink-3)}
+  .score{font-size:17px; font-weight:700; fill:var(--accent); font-variant-numeric:tabular-nums}
+  .score.mut{fill:var(--muted); font-weight:500}
+  .mean{font-size:22px; font-weight:700; fill:var(--accent); font-variant-numeric:tabular-nums}
+  .cell{font-size:16px; fill:var(--ink-2); font-variant-numeric:tabular-nums}
+  .cell.k{font-weight:700; fill:var(--ink)} .cell.a{font-weight:700; fill:var(--accent)}
+  .gbar{fill:#c9c5ba} .gbar.best{fill:var(--accent)}
+  .mline{stroke:var(--accent); stroke-width:2}
+  .stepnav{font-size:17px; font-weight:700; cursor:pointer} .stepnav:hover{fill:var(--ink)}
+  .step{font-size:12px}
+</style>
+</head>
+<!-- ===========================================================================
+  WEEK 3 — designs for splitting labelled data, on the deck's 4,200 training and
+  1,050 test abstracts. Steps: hold-out → train / validation / test → the training
+  data cut into five folds → round 1 in full (fit on four folds, score on the
+  fifth) → rounds 2 to 5 → the mean of the five scores → the same for each
+  setting, keep the best → where the numbers go (folds choose, refit on all
+  training data, test once).
+  The five fold scores are real: the Part III logistic regression on the same
+  five folds as the tuning grid (seed 42); the three settings are rows of
+  results/mlp-tune.rds. Forward and back: ../shared/stepnav.js; #N opens step N.
+=========================================================================== -->
+<body>
+<svg id="chart" viewBox="0 0 1000 440" preserveAspectRatio="xMidYMid meet" role="img"
+     aria-label="Designs for splitting labelled data: hold-out; train, validation and test; five-fold cross-validation on the training part, one round at a time, each fold sitting out once and giving one score; the mean of the five scores; the same for each setting, keeping the best; and the order in which the numbers are used.">
+  <g id="scene"></g>
+  <g id="hud"></g>
+</svg>
+<noscript><p style="max-width:34em;margin:2em;font-family:sans-serif">Needs JavaScript: validation designs.</p></noscript>
+
+<script src="../shared/stepnav.js"></script>
+<script>
+(function () {
+  "use strict";
+  var NS = "http://www.w3.org/2000/svg";
+  function el(t, a) { var e = document.createElementNS(NS, t); for (var k in a) if (a[k] != null) e.setAttribute(k, a[k]); return e; }
+  function txt(p, s, a) { var t = el("text", a || {}); t.textContent = s; p.appendChild(t); return t; }
+  function tsp(t, s, a) { var x = el("tspan", a || {}); x.textContent = s; t.appendChild(x); return x; }
+  function clear(n) { while (n.firstChild) n.removeChild(n.firstChild); }
+  function say(p, y, parts) { var t = txt(p, "", { x: X0, y: y, "class": "say" }); parts.forEach(function (q) { tsp(t, q[0], q[1] ? { "class": q[1] } : {}); }); return t; }
+  var S = document.getElementById("scene");
+  var X0 = 40, W = 920;
+
+  /* real numbers, see the header */
+  var FOLD = [.733, .725, .733, .738, .754];
+  var GRID = [[.0001, .685, .037], [.01, .728, .002], [.3, .751, .007], [1, .647, .009]];                        /* [penalty, mean, s.e.] for 16 hidden units */
+  var MEAN = FOLD.reduce(function (a, b) { return a + b; }) / FOLD.length;
+  var SE = Math.sqrt(FOLD.reduce(function (a, b) { return a + (b - MEAN) * (b - MEAN); }, 0) / (FOLD.length - 1)) / Math.sqrt(FOLD.length);
+  function d3(v) { return v.toFixed(3).replace(/^0/, ""); }
+
+  function bar(y, parts, h) {
+    var x = X0;
+    parts.forEach(function (q) {
+      var w = W * q.share;
+      S.appendChild(el("rect", { "class": "tile " + q.cls, x: x, y: y, width: w - 3, height: h || 40, rx: 4 }));
+      if (q.label) txt(S, q.label, { x: x + 10, y: y + (h || 40) / 2 + 5, "class": "fl" + (q.cls === "tr" ? " dark" : "") });
+      if (q.sub) txt(S, q.sub, { x: x + (w - 3) / 2, y: y + (h || 40) + 22, "class": "under", "text-anchor": "middle" });
+      x += w;
+    });
+  }
+  /* the cross-validation picture: rounds as rows of five folds, the test set sealed beside them */
+  var CX = X0 + 68, FW = 116, RH = 30, RG = 9, RY = 70, SX = CX + 5 * FW + 20, TX = 800;   /* CX: room for "round 1" on the left */
+  function testBox(y0, y1) {
+    S.appendChild(el("rect", { "class": "tile b", x: TX, y: y0, width: X0 + W - TX - 3, height: y1 - y0, rx: 4 }));
+    txt(S, "TEST · 1,050", { x: TX + 14, y: y0 + 24, "class": "fl" }); txt(S, "sealed, untouched", { x: TX + 14, y: y0 + 44, "class": "fl" });
+  }
+  function round(r, y, withScore) {
+    for (var k = 0; k < 5; k++) {
+      var out = k === r;
+      S.appendChild(el("rect", { "class": "tile " + (out ? "fold" : "tr"), x: CX + k * FW, y: y, width: FW - 4, height: RH, rx: 4 }));
+      txt(S, out ? "scores" : "fits", { x: CX + k * FW + (FW - 4) / 2, y: y + RH / 2 + 5, "class": "fl" + (out ? "" : " dark"), "text-anchor": "middle" });
+    }
+    txt(S, "round " + (r + 1), { x: CX - 10, y: y + RH / 2 + 5, "class": "under", "text-anchor": "end" });
+    if (withScore) txt(S, d3(FOLD[r]), { x: SX, y: y + RH / 2 + 6, "class": "score" });
+  }
+
+  function scene(s) {
+    clear(S);
+    if (s === 0) {
+      txt(S, "HOLD-OUT · THE SPLIT YOU JUST SAW", { x: X0, y: 40, "class": "head" });
+      bar(100, [{ share: .8, cls: "tr", label: "TRAIN · 4,200", sub: "fit the model" }, { share: .2, cls: "b", label: "TEST · 1,050", sub: "score it, once" }]);
+      say(S, 250, [["Enough when there is nothing to choose."]]);
+      say(S, 280, [["But every model has settings, and choosing them needs a score too. "], ["Not the test score.", "n"]]);
+    }
+    if (s === 1) {
+      txt(S, "TRAIN · VALIDATION · TEST", { x: X0, y: 40, "class": "head" });
+      bar(100, [{ share: .6, cls: "tr", label: "TRAIN · 3,150", sub: "fit each setting" }, { share: .2, cls: "fold", label: "VALIDATION · 1,050", sub: "compare, keep the best" }, { share: .2, cls: "b", label: "TEST · 1,050", sub: "score the chosen one, once" }]);
+      say(S, 250, [["A third part, cut from the training data, takes every decision."]]);
+      say(S, 280, [["The price: 1,050 coded abstracts that never train anything."]]);
+    }
+    if (s >= 2 && s <= 5) {
+      txt(S, "K-FOLD CROSS-VALIDATION · FIVE FOLDS", { x: X0, y: 40, "class": "head" });
+      if (s === 2) {
+        for (var k = 0; k < 5; k++) {
+          S.appendChild(el("rect", { "class": "tile tr", x: CX + k * FW, y: RY, width: FW - 4, height: 44, rx: 4 }));
+          txt(S, "fold " + (k + 1), { x: CX + k * FW + 10, y: RY + 27, "class": "fl dark" });
+        }
+        txt(S, "TRAIN · 4,200 = five folds of 840", { x: CX, y: RY + 68, "class": "under" });
+        testBox(RY, RY + 60);
+        say(S, 250, [["Cut the training data into five equal "], ["folds", "k"], ["."]]);
+        say(S, 280, [["Each fold will sit out once, while the other four fit the model."]]);
+      } else {
+        var rounds = s === 3 ? 1 : 5;
+        for (var r = 0; r < rounds; r++) round(r, RY + r * (RH + RG), true);
+        testBox(RY, RY + 5 * (RH + RG) - RG);
+        if (s === 3) {
+          var y3 = RY + RH + 26;
+          S.appendChild(el("path", { "class": "brace", d: "M" + (CX + FW) + "," + (y3 - 8) + " v6 h" + (4 * FW - 4) + " v-6" }));
+          txt(S, "fit the model on these 3,360", { x: CX + 3 * FW, y: y3 + 16, "class": "under", "text-anchor": "middle" });
+          S.appendChild(el("path", { "class": "brace", d: "M" + CX + "," + (y3 - 8) + " v6 h" + (FW - 4) + " v-6" }));
+          txt(S, "score it on these 840", { x: CX + (FW - 4) / 2, y: y3 + 16, "class": "under", "text-anchor": "middle" });
+          txt(S, "accuracy", { x: SX, y: RY - 10, "class": "under" });
+          say(S, 250, [["Round 1: fit on folds 2 to 5, score on fold 1."]]);
+          say(S, 280, [["The model has not seen fold 1, so its score there is honest."]]);
+        }
+        if (s === 4) {
+          say(S, 300, [["Rounds 2 to 5: every fold sits out once."]]);
+          say(S, 330, [["Every abstract is scored once, by a model that did not see it."]]);
+        }
+        if (s === 5) {
+          var ym = RY + 5 * (RH + RG) - RG + 4;
+          S.appendChild(el("line", { "class": "mline", x1: SX - 4, y1: ym, x2: SX + 70, y2: ym }));
+          txt(S, d3(MEAN), { x: SX, y: ym + 28, "class": "mean" });
+          txt(S, "± " + d3(SE), { x: SX + 74, y: ym + 28, "class": "under" });
+          say(S, 300, [["The "], ["mean", "a"], [" of the five scores is the estimate for this setting."]]);
+          say(S, 330, [["Their spread says how far to trust it: here ± " + d3(SE) + "."]]);
+        }
+      }
+    }
+    if (s === 6) {
+      txt(S, "ONE MEAN PER SETTING · KEEP THE BEST", { x: X0, y: 40, "class": "head" });
+      var best = GRID.reduce(function (b, r) { return r[1] > b[1] ? r : b; }, GRID[0]);
+      txt(S, "the network, 16 hidden units", { x: X0, y: 76, "class": "under" });
+      txt(S, "penalty", { x: X0, y: 104, "class": "cell k" }); txt(S, "mean of five folds", { x: X0 + 170, y: 104, "class": "cell k" });
+      GRID.forEach(function (r, i) {
+        var y = 140 + i * 40, on = r === best, w = 420 * (r[1] - .5) / .3;
+        txt(S, String(r[0]), { x: X0, y: y, "class": "cell" + (on ? " a" : "") });
+        S.appendChild(el("rect", { "class": "gbar" + (on ? " best" : ""), x: X0 + 170, y: y - 18, width: Math.max(4, w), height: 24, rx: 3 }));
+        txt(S, d3(r[1]) + "  ± " + d3(r[2]), { x: X0 + 180 + Math.max(4, w), y: y, "class": "cell" + (on ? " a" : "") });
+      });
+      say(S, 300, [["Run the five rounds once per setting, and keep the best mean."]]);
+      say(S, 330, [["The tuning in Part V does this for 294 settings."]]);
+    }
+    if (s === 7) {
+      txt(S, "WHERE THE NUMBERS GO", { x: X0, y: 40, "class": "head" });
+      var steps = [["1", "folds", "compare settings, keep the best"], ["2", "all 4,200 training abstracts", "fit the chosen setting once more"], ["3", "test set", "score it once, report that number"]];
+      steps.forEach(function (st, i) {
+        var x = X0 + i * 310, yy = 120;
+        S.appendChild(el("rect", { "class": "box" + (i === 2 ? " sealed" : ""), x: x, y: yy - 30, width: 290, height: 84, rx: 6 }));
+        txt(S, st[0], { x: x + 16, y: yy + 22, "class": "big" + (i === 2 ? " warn" : "") });
+        txt(S, st[1].toUpperCase(), { x: x + 48, y: yy, "class": "lab" }); txt(S, st[2], { x: x + 48, y: yy + 26, "class": "under" });
+        if (i < 2) S.appendChild(el("path", { "class": "arrow", d: "M" + (x + 292) + "," + (yy + 12) + " h14 m-4,-4 l4,4 -4,4" }));
+      });
+      say(S, 270, [["The test set sees one model, once. Nothing else about it is ever computed."]]);
+    }
+  }
+  CADCStepNav.attach({ max: 7, go: function (n) { scene(n); }, hud: document.getElementById("hud"), x: 985, y: 433 });
+})();
+</script>
+</body>
+</html>

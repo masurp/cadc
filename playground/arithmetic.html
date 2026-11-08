@@ -45,9 +45,9 @@ ul.task-list li input[type="checkbox"] {
 <link href="../site_libs/quarto-html/quarto-syntax-highlighting-bf27225e3a48a9273f3daa8f8e829971.css" rel="stylesheet" class="quarto-color-scheme-extra" id="quarto-text-highlighting-styles">
 <script src="../site_libs/bootstrap/bootstrap.min.js"></script>
 <link href="../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
-<link href="../site_libs/bootstrap/bootstrap-a2f8ea6fc60fd3a8c4ae009cc88cebd5.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme" id="quarto-bootstrap" data-mode="light">
-<link href="../site_libs/bootstrap/bootstrap-dark-20e7e51325ba5d36e1a3e4bc34b04bc4.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme quarto-color-alternate" id="quarto-bootstrap" data-mode="dark">
-<link href="../site_libs/bootstrap/bootstrap-a2f8ea6fc60fd3a8c4ae009cc88cebd5.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme-extra" id="quarto-bootstrap" data-mode="light">
+<link href="../site_libs/bootstrap/bootstrap-2e2e607a7148bff3b2e5edf6c9d4694a.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme" id="quarto-bootstrap" data-mode="light">
+<link href="../site_libs/bootstrap/bootstrap-dark-d8c0b66fa26e6d282b7f7daa13e4442f.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme quarto-color-alternate" id="quarto-bootstrap" data-mode="dark">
+<link href="../site_libs/bootstrap/bootstrap-2e2e607a7148bff3b2e5edf6c9d4694a.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme-extra" id="quarto-bootstrap" data-mode="light">
 <script id="quarto-search-options" type="application/json">{
   "location": "navbar",
   "copy-button": false,
@@ -354,12 +354,12 @@ ul.task-list li input[type="checkbox"] {
 <h3 data-anchor-id="what-to-notice">What to notice</h3>
 <p><strong>A word that is not there gets a zero, not a blank.</strong> This is what lets a text be treated as a vector: every text gets a number in every column, in the same order, so any two texts line up position by position. Sentence C is about something else entirely and it still has a <code>good</code> column.</p>
 <p><strong>Sentences A and B score the same, and no word list could fix it.</strong> B says the news is <em>not</em> good. The matrix does have a column for <em>not</em> (B has a 1 in it), so the tempting fix is to give that column a negative weight. It would work on B, and it would punish <em>“not a disaster”</em> by exactly the same amount, because every column is multiplied on its own and then added. The matrix kept the word but threw away what it was attached to, and no choice of weights puts that back. Much of the course after week 2 follows from this, which is why it keeps returning to these three sentences.</p>
-<p><strong>Step 3 changes only the numbers</strong>: the row, the sum and the slot stay the same. In week 2 you wrote the weights; in week 3 a model wrote them from a few thousand coded texts, and that is what separates a dictionary from a classifier. It is also why <span data-when-meta="cadc-hide.naive-bayes"><em>let the data write the dictionary</em> (week 3)</span> is the tool that sits next to this one.</p>
-<p><strong>The dot product grows with length, which is a problem.</strong> P and Q say the same thing, but Q is twice as long, so <code>P·Q</code> comes out larger than <code>P·P</code>: a text is apparently more similar to a longer copy of itself than to itself. Dividing by both lengths removes <em>how much was written</em> and keeps <em>what it was about</em>. That is cosine similarity, and it is the measurement behind every neighbour list in <span data-when-meta="cadc-hide.embeddings"><em>where words live</em> (week 3)</span>.</p>
+<p><strong>Step 3 changes only the numbers</strong>: the row, the sum and the slot stay the same. In week 2 you wrote the weights; in week 3 a model wrote them from a few thousand coded texts, and that is what separates a dictionary from a classifier. It is also why <span data-when-meta="cadc-hide.naive-bayes"><a href="../playground/naive-bayes.html">let the data write the dictionary</a></span> is the tool that sits next to this one.</p>
+<p><strong>The dot product grows with length, which is a problem.</strong> P and Q say the same thing, but Q is twice as long, so <code>P·Q</code> comes out larger than <code>P·P</code>: a text is apparently more similar to a longer copy of itself than to itself. Dividing by both lengths removes <em>how much was written</em> and keeps <em>what it was about</em>. That is cosine similarity, and it is the measurement behind every neighbour list in <span data-when-meta="cadc-hide.embeddings"><a href="../playground/embeddings.html">where words live</a></span>.</p>
 <div class="cadc-refrain">
 <p>Nothing in this tool tells you whether <code>good +1</code> was the right weight, or whether the construct you care about is in those columns at all. Weeks 2 to 4 take up that question.</p>
 </div>
-<p>Used in <a href="../weeks/week-02.html">Week 2 · Dictionaries</a> and <span data-when-meta="cadc-hide.w3">Week 3 · Classifiers</span>; it is the arithmetic behind <a href="../playground/dictionary.html">build-a-dictionary</a> and <span data-when-meta="cadc-hide.embeddings"><em>where words live</em></span>.</p>
+<p>Used in <a href="../weeks/week-02.html">Week 2 · Dictionaries</a> and <span data-when-meta="cadc-hide.w3"><a href="../weeks/week-03.html">Week 3 · Classifiers</a></span>; it is the arithmetic behind <a href="../playground/dictionary.html">build-a-dictionary</a> and <span data-when-meta="cadc-hide.embeddings"><a href="../playground/embeddings.html">where words live</a></span>.</p>
 </section>
 </section>
 </div>

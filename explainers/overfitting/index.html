@@ -1,0 +1,610 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>How much freedom is too much — CADC</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&display=swap">
+<style>
+  /* --- tokens ---------------------------------------------------------------
+     Week 3, so the same era hue as the Naive Bayes tool: chrome only (band,
+     eyebrow, section labels, controls), never on a data mark.
+
+     The two data series here are TRAIN and TEST — the house categorical pair
+     (VU blue / orange-red, CVD ΔE 20). They are additionally separated by
+     shape, filled vs open, so identity never rests on colour alone. */
+  :root{
+    --paper:#faf8f4; --surface:#fff; --panel:#fdfcf9; --strip:#f2f0ea;
+    --hairline:#e7e3d9; --border:#e0dcd0; --grid:#eceae2;
+    --ink:#1a1a17; --ink-2:#3a3a34; --ink-3:#5a5a52; --muted:#7a7a70; --faint:#9a9a90;
+    --accent:#8a6410; --accent-tint:#f6efdd;
+    --train:#2678b0; --train-tint:#e8f1f8;
+    --test:#b84a27;  --test-tint:#fbeee8;
+    --font:"Space Grotesk", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+    --mono:ui-monospace,SFMono-Regular,Menlo,monospace;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --paper:#10243a; --surface:#16304a; --panel:#142c44; --strip:#16304a;
+      --hairline:#2c4560; --border:#2c4560; --grid:#223d58;
+      --ink:#e8eaec; --ink-2:#cfd6de; --ink-3:#a8c0d4; --muted:#7d9bb5; --faint:#6d8ba6;
+      --accent:#d9a63f; --accent-tint:#2e2717;
+      --train:#3291d1; --train-tint:#14304a;
+      --test:#d26a49;  --test-tint:#3a2118;
+    }
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{font-family:var(--font); background:var(--paper); color:var(--ink);
+       font-size:14px; line-height:1.5; padding:0 20px 20px}
+
+  .band{height:3px; background:var(--accent); margin:0 -20px 13px; opacity:.9}
+  .eyebrow{font-size:10px; font-weight:700; letter-spacing:.1em; text-transform:uppercase;
+           color:var(--accent); margin-bottom:5px}
+  h1{font-size:15px; font-weight:700; margin:0}
+  .sub{font-size:12px; color:var(--ink-3); margin:4px 0 14px; max-width:72ch}
+  .sub b{color:var(--ink-2); font-weight:500}
+
+  .grid{display:grid; grid-template-columns:minmax(0,290px) minmax(0,1fr); gap:20px}
+  @media (max-width:760px){ .grid{grid-template-columns:1fr} }
+
+  h2{font-size:10.5px; font-weight:700; letter-spacing:.08em; text-transform:uppercase;
+     color:var(--accent); margin:0 0 8px}
+  h2 .n{color:var(--faint); font-weight:400; letter-spacing:0; text-transform:none}
+
+  .panel{border:1px solid var(--border); border-radius:9px; padding:11px 12px;
+         background:var(--panel); margin-bottom:12px}
+
+  .f{margin-bottom:11px}
+  .f .top{display:flex; justify-content:space-between; align-items:baseline; gap:8px}
+  .f label{font-size:12px; color:var(--ink-2)}
+  .f .v{font-family:var(--mono); font-size:12px; font-weight:500; color:var(--accent);
+        font-variant-numeric:tabular-nums}
+  .f input[type=range]{width:100%; margin:5px 0 0; accent-color:var(--accent); cursor:pointer}
+  .f .hint{font-size:10.5px; color:var(--faint); line-height:1.35; margin-top:2px}
+
+  .btnrow{display:flex; gap:7px; margin-top:4px}
+  .btn{flex:1; font:inherit; font-size:11.5px; padding:5px 8px; cursor:pointer;
+       border:1px solid var(--border); border-radius:6px; background:var(--surface); color:var(--ink-2)}
+  .btn:hover{border-color:var(--accent); color:var(--accent)}
+
+  .ctl{display:flex; align-items:flex-start; gap:8px; font-size:12px; color:var(--ink-2);
+       cursor:pointer; margin-top:9px; padding-top:9px; border-top:1px solid var(--hairline)}
+  .ctl input{width:15px; height:15px; accent-color:var(--test); cursor:pointer; margin-top:1px}
+  .ctl .lb b{display:block; font-weight:500}
+  .ctl .lb span{display:block; font-size:10.5px; color:var(--faint); line-height:1.35; margin-top:1px}
+
+  .verdict{border:1px solid var(--border); border-radius:9px; padding:10px 12px; background:var(--panel)}
+  .verdict .tag{font-size:10px; font-weight:700; letter-spacing:.07em; text-transform:uppercase;
+                margin-bottom:4px}
+  .verdict.under .tag{color:var(--train)}
+  .verdict.over  .tag{color:var(--test)}
+  .verdict.ok    .tag{color:var(--accent)}
+  .verdict p{margin:0; font-size:12px; color:var(--ink-3); line-height:1.5}
+
+  /* --- tiles --- */
+  .tiles{display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:8px; margin-bottom:6px}
+  .tile{position:relative; border:1px solid var(--border); border-radius:8px;
+        padding:8px 10px 7px; background:var(--surface); cursor:help}
+  .tile:hover,.tile:focus-visible{border-color:var(--accent); outline:none}
+  .tile .lab{font-size:9.5px; letter-spacing:.06em; text-transform:uppercase; color:var(--muted)}
+  .tile .val{font-size:20px; font-weight:700; font-variant-numeric:tabular-nums; color:var(--ink);
+             margin-top:2px}
+  .tile .cap{font-size:9px; color:var(--faint); letter-spacing:.03em; margin-top:1px}
+  .tile.t-train{border-left:3px solid var(--train)}
+  .tile.t-test{border-left:3px solid var(--test)}
+  .tile.t-fresh{border-left:3px solid var(--muted)}
+  .tile .flag{display:inline-block; font-size:9px; font-weight:700; letter-spacing:.04em;
+              text-transform:uppercase; color:var(--test); background:var(--test-tint);
+              border-radius:4px; padding:1px 4px; margin-left:4px; vertical-align:2px}
+
+  .tip{position:absolute; top:calc(100% + 7px); left:50%; transform:translateX(-50%);
+       width:250px; z-index:20; padding:10px 12px; text-align:left;
+       background:var(--surface); border:1px solid var(--border); border-radius:9px;
+       box-shadow:0 6px 22px rgba(0,0,0,.13);
+       opacity:0; visibility:hidden; transition:opacity .12s ease}
+  .tile:hover .tip,.tile:focus-within .tip,.tile:focus-visible .tip{opacity:1; visibility:visible}
+  .tip--l{left:0; transform:none}
+  .tip--r{left:auto; right:0; transform:none}
+  .tip b{display:block; font-size:11.5px; color:var(--ink); margin-bottom:3px}
+  .tip .def{display:block; font-size:11.5px; color:var(--ink-3); line-height:1.45}
+
+  .leakline{font-size:11.5px; color:var(--test); line-height:1.45; margin:0 0 10px;
+            padding:7px 10px; background:var(--test-tint); border-radius:7px}
+  .leakline b{font-weight:700}
+
+  /* --- charts --- */
+  .chart{border:1px solid var(--border); border-radius:9px; background:var(--surface);
+         padding:8px 10px 4px; margin-bottom:11px}
+  .chart svg{display:block; width:100%; height:auto}
+  .chead{display:flex; justify-content:space-between; align-items:baseline; gap:10px; margin-bottom:2px}
+  .key{display:flex; gap:11px; font-size:10.5px; color:var(--muted); align-items:center}
+  .key i{display:inline-block; width:9px; height:9px; border-radius:50%; margin-right:4px;
+         vertical-align:-1px}
+  .key .k-train i{background:var(--train)}
+  .key .k-test i{background:transparent; border:1.6px solid var(--test)}
+  .key .k-true i{width:14px; height:0; border-top:1.6px dashed var(--faint); border-radius:0;
+                 vertical-align:3px}
+  .note{font-size:10.5px; color:var(--faint); margin:0 0 2px; line-height:1.4}
+</style>
+</head>
+<body>
+
+<div class="band"></div>
+<div class="eyebrow">Week 3 · overfitting</div>
+<h1>How much freedom is too much</h1>
+<p class="sub">Fifteen points scattered around a curve. Give the model more freedom and it follows
+the training points ever more closely — <b>including the noise</b>. The question is never "does it fit?"
+but "does it fit anything that will still be there next time?"</p>
+
+<div class="grid">
+  <div>
+    <div class="panel">
+      <h2>The model</h2>
+      <div class="f">
+        <div class="top"><label for="deg">Freedom (polynomial degree)</label><span class="v" id="v-d"></span></div>
+        <input type="range" id="deg" min="1" max="12" step="1" value="3">
+        <div class="hint">1 = a straight line. 3 = the shape the data really has. 9+ = free to chase every point.</div>
+      </div>
+
+      <h2 style="margin-top:14px">The data</h2>
+      <div class="f">
+        <div class="top"><label for="n">Training points</label><span class="v" id="v-n"></span></div>
+        <input type="range" id="n" min="10" max="120" step="1" value="15">
+        <div class="hint">More data is the cheapest cure for overfitting. Try 80.</div>
+      </div>
+      <div class="f">
+        <div class="top"><label for="sd">Noise</label><span class="v" id="v-s"></span></div>
+        <input type="range" id="sd" min="0" max="30" step="1" value="10">
+        <div class="hint">At zero noise there is nothing to overfit — high degree stops hurting.</div>
+      </div>
+      <div class="btnrow">
+        <button class="btn" id="resample">new sample</button>
+        <button class="btn" id="reset">reset</button>
+      </div>
+
+      <label class="ctl"><input type="checkbox" id="leak">
+        <span class="lb"><b>Leak the test set</b>
+        <span>Try 20 different train/test splits and report the best-looking one.</span></span></label>
+    </div>
+
+    <div class="verdict" id="verdict">
+      <div class="tag" id="v-tag"></div>
+      <p id="v-txt"></p>
+    </div>
+  </div>
+
+  <div>
+    <div class="tiles">
+      <div class="tile t-train" tabindex="0"><div class="lab">Train error</div>
+        <div class="val" id="m-tr">—</div><div class="cap">points it fitted</div>
+        <div class="tip tip--l" role="note"><b>Train error</b>
+          <span class="def">Average miss on the very points the curve was fitted to. It only ever falls as you add freedom, which is exactly why it cannot tell you anything on its own.</span></div></div>
+
+      <div class="tile t-test" tabindex="0"><div class="lab">Test error <span id="m-flag"></span></div>
+        <div class="val" id="m-te">—</div><div class="cap">20 held-out points</div>
+        <div class="tip" role="note"><b>Test error</b>
+          <span class="def">Average miss on 20 points the model never saw. This is the number you would report — and with only 20 points it is a noisy estimate even when you are honest.</span></div></div>
+
+      <div class="tile t-fresh" tabindex="0"><div class="lab">Fresh error</div>
+        <div class="val" id="m-fr">—</div><div class="cap">400 points, never touched</div>
+        <div class="tip tip--r" role="note"><b>Fresh error</b>
+          <span class="def">The truth: 400 more points from the same process, which the tool never shows you and never lets you choose against. In real work you do not get this column.</span></div></div>
+    </div>
+
+    <p class="leakline" id="leakline" hidden></p>
+
+    <div class="chart">
+      <div class="chead">
+        <span class="note" id="fitnote"></span>
+        <span class="key">
+          <span class="k-train"><i></i>train</span>
+          <span class="k-test"><i></i>test</span>
+          <span class="k-true"><i></i>true relationship</span>
+        </span>
+      </div>
+      <svg id="fitsvg" viewBox="0 0 720 300" role="img" aria-label="Scatter plot with fitted curve"></svg>
+    </div>
+
+    <div class="chart">
+      <div class="chead">
+        <span class="note" id="errnote">Error against freedom &mdash; every degree from 1 to 12, refitted. Log scale.</span>
+      </div>
+      <svg id="errsvg" viewBox="0 0 720 190" role="img" aria-label="Train and test error against model complexity"></svg>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  var el = function (id) { return document.getElementById(id); };
+  var NS = "http://www.w3.org/2000/svg";
+
+  // --- the data-generating process, copied from the lecture deck ------------
+  //   x ~ Uniform(1, 7);  y = x^3 + Normal(0, sd)
+  // Keeping the deck's own simulation means the degree slider walks through
+  // exactly the three slides: 1 = "Linear fit (underfit)", 3 = "Good fit",
+  // 9 = "Overfit".
+  var X0 = 1, X1 = 7, MID = 4, HALF = 3;
+  var YMIN = -50, YMAX = 300;          // the deck's ylim(-50, 300)
+  var NMAX = 120, NTEST = 20, NFRESH = 400;
+  var truth = function (x) { return x * x * x; };
+
+  function rng(seed) {
+    var s = seed >>> 0;
+    return function () {
+      s = (s + 0x6D2B79F5) >>> 0;
+      var t = Math.imul(s ^ (s >>> 15), 1 | s);
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+  function gauss(r) {
+    var u = 0, v = 0;
+    while (!u) u = r();
+    while (!v) v = r();
+    return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v);
+  }
+
+  // Draw x positions and unit noise ONCE per sample, then scale the noise by
+  // the slider. That way nudging n adds a point instead of redrawing the world,
+  // and nudging the noise slider grows the same scatter rather than a new one.
+  var base = null;
+  function draw(seed) {
+    var r = rng(seed);
+    function set(k) {
+      var a = [];
+      for (var i = 0; i < k; i++) a.push([X0 + r() * (X1 - X0), gauss(r)]);
+      return a;
+    }
+    base = { train: set(NMAX), test: set(NTEST), fresh: set(NFRESH) };
+  }
+  var mk = function (raw, n, sd) {
+    var o = [];
+    for (var i = 0; i < n; i++) o.push([raw[i][0], truth(raw[i][0]) + raw[i][1] * sd]);
+    return o;
+  };
+
+  // --- least squares on powers of u = (x − 4) / 3 ---------------------------
+  // Centring and scaling x before taking powers is what keeps a degree-12
+  // Vandermonde system solvable; the tiny ridge term covers the case where
+  // the degree approaches the number of points.
+  function fit(pts, deg) {
+    var p = deg + 1, i, j, c, A = [], b = new Float64Array(p);
+    for (i = 0; i < p; i++) A.push(new Float64Array(p));
+    for (var k = 0; k < pts.length; k++) {
+      var u = (pts[k][0] - MID) / HALF, y = pts[k][1];
+      var v = new Float64Array(p); v[0] = 1;
+      for (j = 1; j < p; j++) v[j] = v[j - 1] * u;
+      for (i = 0; i < p; i++) { b[i] += v[i] * y; for (j = 0; j < p; j++) A[i][j] += v[i] * v[j]; }
+    }
+    for (i = 0; i < p; i++) A[i][i] += 1e-7;
+    var M = [];
+    for (i = 0; i < p; i++) { var row = new Float64Array(p + 1); row.set(A[i]); row[p] = b[i]; M.push(row); }
+    for (c = 0; c < p; c++) {
+      var piv = c;
+      for (i = c + 1; i < p; i++) if (Math.abs(M[i][c]) > Math.abs(M[piv][c])) piv = i;
+      var tmp = M[c]; M[c] = M[piv]; M[piv] = tmp;
+      if (Math.abs(M[c][c]) < 1e-14) continue;
+      for (i = 0; i < p; i++) {
+        if (i === c) continue;
+        var f = M[i][c] / M[c][c];
+        for (j = c; j <= p; j++) M[i][j] -= f * M[c][j];
+      }
+    }
+    var co = new Float64Array(p);
+    for (i = 0; i < p; i++) co[i] = Math.abs(M[i][i]) < 1e-14 ? 0 : M[i][p] / M[i][i];
+    return co;
+  }
+  function predict(co, x) {
+    var u = (x - MID) / HALF, s = 0, v = 1;
+    for (var i = 0; i < co.length; i++) { s += co[i] * v; v *= u; }
+    return s;
+  }
+  function rmse(co, pts) {
+    var s = 0;
+    for (var i = 0; i < pts.length; i++) { var d = pts[i][1] - predict(co, pts[i][0]); s += d * d; }
+    return Math.sqrt(s / pts.length);
+  }
+
+  // --- leakage: best of 20 re-splits ---------------------------------------
+  // Not "tune the degree on the test set" — on this data degree 3 wins outright,
+  // so that version of the sin costs nothing. This is the one researchers
+  // actually commit: reshuffle the split, refit, and keep the run that looked
+  // best. The model never improves; only the number does.
+  var LEAK_TRIES = 20;
+  function leaked(train, test, deg, fresh, seed) {
+    var pool = train.concat(test), n = train.length, r = rng(seed), best = null, all = [];
+    for (var k = 0; k < LEAK_TRIES; k++) {
+      var a = pool.slice();
+      for (var i = a.length - 1; i > 0; i--) {
+        var j = Math.floor(r() * (i + 1)), t = a[i]; a[i] = a[j]; a[j] = t;
+      }
+      var tr = a.slice(0, n), te = a.slice(n), co = fit(tr, deg), e = rmse(co, te);
+      all.push(e);
+      if (!best || e < best.te) best = { te: e, co: co, tr: tr, teSet: te };
+    }
+    all.sort(function (x, y) { return x - y; });
+    return { reported: best.te, fresh: rmse(best.co, fresh), co: best.co,
+             train: best.tr, test: best.teSet,
+             lo: all[0], med: all[Math.floor(all.length / 2)], hi: all[all.length - 1] };
+  }
+
+  // --- drawing helpers ------------------------------------------------------
+  function svgEl(name, attrs) {
+    var e = document.createElementNS(NS, name);
+    for (var k in attrs) e.setAttribute(k, attrs[k]);
+    return e;
+  }
+  function txt(x, y, s, cls, anchor) {
+    var t = svgEl("text", { x: x, y: y, "text-anchor": anchor || "middle", class: cls || "" });
+    t.textContent = s;
+    return t;
+  }
+  var fmt = function (v) {
+    if (!isFinite(v)) return "∞";
+    return v >= 100 ? v.toFixed(0) : v.toFixed(1);
+  };
+
+  var C = {};
+  function readVars() {
+    var cs = getComputedStyle(document.documentElement);
+    ["ink", "ink-3", "muted", "faint", "grid", "train", "test", "surface", "accent", "hairline"]
+      .forEach(function (k) { C[k] = cs.getPropertyValue("--" + k).trim(); });
+  }
+
+  // --- chart 1: the scatter and the fitted curve ---------------------------
+  function drawFit(train, test, co, deg) {
+    var W = 720, H = 300, L = 46, R = 14, T = 12, B = 26;
+    var sx = function (x) { return L + (x - X0) / (X1 - X0) * (W - L - R); };
+    var sy = function (y) { return H - B - (y - YMIN) / (YMAX - YMIN) * (H - T - B); };
+    var g = el("fitsvg");
+    g.innerHTML = "";
+
+    var clip = svgEl("clipPath", { id: "plotclip" });
+    clip.appendChild(svgEl("rect", { x: L, y: T, width: W - L - R, height: H - T - B }));
+    var defs = svgEl("defs"); defs.appendChild(clip); g.appendChild(defs);
+
+    // y gridlines + labels
+    [0, 100, 200, 300].forEach(function (v) {
+      g.appendChild(svgEl("line", { x1: L, x2: W - R, y1: sy(v), y2: sy(v),
+        stroke: C.grid, "stroke-width": 1 }));
+      var t = txt(L - 8, sy(v) + 3.5, v, "", "end");
+      t.setAttribute("fill", C.faint); t.setAttribute("font-size", "10");
+      g.appendChild(t);
+    });
+    // x axis
+    g.appendChild(svgEl("line", { x1: L, x2: W - R, y1: sy(YMIN), y2: sy(YMIN),
+      stroke: C.hairline, "stroke-width": 1 }));
+    for (var xv = 1; xv <= 7; xv++) {
+      var tx = txt(sx(xv), H - B + 15, xv, "");
+      tx.setAttribute("fill", C.faint); tx.setAttribute("font-size", "10");
+      g.appendChild(tx);
+    }
+
+    var plot = svgEl("g", { "clip-path": "url(#plotclip)" });
+
+    // the truth, dashed — the thing the model is trying to recover
+    var dTrue = "";
+    for (var x = X0; x <= X1 + 0.001; x += 0.05)
+      dTrue += (dTrue ? "L" : "M") + sx(x).toFixed(1) + " " + sy(truth(x)).toFixed(1);
+    plot.appendChild(svgEl("path", { d: dTrue, fill: "none", stroke: C.faint,
+      "stroke-width": 1.6, "stroke-dasharray": "5 4" }));
+
+    // the fitted curve — deliberately allowed to run off the panel, exactly as
+    // the deck's ylim(-50, 300) does, because "off the chart" is the honest
+    // picture of a degree-9 fit through 15 points
+    var dFit = "";
+    for (var x2 = X0; x2 <= X1 + 0.001; x2 += 0.02) {
+      var yy = predict(co, x2);
+      if (!isFinite(yy)) continue;
+      yy = Math.max(-1e6, Math.min(1e6, yy));
+      dFit += (dFit ? "L" : "M") + sx(x2).toFixed(1) + " " + sy(yy).toFixed(1);
+    }
+    plot.appendChild(svgEl("path", { d: dFit, fill: "none", stroke: C.ink,
+      "stroke-width": 2, "stroke-linejoin": "round" }));
+
+    // test points: open circles (shape as well as hue)
+    test.forEach(function (p) {
+      plot.appendChild(svgEl("circle", { cx: sx(p[0]), cy: sy(p[1]), r: 4.2,
+        fill: "none", stroke: C.test, "stroke-width": 1.8 }));
+    });
+    // train points: filled, with a surface ring so overlaps stay countable
+    train.forEach(function (p) {
+      plot.appendChild(svgEl("circle", { cx: sx(p[0]), cy: sy(p[1]), r: 4.2,
+        fill: C.train, stroke: C.surface, "stroke-width": 1.5 }));
+    });
+    g.appendChild(plot);
+
+    var off = train.filter(function (p) { return p[1] > YMAX || p[1] < YMIN; }).length;
+    el("fitnote").textContent = "Degree " + deg + " · fitted to " + train.length +
+      " training points" + (off ? " · " + off + " off the chart" : "");
+  }
+
+  // --- chart 2: error against complexity, log scale ------------------------
+  function drawErr(curve, deg) {
+    var W = 720, H = 190, L = 46, R = 44, T = 12, B = 26;
+    var g = el("errsvg");
+    g.innerHTML = "";
+
+    var vals = [];
+    curve.forEach(function (c) { vals.push(c.tr, c.te); });
+    var lo = Math.max(0.5, Math.min.apply(null, vals) * 0.7);
+    var hi = Math.max.apply(null, vals) * 1.4;
+    var ly = function (v) {
+      var t = (Math.log10(Math.max(v, lo)) - Math.log10(lo)) /
+              (Math.log10(hi) - Math.log10(lo));
+      return H - B - t * (H - T - B);
+    };
+    var sx = function (d) { return L + (d - 1) / 11 * (W - L - R); };
+
+    // decade gridlines
+    for (var e = Math.floor(Math.log10(lo)); e <= Math.ceil(Math.log10(hi)); e++) {
+      var v = Math.pow(10, e);
+      if (v < lo || v > hi) continue;
+      g.appendChild(svgEl("line", { x1: L, x2: W - R, y1: ly(v), y2: ly(v),
+        stroke: C.grid, "stroke-width": 1 }));
+      var t = txt(L - 8, ly(v) + 3.5, v >= 1 ? v : v.toFixed(1), "", "end");
+      t.setAttribute("fill", C.faint); t.setAttribute("font-size", "10");
+      g.appendChild(t);
+    }
+    // marker at the selected degree
+    g.appendChild(svgEl("line", { x1: sx(deg), x2: sx(deg), y1: T, y2: H - B,
+      stroke: C.accent, "stroke-width": 1.5, "stroke-dasharray": "3 3", opacity: ".75" }));
+
+    for (var d = 1; d <= 12; d++) {
+      var tx = txt(sx(d), H - B + 15, d, "");
+      tx.setAttribute("fill", d === deg ? C.accent : C.faint);
+      tx.setAttribute("font-size", "10");
+      tx.setAttribute("font-weight", d === deg ? "700" : "400");
+      g.appendChild(tx);
+    }
+
+    // Direct labels can collide where the two lines converge (lots of data,
+    // no overfitting gap), so push them apart rather than letting them overlap.
+    var last = curve[curve.length - 1];
+    var labY = { tr: ly(last.tr), te: ly(last.te) };
+    if (Math.abs(labY.tr - labY.te) < 11) {
+      var mid = (labY.tr + labY.te) / 2;
+      labY.te = mid - 6; labY.tr = mid + 6;
+    }
+
+    ["tr", "te"].forEach(function (key) {
+      var col = key === "tr" ? C.train : C.test, path = "";
+      curve.forEach(function (c, i) {
+        path += (i ? "L" : "M") + sx(c.d).toFixed(1) + " " + ly(c[key]).toFixed(1);
+      });
+      g.appendChild(svgEl("path", { d: path, fill: "none", stroke: col,
+        "stroke-width": 2, "stroke-linejoin": "round" }));
+      curve.forEach(function (c) {
+        g.appendChild(svgEl("circle", { cx: sx(c.d), cy: ly(c[key]), r: c.d === deg ? 4 : 2.6,
+          fill: col, stroke: C.surface, "stroke-width": c.d === deg ? 1.6 : 0 }));
+      });
+      // direct label at the right-hand end, so the lines need no legend
+      var lab = txt(W - R + 6, labY[key] + 3.5, key === "tr" ? "train" : "test", "", "start");
+      lab.setAttribute("fill", col);
+      lab.setAttribute("font-size", "10.5");
+      lab.setAttribute("font-weight", "700");
+      g.appendChild(lab);
+    });
+
+    // The bottom of the U is the whole point of the chart, so name it.
+    var best = curve.reduce(function (a, c) { return c.te < a.te ? c : a; }, curve[0]);
+    var bx = sx(best.d), by = ly(best.te);
+    g.appendChild(svgEl("circle", { cx: bx, cy: by, r: 7, fill: "none",
+      stroke: C.test, "stroke-width": 1.4, opacity: ".8" }));
+    el("errnote").innerHTML =
+      "Error against freedom \u2014 every degree from 1 to 12, refitted. Log scale. " +
+      '<b style="color:' + C.test + '">\u25cb lowest test error at degree ' + best.d + "</b>.";
+  }
+
+  // --- main -----------------------------------------------------------------
+  var seed = 42;
+
+  function run() {
+    readVars();
+    var deg = +el("deg").value, n = +el("n").value, sd = +el("sd").value;
+    var isLeak = el("leak").checked;
+    el("v-d").textContent = deg;
+    el("v-n").textContent = n;
+    el("v-s").textContent = sd;
+
+    var train = mk(base.train, n, sd),
+        test  = mk(base.test, NTEST, sd),
+        fresh = mk(base.fresh, NFRESH, sd);
+
+    // the honest error curve, always — the verdict is judged against this
+    var curve = [];
+    for (var d = 1; d <= 12; d++) {
+      var c = fit(train, d);
+      curve.push({ d: d, tr: rmse(c, train), te: rmse(c, test) });
+    }
+    var bestD = curve.reduce(function (a, b) { return b.te < a.te ? b : a; }).d;
+
+    var co = fit(train, deg);
+    var eTr = rmse(co, train), eTe = rmse(co, test), eFr = rmse(co, fresh);
+    var shownTrain = train, shownTest = test;
+
+    if (isLeak) {
+      var L = leaked(train, test, deg, fresh, seed + 977);
+      eTe = L.reported; eFr = L.fresh; co = L.co;
+      shownTrain = L.train; shownTest = L.test;
+      eTr = rmse(co, shownTrain);
+      // Compare the reported number with the SAME model's error on untouched
+      // data — not with the original split's model, which is a different fit.
+      // The honest damage is the spread across splits: the number is a lottery
+      // and you kept the winning ticket.
+      el("leakline").hidden = false;
+      el("leakline").innerHTML =
+        LEAK_TRIES + " re-splits of the same " + (train.length + NTEST) +
+        " points gave test errors from <b>" + fmt(L.lo) + "</b> to <b>" + fmt(L.hi) +
+        "</b> (median <b>" + fmt(L.med) + "</b>). You report the best one. That model scores <b>" +
+        fmt(eFr) + "</b> on data nobody chose against, so the headline flatters it — and the only " +
+        "thing that changed between splits was luck.";
+      el("m-flag").innerHTML = '<span class="flag">leaked</span>';
+    } else {
+      el("leakline").hidden = true;
+      el("m-flag").innerHTML = "";
+    }
+
+    el("m-tr").textContent = fmt(eTr);
+    el("m-te").textContent = fmt(eTe);
+    el("m-fr").textContent = fmt(eFr);
+
+    drawFit(shownTrain, shownTest, co, deg);
+    drawErr(curve, deg);
+
+    // verdict, judged against the bottom of the honest test curve
+    // The verdict always describes the DEGREE, judged on the honest fit shown in
+    // the error chart — never on a leaked split, whose ratio means nothing.
+    var v = el("verdict"), tag = el("v-tag"), p = el("v-txt");
+    v.className = "verdict " + (deg < bestD ? "under" : deg > bestD ? "over" : "ok");
+    var hon = curve[deg - 1];
+    var bestTe = curve[bestD - 1].te;
+    var ratio = hon.tr > 0 ? hon.te / hon.tr : Infinity;
+    // Extra freedom is only dangerous relative to how much data there is. With
+    // enough points a degree-12 fit costs almost nothing, so say so rather than
+    // crying "overfitting" at a test/train ratio of 1.1.
+    var harmless = hon.te <= bestTe * 1.15 && ratio < 1.5;
+    if (deg < bestD) {
+      tag.textContent = "Underfitting";
+      p.textContent = "The curve is too stiff to follow the pattern. Notice that train and test " +
+        "error are both high and close together — that similarity is the signature of underfitting, " +
+        "and it is the one case where a bad model is at least honest about it.";
+    } else if (deg > bestD && harmless) {
+      v.className = "verdict ok";
+      tag.textContent = "More freedom than it needs";
+      p.textContent = "More complexity than the pattern requires, but with " + n +
+        " training points it costs almost nothing — test error is only " + ratio.toFixed(1) +
+        "× train. Complexity is not dangerous on its own; it is dangerous relative to how much " +
+        "data you have. Drag the training points back down to 15 and watch this turn.";
+    } else if (deg > bestD) {
+      tag.textContent = "Overfitting";
+      p.textContent = "Test error is " + (isFinite(ratio) ? ratio.toFixed(1) + "×" : "far above") +
+        " the train error. The curve is passing through the training points by bending between " +
+        "them — it has learned this sample, including its noise, rather than the process behind it.";
+    } else {
+      tag.textContent = "About right";
+      p.textContent = "This is the bottom of the U on the chart below: the lowest test error of any " +
+        "degree from 1 to 12. Adding freedom from here buys you a smaller train error and a worse model.";
+    }
+  }
+
+  ["deg", "n", "sd"].forEach(function (id) { el(id).addEventListener("input", run); });
+  el("leak").addEventListener("change", run);
+  el("resample").onclick = function () { seed = (seed * 1103515245 + 12345) >>> 0; draw(seed); run(); };
+  el("reset").onclick = function () {
+    el("deg").value = 3; el("n").value = 15; el("sd").value = 10; el("leak").checked = false;
+    seed = 42; draw(seed); run();
+  };
+  if (window.matchMedia) {
+    var mq = window.matchMedia("(prefers-color-scheme: dark)");
+    (mq.addEventListener ? mq.addEventListener.bind(mq, "change") : mq.addListener.bind(mq))(run);
+  }
+
+  draw(seed);
+  run();
+})();
+</script>
+</body>
+</html>

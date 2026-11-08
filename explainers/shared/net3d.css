@@ -39,6 +39,14 @@ text{font-family:var(--font); fill:var(--ink)}
 .over{fill:rgba(16,36,58,.55); stroke:var(--accent); stroke-width:1.6}
 .olab{font-size:11.5px; font-weight:700; fill:var(--accent)}
 .formula{font-family:var(--mono); font-size:11.5px; fill:var(--ink-2)}
-.step{font-size:10.5px; fill:var(--faint); text-anchor:end}
+.step{font-size:12px; fill:var(--faint); text-anchor:end}
+.stepnav{font-size:17px; font-weight:700; cursor:pointer}
+.stepnav:hover{fill:var(--ink)}
+.stepnav-hit{cursor:pointer}
+.band{fill:transparent; transition:fill .25s ease}
+.band.err{fill:rgba(224,122,82,.22)}
+.band.cur{fill:rgba(79,192,141,.22)}
+.callout{font-size:15px; fill:var(--ink-2)}
+.callout tspan.n{font-weight:700; fill:var(--neg)} .callout tspan.p{font-weight:700; fill:var(--pos)}
 .fade{transition:opacity .5s ease}
 .hid{opacity:0; pointer-events:none}

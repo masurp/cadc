@@ -1,0 +1,368 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The network, taken apart</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="../shared/net3d.css">
+<style>
+  /* the panel on the right is read from the back of the room: slide-sized type, bullets */
+  .ptitle{font-size:12.5px; font-weight:700; letter-spacing:.09em; fill:var(--accent)}
+  .bul{font-size:17.5px; fill:var(--ink-2)}
+  .bul tspan.k{font-weight:700; fill:var(--ink)} .bul tspan.n{font-weight:700; fill:var(--neg)}
+  .bul tspan.p{font-weight:700; fill:var(--pos)} .bul tspan.a{font-weight:700; fill:var(--accent)}
+  .bul tspan.m{font-weight:700; fill:var(--amber)}
+  .dot{fill:var(--accent)}
+  .cell{font-size:17px; fill:var(--ink-2); font-variant-numeric:tabular-nums}
+  .cell.k{fill:var(--ink); font-weight:700} .cell.n{fill:var(--neg); font-weight:700} .cell.p{fill:var(--pos); font-weight:700}
+  .cell.a{fill:var(--accent); font-weight:700} .cell.mut{fill:var(--muted)}
+  .rule{stroke:var(--faint); stroke-width:1}
+  .ax{stroke:var(--faint); stroke-width:1}
+  .grid{stroke:var(--faint); stroke-width:1; stroke-dasharray:3 4}
+  .fn{fill:none; stroke:var(--ink-3); stroke-width:2}
+  .fn.on{stroke:var(--accent)}
+  .guide{stroke:var(--accent); stroke-width:1.2; stroke-dasharray:3 3}
+  .pt{fill:var(--accent)} .pt.n{fill:var(--neg)}
+  .tk{font-size:12px; fill:var(--muted); font-variant-numeric:tabular-nums}
+  .tv{font-size:14px; font-weight:700; fill:var(--accent); font-variant-numeric:tabular-nums}
+  .tv.n{fill:var(--neg)} .tv.p{fill:var(--pos)}
+  .bar{fill:var(--faint)} .bar.me{fill:var(--neg)}
+  .formula2{font-size:19px; font-weight:600; fill:var(--ink)}
+  .rv{font-size:14px; fill:var(--ink-3)} .rv tspan.k{font-weight:700; fill:var(--ink)} .rv tspan.n{font-weight:700; fill:var(--neg)}
+  #unit .olab{font-size:15px}
+</style>
+</head>
+<!-- ===========================================================================
+  WEEK 3 — the cold open's network (explainers/learning), same engine, same
+  model, same seed, same recorded run, taken apart on ONE review: "Not good at
+  all.", human label negative. It follows one hidden unit, B, the whole way,
+  with its weights on its lines and every sum worked out in numbers whose
+  colours match the lines.
+  Steps: the neuron → one unit (a logistic regression) → the network → the
+  review goes in → the weights → unit B adds up → B's activation function →
+  all four units → the output adds up → the probability → the loss → all
+  twenty losses → nudging one weight → backpropagation → one step → epoch
+  after epoch → what B learned ("Not good" against "Not boring").
+  Forward and back: explainers/shared/stepnav.js; #N opens at step N.
+=========================================================================== -->
+<body>
+<div class="stage">
+  <canvas id="c"></canvas>
+  <svg id="o" viewBox="0 0 1000 440" preserveAspectRatio="xMidYMid meet" role="img"
+       aria-label="A neuron becomes one unit, a logistic regression, and units become a small network. One review, Not good at all, goes through it: hidden unit B adds up its weighted inputs and squashes the sum with tanh, the output turns its sum into a probability of positive, 0.76, and the loss measures how wrong that is. Nudging a weight shows which way it should move; backpropagation finds that for every weight; one step and then sixty-five epochs later the review comes out right, and unit B sends opposite signals for Not good at all and Not boring at all.">
+    <g id="neuronLabels" class="fade"></g>
+    <g id="unit" class="fade hid"></g>
+    <g id="labels" class="fade hid"></g>
+    <g id="panel"></g>
+    <g id="hud"></g>
+  </svg>
+</div>
+<noscript><p style="max-width:34em;margin:2em;font-family:sans-serif;color:#fff">Needs JavaScript: a small
+neural network's forward pass, loss and training on one review.</p></noscript>
+
+<script src="../shared/mlp.js"></script>
+<script src="../shared/net3d.js"></script>
+<script src="../shared/neuron.js"></script>
+<script src="../shared/netdraw.js"></script>
+<script src="../shared/stepnav.js"></script>
+<script>
+(function () {
+  "use strict";
+  var D = CADCNetDraw, el = D.el, txt = D.txt, g = D.g;
+  function tsp(t, s, a) { var x = el("tspan", a || {}); x.textContent = s; t.appendChild(x); return x; }
+  function clear(n) { while (n.firstChild) n.removeChild(n.firstChild); }
+  function $(id) { return document.getElementById(id); }
+  var M = CADCMLP, N3 = CADCNet3D, COL = N3.COL, ease = N3.ease;
+  var reduced = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  /* ---- the model and the numbers every step shows ----------------------------------- */
+  var EPOCHS = 65, LR = 0.6;
+  var HIST = M.train({ hidden: 4, lr: LR, epochs: EPOCHS, seed: 1 });
+  var NG = M.REVIEWS.findIndex(function (r) { return r[0] === "Not good at all."; });
+  var NB = M.REVIEWS.findIndex(function (r) { return r[0] === "Not boring at all."; });
+  var x = M.X[NG], iNot = M.VOCAB.indexOf("not"), iGood = M.VOCAB.indexOf("good"), iBoring = M.VOCAB.indexOf("boring");
+  var P0 = HIST[0].params, P1 = HIST[1].params, PEND = HIST[EPOCHS].params;
+  var U = M.decisiveUnit(PEND, x, 0), NAMES = ["D", "C", "B", "A"], UN = NAMES[U], TOP = [3, 2, 1, 0];   /* unit 0 is drawn lowest */
+  var F0 = M.forward(P0, x), F1 = M.forward(P1, x);
+  var LOSS0 = -Math.log(1 - F0.out);
+  var RIGHT_AT = HIST.findIndex(function (s) { return M.forward(s.params, x).out < .5; });
+  function avgLoss(p) { var s = 0; M.X.forEach(function (xx, i) { var o = M.forward(p, xx).out; s += -(M.Y[i] * Math.log(o) + (1 - M.Y[i]) * Math.log(1 - o)); }); return s / M.X.length; }
+  function cloneP(p) { return { W1: p.W1.map(function (r) { return r.slice(); }), b1: p.b1.slice(), W2: p.W2.slice(), b2: p.b2 }; }
+  /* the nudge: the lowest unit's line to the output, 0.1 larger */
+  var NUDGE_H = 0, PN = cloneP(P0); PN.W2[NUDGE_H] += 0.1;
+  var L_BEFORE = avgLoss(P0), L_NUDGED = avgLoss(PN);
+  /* the averaged gradient, as training uses it */
+  var GA = null;
+  M.X.forEach(function (xx, i) { var gr = M.gradOne(P0, xx, M.Y[i]);
+    if (!GA) GA = { gW1: gr.gW1.map(function (r) { return r.slice(); }), gW2: gr.gW2.slice() };
+    else for (var h = 0; h < 4; h++) { GA.gW2[h] += gr.gW2[h]; for (var k = 0; k < x.length; k++) GA.gW1[h][k] += gr.gW1[h][k]; } });
+  GA.gW2 = GA.gW2.map(function (v) { return v / M.X.length; }); GA.gW1 = GA.gW1.map(function (r) { return r.map(function (v) { return v / M.X.length; }); });
+
+  function f2(v) { return (v < 0 ? "−" : "") + Math.abs(v).toFixed(2); }
+  function s2(v) { return (v < 0 ? "−" : "+") + Math.abs(v).toFixed(2); }
+  function f3(v) { return (v < 0 ? "−" : "") + Math.abs(v).toFixed(3); }
+  function sgnCls(v) { return v < 0 ? "n" : "p"; }
+
+  /* ---- canvas, network, neuron ---------------------------------------------------------- */
+  var cv = $("c"), ctx = cv.getContext("2d"), W = 1000, H = 440;
+  function resize() { var dpr = window.devicePixelRatio || 1, r = cv.getBoundingClientRect(); cv.width = Math.round(r.width * dpr); cv.height = Math.round(r.height * dpr); ctx.setTransform(cv.width / W, 0, 0, cv.height / H, 0, 0); }
+  window.addEventListener("resize", resize); resize();
+  /* the neuron, smaller and to the left, so the panel has room */
+  var NS_ = .74, NX = 272 - 440 * NS_, NY = 205 - 216 * NS_;
+  var net = N3.create({ ctx: ctx, vocab: M.VOCAB, hidden: 4, cam: { cx: 268, cy: 205, S: 72, f: 7.5, pitch: .16 }, origin: [272, 205], nodeR: { in: 6.5, hid: 11, out: 14.5 } });
+  var neuron = CADCNeuron.create({ ctx: ctx, net: net });
+  var IN = function (i) { return i; }, HID = function (h) { return 15 + h; }, OUT = 19;
+
+  (function () {
+    var L = $("neuronLabels"), T = "translate(" + NX + " " + NY + ") scale(" + NS_ + ")";
+    txt(L, "A NEURON", { x: 40, y: 30, "class": "lab" });
+    var U2 = $("unit"); var inner = g(U2, { transform: T }); neuron.overlay(inner);
+    txt(U2, "ONE UNIT", { x: 40, y: 30, "class": "lab", fill: "#4fc08d" });
+    var Lb = $("labels");
+    txt(Lb, "INPUT · WORD COUNTS", { x: 40, y: 30, "class": "lab" }); txt(Lb, "HIDDEN", { x: 268, y: 30, "class": "lab", "text-anchor": "middle" }); txt(Lb, "OUTPUT", { x: 440, y: 30, "class": "lab", "text-anchor": "middle" });
+  })();
+  var review = txt($("labels"), "", { x: 40, y: 424, "class": "rv" });
+  tsp(review, "The review: "); tsp(review, "“Not good at all.”", { "class": "k" }); tsp(review, "   human label: "); tsp(review, "negative", { "class": "n" });
+
+  /* ---- the panel ------------------------------------------------------------------------- */
+  var gP = $("panel"), PX = 588, PW = 392, cur = 0;
+  function title(s) { txt(gP, s, { x: PX, y: 34, "class": "ptitle" }); cur = 68; }
+  function bullet(parts) {
+    gP.appendChild(el("circle", { "class": "dot", cx: PX + 4, cy: cur - 6, r: 3.2 }));
+    cur = D.wrap(gP, parts, { x: PX + 16, y: cur, width: PW - 16, lh: 23, cls: "bul" }) + 9;
+  }
+  /* a worked sum: rows of [label, expression, result, classes] */
+  function table(rows, y) {
+    var X0 = PX + 16, X1 = PX + 92, X2 = PX + 330;
+    rows.forEach(function (r) {
+      if (r === "rule") { gP.appendChild(el("line", { "class": "rule", x1: X0, y1: y - 15, x2: X2 + 4, y2: y - 15 })); y += 4; return; }
+      txt(gP, r[0], { x: X0, y: y, "class": "cell " + (r[3] || "k") });
+      var e = txt(gP, "", { x: X1, y: y, "class": "cell" }); (r[1] || []).forEach(function (p) { tsp(e, p[0], p[1] ? { "class": p[1] } : {}); });
+      txt(gP, r[2], { x: X2, y: y, "class": "cell " + (r[4] || "k"), "text-anchor": "end" });
+      y += 26;
+    });
+    return y;
+  }
+  /* a small plot of a curve with one point marked */
+  function plot(o) {
+    var G = g(gP, {}), x0 = o.x, y0 = o.y, w = o.w, h = o.h;
+    var sx = function (v) { return x0 + (v - o.xr[0]) / (o.xr[1] - o.xr[0]) * w; }, sy = function (v) { return y0 + h - (v - o.yr[0]) / (o.yr[1] - o.yr[0]) * h; };
+    G.appendChild(el("line", { "class": "ax", x1: x0, y1: y0 + h, x2: x0 + w, y2: y0 + h })); G.appendChild(el("line", { "class": "ax", x1: x0, y1: y0, x2: x0, y2: y0 + h }));
+    (o.hlines || []).forEach(function (v) { G.appendChild(el("line", { "class": "grid", x1: x0, y1: sy(v), x2: x0 + w, y2: sy(v) })); });
+    (o.yticks || []).forEach(function (v) { txt(G, v[1], { x: x0 - 6, y: sy(v[0]) + 4, "class": "tk", "text-anchor": "end" }); });
+    (o.xticks || []).forEach(function (v) { txt(G, v[1], { x: sx(v[0]), y: y0 + h + 15, "class": "tk", "text-anchor": "middle" }); });
+    if (o.xlab) txt(G, o.xlab, { x: x0 + w, y: y0 + h + 30, "class": "tk", "text-anchor": "end" });
+    if (o.f) {
+      var d = ""; for (var k = 0; k <= 120; k++) { var v = o.xr[0] + (o.xr[1] - o.xr[0]) * k / 120, fv = Math.max(o.yr[0], Math.min(o.yr[1], o.f(v))); d += (k ? " L" : "M") + sx(v).toFixed(1) + "," + sy(fv).toFixed(1); }
+      G.appendChild(el("path", { "class": "fn on", d: d }));
+    }
+    if (o.pt) {
+      var px = sx(o.pt[0]), py = sy(o.pt[1]);
+      G.appendChild(el("line", { "class": "guide", x1: px, y1: y0 + h, x2: px, y2: py })); G.appendChild(el("line", { "class": "guide", x1: x0, y1: py, x2: px, y2: py }));
+      G.appendChild(el("circle", { "class": "pt" + (o.ptCls ? " " + o.ptCls : ""), cx: px, cy: py, r: 5 }));
+      if (o.ptLab) txt(G, o.ptLab, { x: px + (o.ptDx || 9), y: py + (o.ptDy || -8), "class": "tv" + (o.ptCls ? " " + o.ptCls : ""), "text-anchor": o.ptAnchor || "start" });
+    }
+    return { sx: sx, sy: sy, g: G };
+  }
+  var live = null;   /* parts of the panel that change while a step animates */
+
+  function panel(s) {
+    clear(gP); live = null;
+    var w = P0.W1[U], wo = P0.W2;
+    if (s === 0) { title("FROM THE BRAIN");
+      bullet([["A neuron collects signals, adds them up, and fires once they pass a threshold"]]);
+      bullet([["That is as far as the comparison goes"]]); }
+    if (s === 1) { title("ONE UNIT");
+      bullet([["Each input "], ["x", "k"], [" is multiplied by a weight "], ["w", "k"], ["; the results are added up, plus a bias "], ["b", "k"]]);
+      bullet([["An S-curve "], ["f", "k"], [", the "], ["activation function", "k"], [", turns the sum into the output"]]);
+      bullet([["With the logistic curve as "], ["f", "k"], [", one unit is a "], ["logistic regression", "a"]]);
+      txt(gP, "y = f( w₁x₁ + w₂x₂ + … + b )", { x: PX + 16, y: cur + 22, "class": "formula2" }); }
+    if (s === 2) { title("A NETWORK OF UNITS");
+      bullet([["Units in layers: what one layer sends out, the next takes in"]]);
+      bullet([["Here: 15 words in, 4 hidden units "], ["A", "k"], [" to "], ["D", "k"], [", 1 output"]]);
+      bullet([["The cold open's network, before training: the weights are random"]]); }
+    if (s === 3) { title("ONE REVIEW GOES IN");
+      bullet([["“Not good at all.”", "k"], [" The human label is "], ["negative", "n"]]);
+      bullet([["The network sees word counts: "], ["not", "a"], [" 1, "], ["good", "a"], [" 1, the other 13 words 0"]]); }
+    if (s === 4) { title("THE WEIGHTS");
+      bullet([["Every line is a weight: one number"]]);
+      bullet([["Blue", "p"], [" positive, "], ["orange", "n"], [" negative, thicker when larger"]]);
+      bullet([["We follow unit "], [UN, "a"], [". Its lines carry the numbers shown"]]); }
+    if (s === 5) { title("UNIT " + UN + " ADDS UP");
+      bullet([["Each count times its weight, then " + UN + "'s own number, the "], ["bias", "k"]]);
+      var y5 = table([["not", [["1 × "], [f2(w[iNot]), sgnCls(w[iNot])]], "= " + f2(w[iNot])],
+                      ["good", [["1 × "], [f2(w[iGood]), sgnCls(w[iGood])]], "= " + f2(w[iGood])],
+                      ["bias", [], s2(P0.b1[U]), "mut"], "rule",
+                      ["sum", [], f2(F0.z1[U]), "a", "a"]], cur + 18);
+      cur = y5 + 4; bullet([["Words with a count of 0 add nothing"]]); }
+    if (s === 6) { title("UNIT " + UN + " SQUASHES THE SUM");
+      bullet([["The activation function, here "], ["tanh", "k"], [", is an S-curve"]]);
+      bullet([["Whatever the sum, the output stays between −1 and +1"]]);
+      plot({ x: PX + 50, y: cur + 8, w: 300, h: 138, xr: [-3, 3], yr: [-1, 1], f: Math.tanh, hlines: [0],
+             yticks: [[1, "+1"], [0, "0"], [-1, "−1"]], xticks: [[-3, "−3"], [0, "0"], [3, "+3"]], xlab: "the sum",
+             pt: [F0.z1[U], F0.a1[U]], ptCls: "n", ptLab: "sum " + f2(F0.z1[U]) + "  →  " + f2(F0.a1[U]), ptDx: 12, ptDy: 18 }); }
+    if (s === 7) { title("ALL FOUR UNITS");
+      var others = TOP.filter(function (h) { return h !== U; }).map(function (h) { return NAMES[h]; });
+      bullet([[others[0], "k"], [", "], [others[1], "k"], [" and "], [others[2], "k"], [" do the same, each with its own weights"]]);
+      bullet([["Four numbers leave the hidden layer"]]);
+      table(TOP.map(function (h) { var a = F0.a1[h]; return [NAMES[h], [], s2(a), h === U ? "a" : "k", sgnCls(a)]; }), cur + 18); }
+    if (s === 8) { title("THE OUTPUT UNIT ADDS UP");
+      bullet([["Same rule: each unit's number times its weight, plus a bias"]]);
+      var rows = TOP.map(function (h) { var a = F0.a1[h]; return [NAMES[h], [[s2(a), sgnCls(a)], [" × "], [s2(wo[h]), sgnCls(wo[h])]], "= " + s2(a * wo[h]), h === U ? "a" : "k"]; });
+      rows.push(["bias", [], s2(P0.b2), "mut"]); rows.push("rule"); rows.push(["sum", [], s2(F0.z2), "a", "a"]);
+      table(rows, cur + 16); }
+    if (s === 9) { title("… AND MAKES IT A PROBABILITY");
+      bullet([["The logistic curve turns the sum into a number between 0 and 1"]]);
+      bullet([["p(positive) = " + F0.out.toFixed(2), "p"], [": the network says positive, the human said negative"]]);
+      bullet([["The output unit is a "], ["logistic regression", "a"], [" on A to D"]]);
+      plot({ x: PX + 50, y: cur + 6, w: 300, h: 110, xr: [-4, 4], yr: [0, 1], f: function (v) { return 1 / (1 + Math.exp(-v)); }, hlines: [.5],
+             yticks: [[1, "1"], [.5, ".5"], [0, "0"]], xticks: [[-4, "−4"], [0, "0"], [4, "+4"]], xlab: "the sum",
+             pt: [F0.z2, F0.out], ptLab: F0.out.toFixed(2), ptDx: -12, ptDy: -8, ptAnchor: "end" }); }
+    if (s === 10) { title("HOW WRONG? THE LOSS");
+      bullet([["The "], ["loss", "k"], [" turns a miss into one number"]]);
+      bullet([["Near 0 when the answer is right and sure, large when it is wrong and sure"]]);
+      var pl = plot({ x: PX + 50, y: cur + 8, w: 300, h: 128, xr: [0, 1], yr: [0, 3], f: function (v) { return -Math.log(1 - Math.min(v, .999)); },
+             yticks: [[0, "0"], [1, "1"], [2, "2"], [3, "3"]], xticks: [[0, "0"], [.5, ".5"], [1, "1"]], xlab: "p(positive), for a negative review",
+             pt: [F0.out, LOSS0], ptCls: "n", ptLab: "here: " + LOSS0.toFixed(2), ptDx: -12, ptDy: -6, ptAnchor: "end" }); }
+    if (s === 11) { title("ALL TWENTY REVIEWS");
+      bullet([["Every review gets its own loss"]]);
+      bullet([["Training changes the weights so that their "], ["average", "k"], [" gets smaller. Now: " + HIST[0].loss.toFixed(2)]]);
+      var losses = HIST[0].outs.map(function (o, i) { return -(M.Y[i] * Math.log(o) + (1 - M.Y[i]) * Math.log(1 - o)); });
+      var bx = PX + 30, by = cur + 18, bw = 15, bh = 120, mx = 2;
+      losses.forEach(function (l, i) { var hgt = bh * Math.min(l, mx) / mx;
+        gP.appendChild(el("rect", { "class": "bar" + (i === NG ? " me" : ""), x: bx + i * (bw + 3), y: by + bh - hgt, width: bw, height: hgt, rx: 2 })); });
+      var my = by + bh - bh * HIST[0].loss / mx;
+      gP.appendChild(el("line", { "class": "guide", x1: bx - 6, y1: my, x2: bx + 20 * (bw + 3), y2: my }));
+      txt(gP, "average " + HIST[0].loss.toFixed(2), { x: bx + 20 * (bw + 3) - 2, y: my - 7, "class": "tv", "text-anchor": "end" });
+      txt(gP, "this review", { x: bx + NG * (bw + 3) + bw / 2, y: by + bh + 18, "class": "tk", "text-anchor": "middle" });
+      txt(gP, "one bar per review", { x: bx, y: by + bh + 36, "class": "tk" }); }
+    if (s === 12) { title("WHICH WAY SHOULD A WEIGHT MOVE?");
+      bullet([["Take one weight, "], [NAMES[NUDGE_H] + "'s line to the output", "a"], [", and make it 0.1 larger"]]);
+      bullet([["The average loss over the twenty: " + f3(L_BEFORE) + " → " + f3(L_NUDGED)]]);
+      bullet([[L_NUDGED < L_BEFORE ? "It falls, so this weight should go up. Had it risen, it should go down" : "It rises, so this weight should go down. Had it fallen, it should go up"]]); }
+    if (s === 13) { title("BACKPROPAGATION");
+      bullet([["Asking this for all 64 weights, one at a time, would be slow"]]);
+      bullet([["Backpropagation", "m"], [" answers for all of them at once, working back from the output"]]);
+      bullet([["Amber: which way each weight should go, and the thicker, the more it matters now"]]); }
+    if (s === 14) { title("ONE STEP");
+      bullet([["Every weight takes a small step in its direction"]]);
+      bullet([["How big a step: the "], ["learning rate", "k"], [", set by you"]]);
+      bullet([["This review: p(positive) " + F0.out.toFixed(3) + " → " + F1.out.toFixed(3)]]);
+      bullet([["Average loss: " + f3(HIST[0].loss) + " → " + f3(HIST[1].loss)]]); }
+    if (s === 15) { title("AGAIN AND AGAIN");
+      bullet([["One pass over all twenty, then one step: an "], ["epoch", "k"]]);
+      bullet([["Watch " + UN + "'s lines grow, and this review's p(positive) fall"]]);
+      var pc = plot({ x: PX + 50, y: cur + 10, w: 300, h: 120, xr: [0, EPOCHS], yr: [0, 1], f: null, hlines: [.5],
+                      yticks: [[1, "1"], [.5, ".5"], [0, "0"]], xticks: [[0, "0"], [RIGHT_AT, String(RIGHT_AT)], [EPOCHS, String(EPOCHS)]], xlab: "epoch" });
+      var line = pc.g.appendChild(el("path", { "class": "fn on", d: "" })), dotp = pc.g.appendChild(el("circle", { "class": "pt", r: 5 }));
+      var lab = txt(pc.g, "", { "class": "tv" }), note = txt(gP, "", { x: PX + 50, y: cur + 176, "class": "tk" }), note2 = txt(gP, "", { x: PX + 50, y: cur + 193, "class": "tk" });
+      live = function (ep) {
+        var d = ""; for (var e = 0; e <= ep; e++) { var o = M.forward(HIST[e].params, x).out; d += (e ? " L" : "M") + pc.sx(e).toFixed(1) + "," + pc.sy(o).toFixed(1); }
+        var oe = M.forward(HIST[ep].params, x).out; line.setAttribute("d", d);
+        dotp.setAttribute("cx", pc.sx(ep)); dotp.setAttribute("cy", pc.sy(oe));
+        lab.setAttribute("x", pc.sx(ep) - 8); lab.setAttribute("y", pc.sy(oe) - 9); lab.setAttribute("text-anchor", "end"); lab.textContent = "epoch " + ep + ": " + oe.toFixed(2);
+        note.textContent = ep >= RIGHT_AT ? "Epoch " + RIGHT_AT + ": this review comes out right" : "";
+        note2.textContent = ep >= EPOCHS ? "Epoch " + EPOCHS + ": all twenty do" : "";
+      }; }
+    if (s === 16) { title("WHAT UNIT " + UN + " LEARNED");
+      var fNG = M.forward(PEND, M.X[NG]), fNB = M.forward(PEND, M.X[NB]);
+      bullet([["“Not good at all.”", "k"], [": " + UN + " sends "], [f2(fNG.a1[U]), "n"], [", toward negative"]]);
+      bullet([["“Not boring at all.”", "k"], [": " + UN + " sends "], [s2(fNB.a1[U]), "p"], [", toward positive"]]);
+      bullet([["The two differ only in "], ["good", "a"], [" and "], ["boring", "a"], [". Nobody told " + UN + " to tell them apart; its weights moved there because the loss fell"]]); }
+  }
+
+  /* ---- what the canvas shows, per step ---------------------------------------------------- */
+  var state = 0, from = -1, tIn = 0, yaw = 0, last = 0, unfold = 0, neuronA = 1, netA = 0, ep15 = 1;
+  function lerpP(a, b, k) {
+    return { W1: a.W1.map(function (r, h) { return r.map(function (v, i) { return v + (b.W1[h][i] - v) * k; }); }),
+             b1: a.b1.map(function (v, h) { return v + (b.b1[h] - v) * k; }), W2: a.W2.map(function (v, h) { return v + (b.W2[h] - v) * k; }), b2: a.b2 + (b.b2 - a.b2) * k };
+  }
+  function lab(a, b, t, text, col) { return { a: a, b: b, t: t, text: text, col: col }; }
+  function wcol(v) { return v >= 0 ? COL.pos : COL.neg; }
+  function config(now) {
+    var k = reduced ? 1 : Math.min(1, (now - tIn) / 1600), s = state;
+    var c = { params: P0, pulse: null, highlight: null, litEdges: null, focus: null, grad: null, edgeLabels: [], hidText: null, outGlow: null };
+    var bothIn = [iNot, iGood];
+    if (s >= 3) c.focus = bothIn;
+    if (s >= 3 && s <= 13) c.pulse = { x: x, hid: F0.a1, out: F0.out, t: 0 };
+    if (s === 4) { c.edgeLabels = [lab(IN(iNot), HID(U), .64, f2(P0.W1[U][iNot]), wcol(P0.W1[U][iNot])), lab(IN(iGood), HID(U), .64, f2(P0.W1[U][iGood]), wcol(P0.W1[U][iGood])),
+                                   lab(HID(U), OUT, .5, f2(P0.W2[U]), wcol(P0.W2[U]))]; }
+    if (s === 5 || s === 6) {
+      c.highlight = U; c.litEdges = { h: U, inputs: bothIn, out: false };
+      c.edgeLabels = [lab(IN(iNot), HID(U), .64, f2(P0.W1[U][iNot]), wcol(P0.W1[U][iNot])), lab(IN(iGood), HID(U), .64, f2(P0.W1[U][iGood]), wcol(P0.W1[U][iGood]))];
+      c.pulse.t = s === 5 ? Math.min(.499, .5 * ease(k)) : .5; c.hidText = {}; c.hidText[U] = s === 5 ? "sum " + f2(F0.z1[U]) : f2(F0.a1[U]);
+    }
+    if (s === 7) { c.pulse.t = .5; c.hidText = {}; F0.a1.forEach(function (a, h) { c.hidText[h] = s2(a); }); }
+    if (s === 8) { c.pulse.t = .5 + .48 * ease(k); c.hidText = {}; F0.a1.forEach(function (a, h) { c.hidText[h] = s2(a); });
+      c.edgeLabels = [0, 1, 2, 3].map(function (h) { return lab(HID(h), OUT, .5, f2(P0.W2[h]), wcol(P0.W2[h])); }); }
+    if (s >= 9 && s <= 13) c.pulse.t = 1;
+    if (s === 10 || s === 11) c.outGlow = COL.neg;
+    if (s === 12) { c.litEdges = { h: NUDGE_H, inputs: [], out: true }; c.highlight = null;
+      c.edgeLabels = [lab(HID(NUDGE_H), OUT, .5, f2(P0.W2[NUDGE_H]) + " → " + f2(PN.W2[NUDGE_H]), COL.acc)]; }
+    if (s === 13) { c.grad = { g1: GA.gW1, g2: GA.gW2, inputs: bothIn, phase: reduced ? 1 : Math.min(1, (now - tIn) / 2600) };
+      var labs = [0, 1, 2, 3].map(function (h) { return lab(HID(h), OUT, .5, GA.gW2[h] < 0 ? "up" : "down", COL.amber); });
+      if (c.grad.phase >= 1) { labs.push(lab(IN(iNot), HID(U), .66, GA.gW1[U][iNot] < 0 ? "up" : "down", COL.amber)); labs.push(lab(IN(iGood), HID(U), .62, GA.gW1[U][iGood] < 0 ? "up" : "down", COL.amber)); }
+      c.edgeLabels = c.grad.phase > .45 ? labs : []; c.pulse = null; }
+    if (s === 14) { var kk = reduced ? 1 : ease(Math.min(1, (now - tIn) / 1800));
+      c.params = lerpP(P0, P1, kk); var f = M.forward(c.params, x); c.pulse = { x: x, hid: f.a1, out: f.out, t: 1 };
+      c.edgeLabels = [lab(IN(iNot), HID(U), .66, f3(P0.W1[U][iNot]) + " → " + f3(P1.W1[U][iNot]), wcol(P1.W1[U][iNot])),
+                      lab(IN(iGood), HID(U), .62, f3(P0.W1[U][iGood]) + " → " + f3(P1.W1[U][iGood]), wcol(P1.W1[U][iGood])),
+                      lab(HID(U), OUT, .5, f3(P0.W2[U]) + " → " + f3(P1.W2[U]), wcol(P1.W2[U])),
+                      lab(HID(NUDGE_H), OUT, .5, f3(P0.W2[NUDGE_H]) + " → " + f3(P1.W2[NUDGE_H]), wcol(P1.W2[NUDGE_H]))]; }
+    if (s === 15) {
+      var e = reduced || from !== 14 ? EPOCHS : Math.max(1, Math.min(EPOCHS, 1 + Math.floor((EPOCHS - 1) * ease(Math.min(1, (now - tIn) / 6500)))));
+      ep15 = e; var p = HIST[e].params, f5 = M.forward(p, x); c.params = p; c.pulse = { x: x, hid: f5.a1, out: f5.out, t: 1 }; c.highlight = U;
+      c.litEdges = { h: U, inputs: bothIn, out: true };
+      c.edgeLabels = [lab(IN(iNot), HID(U), .64, f2(p.W1[U][iNot]), wcol(p.W1[U][iNot])), lab(IN(iGood), HID(U), .64, f2(p.W1[U][iGood]), wcol(p.W1[U][iGood])),
+                      lab(HID(U), OUT, .5, f2(p.W2[U]), wcol(p.W2[U]))]; }
+    if (s === 16) {
+      var which = reduced ? NG : (Math.floor((now - tIn) / 2600) % 2 ? NB : NG), ff = M.forward(PEND, M.X[which]);
+      c.params = PEND; c.focus = [iNot, iGood, iBoring]; c.highlight = U; c.litEdges = { h: U, inputs: [iNot, iGood, iBoring], out: true };
+      c.pulse = { x: M.X[which], hid: ff.a1, out: ff.out, t: 1 }; c.hidText = {}; c.hidText[U] = s2(ff.a1[U]);
+      c.edgeLabels = [lab(IN(iNot), HID(U), .72, f2(PEND.W1[U][iNot]), wcol(PEND.W1[U][iNot])), lab(IN(iGood), HID(U), .62, f2(PEND.W1[U][iGood]), wcol(PEND.W1[U][iGood])),
+                      lab(IN(iBoring), HID(U), .42, s2(PEND.W1[U][iBoring]), wcol(PEND.W1[U][iBoring])), lab(HID(U), OUT, .5, s2(PEND.W2[U]), wcol(PEND.W2[U]))];
+      c.reviewNow = which; }
+    return c;
+  }
+  var shownReview = NG;
+  function setReview(i) {
+    if (i === shownReview) return; shownReview = i; clear(review);
+    tsp(review, "The review: "); tsp(review, "“" + M.REVIEWS[i][0] + "”", { "class": "k" }); tsp(review, "   human label: ");
+    tsp(review, M.Y[i] ? "positive" : "negative", { "class": M.Y[i] ? "p" : "n" });
+  }
+
+  function frame(now) {
+    var dt = Math.min(50, now - last || 16); last = now;
+    if (!reduced) yaw = .2 * Math.sin(now / 6000);
+    var wantNet = state >= 2;
+    netA += ((wantNet ? 1 : 0) - netA) * Math.min(1, dt / 350); neuronA += ((wantNet ? 0 : (state === 1 ? .45 : 1)) - neuronA) * Math.min(1, dt / 350);
+    unfold += ((wantNet ? 1 : 0) - unfold) * Math.min(1, dt / 420);
+    if (reduced) { netA = wantNet ? 1 : 0; unfold = netA; neuronA = wantNet ? 0 : (state === 1 ? .45 : 1); }
+    var c = config(now);
+    if (state === 16) setReview(c.reviewNow); else setReview(NG);
+    if (state === 15 && live) live(ep15);
+    ctx.clearRect(0, 0, W, H);
+    ctx.save(); ctx.translate(NX, NY); ctx.scale(NS_, NS_); neuron.draw(now, neuronA, reduced); ctx.restore();
+    net.draw(reduced ? 0 : now, { alpha: netA, yaw: yaw, unfold: unfold, params: c.params, pulse: c.pulse, focus: c.focus, grad: c.grad,
+                                  highlight: c.highlight, litEdges: c.litEdges, outGlow: c.outGlow, hidText: c.hidText, edgeLabels: c.edgeLabels,
+                                  unitNames: state >= 2 ? NAMES : null, labels: { words: true, out: state >= 9, counts: state >= 3, size: 10.5 } });
+    requestAnimationFrame(frame);
+  }
+
+  function show(id, on) { $(id).setAttribute("class", "fade" + (on ? "" : " hid")); }
+  function go(n, prevState) {
+    state = n; from = prevState; tIn = performance.now();
+    show("neuronLabels", state === 0); show("unit", state === 1); show("labels", state >= 2);
+    review.style.opacity = state >= 3 ? 1 : 0;
+    panel(state);
+    if (state === 15 && live) live(reduced || from !== 14 ? EPOCHS : 1);
+  }
+  if ((parseInt((location.hash || "").slice(1), 10) || 0) >= 2) { unfold = 1; netA = 1; neuronA = 0; }
+  CADCStepNav.attach({ max: 16, go: go, hud: $("hud"), x: 985, y: 433 });
+  requestAnimationFrame(frame);
+  if (document.fonts && document.fonts.load) document.fonts.load("11px 'Space Grotesk'");
+})();
+</script>
+</body>
+</html>

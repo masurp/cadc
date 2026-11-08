@@ -7,12 +7,13 @@
    whole training trajectory is recorded so a slide can scrub to any epoch.
 
    The corpus is twenty short reviews written for this purpose (below), with
-   a vocabulary of fifteen content words. It is stacked so that a linear
-   model CANNOT fit it: "Not boring at all" is positive and "Not good at all"
-   is negative, which no single weight on "not" can produce. A hidden unit
-   can, by firing on "not" together with "good" — that is what the slides
-   show it learning. Seeded PRNG, so the run is the same on every load and
-   #N bookmarks land on the same picture.
+   a vocabulary of fifteen content words. It pairs negations with praise and
+   with criticism ("Not good at all" negative, "Not boring at all" positive).
+   A plain logistic regression CAN fit all twenty, but only with extreme
+   weights (about +25 on "boring" and a bias of -28); the network gets there
+   with moderate ones, and one hidden unit ends up reacting in opposite ways
+   to the two negated reviews, which is what the slides show. Seeded PRNG, so
+   the run is the same on every load and #N bookmarks land on the same picture.
    =========================================================================== */
 (function (root) {
   "use strict";

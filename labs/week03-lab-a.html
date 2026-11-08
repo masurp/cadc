@@ -1,0 +1,1170 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.10.19">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+
+<title>Supervised classification – CADC</title>
+<style>
+/* Default styles provided by pandoc.
+** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+*/
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: 1.5em;}
+div.column{flex: auto;}
+@media screen {
+div.columns{gap: min(4vw, 1.5em);}
+div.column{overflow-x: auto;}
+}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../">
+<script src="../site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="../site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="../site_libs/quarto-html/popper.min.js"></script>
+<script src="../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../site_libs/quarto-html/quarto-syntax-highlighting-bf27225e3a48a9273f3daa8f8e829971.css" rel="stylesheet" class="quarto-color-scheme" id="quarto-text-highlighting-styles">
+<link href="../site_libs/quarto-html/quarto-syntax-highlighting-dark-b626d73c4c936ccc3cb08be7d45d1df6.css" rel="stylesheet" class="quarto-color-scheme quarto-color-alternate" id="quarto-text-highlighting-styles">
+<link href="../site_libs/quarto-html/quarto-syntax-highlighting-bf27225e3a48a9273f3daa8f8e829971.css" rel="stylesheet" class="quarto-color-scheme-extra" id="quarto-text-highlighting-styles">
+<script src="../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../site_libs/bootstrap/bootstrap-2e2e607a7148bff3b2e5edf6c9d4694a.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme" id="quarto-bootstrap" data-mode="light">
+<link href="../site_libs/bootstrap/bootstrap-dark-d8c0b66fa26e6d282b7f7daa13e4442f.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme quarto-color-alternate" id="quarto-bootstrap" data-mode="dark">
+<link href="../site_libs/bootstrap/bootstrap-2e2e607a7148bff3b2e5edf6c9d4694a.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme-extra" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+<style>html{ scroll-behavior: smooth; }</style>
+
+
+</head>
+
+<body class="nav-fixed quarto-light"><script id="quarto-html-before-body" type="application/javascript">
+    const toggleBodyColorMode = (bsSheetEl) => {
+      const mode = bsSheetEl.getAttribute("data-mode");
+      const bodyEl = window.document.querySelector("body");
+      if (mode === "dark") {
+        bodyEl.classList.add("quarto-dark");
+        bodyEl.classList.remove("quarto-light");
+      } else {
+        bodyEl.classList.add("quarto-light");
+        bodyEl.classList.remove("quarto-dark");
+      }
+    }
+    const toggleBodyColorPrimary = () => {
+      const bsSheetEl = window.document.querySelector("link#quarto-bootstrap:not([rel=disabled-stylesheet])");
+      if (bsSheetEl) {
+        toggleBodyColorMode(bsSheetEl);
+      }
+    }
+    const setColorSchemeToggle = (alternate) => {
+      const toggles = window.document.querySelectorAll('.quarto-color-scheme-toggle');
+      for (let i=0; i < toggles.length; i++) {
+        const toggle = toggles[i];
+        if (toggle) {
+          if (alternate) {
+            toggle.classList.add("alternate");
+          } else {
+            toggle.classList.remove("alternate");
+          }
+        }
+      }
+    };
+    const toggleColorMode = (alternate) => {
+      // Switch the stylesheets
+      const primaryStylesheets = window.document.querySelectorAll('link.quarto-color-scheme:not(.quarto-color-alternate)');
+      const alternateStylesheets = window.document.querySelectorAll('link.quarto-color-scheme.quarto-color-alternate');
+      manageTransitions('#quarto-margin-sidebar .nav-link', false);
+      if (alternate) {
+        // note: dark is layered on light, we don't disable primary!
+        enableStylesheet(alternateStylesheets);
+        for (const sheetNode of alternateStylesheets) {
+          if (sheetNode.id === "quarto-bootstrap") {
+            toggleBodyColorMode(sheetNode);
+          }
+        }
+      } else {
+        disableStylesheet(alternateStylesheets);
+        enableStylesheet(primaryStylesheets)
+        toggleBodyColorPrimary();
+      }
+      manageTransitions('#quarto-margin-sidebar .nav-link', true);
+      // Switch the toggles
+      setColorSchemeToggle(alternate)
+      // Hack to workaround the fact that safari doesn't
+      // properly recolor the scrollbar when toggling (#1455)
+      if (navigator.userAgent.indexOf('Safari') > 0 && navigator.userAgent.indexOf('Chrome') == -1) {
+        manageTransitions("body", false);
+        window.scrollTo(0, 1);
+        setTimeout(() => {
+          window.scrollTo(0, 0);
+          manageTransitions("body", true);
+        }, 40);
+      }
+    }
+    const disableStylesheet = (stylesheets) => {
+      for (let i=0; i < stylesheets.length; i++) {
+        const stylesheet = stylesheets[i];
+        stylesheet.rel = 'disabled-stylesheet';
+      }
+    }
+    const enableStylesheet = (stylesheets) => {
+      for (let i=0; i < stylesheets.length; i++) {
+        const stylesheet = stylesheets[i];
+        if(stylesheet.rel !== 'stylesheet') { // for Chrome, which will still FOUC without this check
+          stylesheet.rel = 'stylesheet';
+        }
+      }
+    }
+    const manageTransitions = (selector, allowTransitions) => {
+      const els = window.document.querySelectorAll(selector);
+      for (let i=0; i < els.length; i++) {
+        const el = els[i];
+        if (allowTransitions) {
+          el.classList.remove('notransition');
+        } else {
+          el.classList.add('notransition');
+        }
+      }
+    }
+    const isFileUrl = () => {
+      return window.location.protocol === 'file:';
+    }
+    const hasAlternateSentinel = () => {
+      let styleSentinel = getColorSchemeSentinel();
+      if (styleSentinel !== null) {
+        return styleSentinel === "alternate";
+      } else {
+        return false;
+      }
+    }
+    const setStyleSentinel = (alternate) => {
+      const value = alternate ? "alternate" : "default";
+      if (!isFileUrl()) {
+        window.localStorage.setItem("quarto-color-scheme", value);
+      } else {
+        localAlternateSentinel = value;
+      }
+    }
+    const getColorSchemeSentinel = () => {
+      if (!isFileUrl()) {
+        const storageValue = window.localStorage.getItem("quarto-color-scheme");
+        return storageValue != null ? storageValue : localAlternateSentinel;
+      } else {
+        return localAlternateSentinel;
+      }
+    }
+    const toggleGiscusIfUsed = (isAlternate, darkModeDefault) => {
+      const baseTheme = document.querySelector('#giscus-base-theme')?.value ?? 'light';
+      const alternateTheme = document.querySelector('#giscus-alt-theme')?.value ?? 'dark';
+      let newTheme = '';
+      if(authorPrefersDark) {
+        newTheme = isAlternate ? baseTheme : alternateTheme;
+      } else {
+        newTheme = isAlternate ? alternateTheme : baseTheme;
+      }
+      const changeGiscusTheme = () => {
+        // From: https://github.com/giscus/giscus/issues/336
+        const sendMessage = (message) => {
+          const iframe = document.querySelector('iframe.giscus-frame');
+          if (!iframe) return;
+          iframe.contentWindow.postMessage({ giscus: message }, 'https://giscus.app');
+        }
+        sendMessage({
+          setConfig: {
+            theme: newTheme
+          }
+        });
+      }
+      const isGiscussLoaded = window.document.querySelector('iframe.giscus-frame') !== null;
+      if (isGiscussLoaded) {
+        changeGiscusTheme();
+      }
+    };
+    const authorPrefersDark = false;
+    const darkModeDefault = authorPrefersDark;
+      document.querySelector('link#quarto-text-highlighting-styles.quarto-color-scheme-extra').rel = 'disabled-stylesheet';
+      document.querySelector('link#quarto-bootstrap.quarto-color-scheme-extra').rel = 'disabled-stylesheet';
+    let localAlternateSentinel = darkModeDefault ? 'alternate' : 'default';
+    // Dark / light mode switch
+    window.quartoToggleColorScheme = () => {
+      // Read the current dark / light value
+      let toAlternate = !hasAlternateSentinel();
+      toggleColorMode(toAlternate);
+      setStyleSentinel(toAlternate);
+      toggleGiscusIfUsed(toAlternate, darkModeDefault);
+      window.dispatchEvent(new Event('resize'));
+    };
+    // Switch to dark mode if need be
+    if (hasAlternateSentinel()) {
+      toggleColorMode(true);
+    } else {
+      toggleColorMode(false);
+    }
+  </script>
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top">
+    <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
+      <div class="navbar-container container-fluid">
+      <div class="navbar-brand-container mx-auto">
+    <a href="../index.html" class="navbar-brand navbar-brand-logo">
+    <img src="../assets/img/vu-logo-white.png" alt="Vrije Universiteit Amsterdam" class="navbar-logo light-content">
+    <img src="../assets/img/vu-logo-white.png" alt="Vrije Universiteit Amsterdam" class="navbar-logo dark-content">
+    </a>
+    <a class="navbar-brand" href="../index.html">
+    <span class="navbar-title">CADC</span>
+    </a>
+  </div>
+            <div id="quarto-search" class="" title="Search"></div>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll ms-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="../weeks/index.html"> 
+<span class="menu-text">Weeks</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../playground.html"> 
+<span class="menu-text">Playground</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../homework.html"> 
+<span class="menu-text">Homework</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../projects.html"> 
+<span class="menu-text">Projects</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../assessment.html"> 
+<span class="menu-text">Assessment</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../ai.html"> 
+<span class="menu-text">AI use</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../info.html"> 
+<span class="menu-text">Info</span></a>
+  </li>  
+</ul>
+          </div> <!-- /navcollapse -->
+            <div class="quarto-navbar-tools">
+  <a href="" class="quarto-color-scheme-toggle quarto-navigation-tool  px-1" onclick="window.quartoToggleColorScheme(); return false;" title="Toggle dark mode"><i class="bi"></i></a>
+</div>
+      </div> <!-- /container-fluid -->
+    </nav>
+</header>
+<!-- content -->
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">In this lab</h2>
+   
+  <ul>
+  <li><a href="#from-the-lecture-to-the-lab" id="toc-from-the-lecture-to-the-lab" class="nav-link active" data-scroll-target="#from-the-lecture-to-the-lab">From the lecture to the lab</a></li>
+  <li><a href="#the-data" id="toc-the-data" class="nav-link" data-scroll-target="#the-data">The data</a></li>
+  <li><a href="#check-in" id="toc-check-in" class="nav-link" data-scroll-target="#check-in">Check-in</a></li>
+  <li><a href="#part-1-which-discipline-wrote-this-abstract" id="toc-part-1-which-discipline-wrote-this-abstract" class="nav-link" data-scroll-target="#part-1-which-discipline-wrote-this-abstract">Part 1 · Which discipline wrote this abstract?</a>
+  <ul class="collapse">
+  <li><a href="#getting-to-know-the-data" id="toc-getting-to-know-the-data" class="nav-link" data-scroll-target="#getting-to-know-the-data">1 · Getting to know the data</a></li>
+  <li><a href="#sketch-the-pipeline-first" id="toc-sketch-the-pipeline-first" class="nav-link" data-scroll-target="#sketch-the-pipeline-first">2 · Sketch the pipeline first</a></li>
+  <li><a href="#split-first" id="toc-split-first" class="nav-link" data-scroll-target="#split-first">3 · Split first</a></li>
+  <li><a href="#the-recipe" id="toc-the-recipe" class="nav-link" data-scroll-target="#the-recipe">4 · The recipe</a></li>
+  <li><a href="#model-workflow-fit" id="toc-model-workflow-fit" class="nav-link" data-scroll-target="#model-workflow-fit">5 · Model, workflow, fit</a></li>
+  <li><a href="#predict-and-evaluate" id="toc-predict-and-evaluate" class="nav-link" data-scroll-target="#predict-and-evaluate">6 · Predict and evaluate</a></li>
+  <li><a href="#swap-the-algorithm" id="toc-swap-the-algorithm" class="nav-link" data-scroll-target="#swap-the-algorithm">7 · Swap the algorithm</a></li>
+  </ul></li>
+  <li><a href="#part-2-on-your-own-beat-the-paper" id="toc-part-2-on-your-own-beat-the-paper" class="nav-link" data-scroll-target="#part-2-on-your-own-beat-the-paper">Part 2 · On your own: beat the paper</a>
+  <ul class="collapse">
+  <li><a href="#the-rules" id="toc-the-rules" class="nav-link" data-scroll-target="#the-rules">The rules</a></li>
+  <li><a href="#what-you-can-change" id="toc-what-you-can-change" class="nav-link" data-scroll-target="#what-you-can-change">What you can change</a></li>
+  <li><a href="#how-to-work" id="toc-how-to-work" class="nav-link" data-scroll-target="#how-to-work">How to work</a></li>
+  </ul></li>
+  </ul>
+</nav>
+    </div>
+<!-- main -->
+<main class="content" id="quarto-document-content">
+
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">Supervised classification</h1>
+<p class="subtitle lead">Week 3 · Lab A</p>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<div class="cadc-labhead">
+<p><span class="cadc-stepchip" style="--cadc-accent:var(--cadc-era-3)"><svg viewbox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h5"></path><path d="M8 12l4-5h6"></path><path d="M8 12l4 5h6"></path><path d="M16 5l2 2-2 2"></path><path d="M16 15l2 2-2 2"></path></svg><span>03 CLASSIFY</span></span> <span class="cadc-labhead__meta">Lab A · Supervised classification</span> <span class="cadc-labhead__right">Week 3 · 105 min</span></p>
+</div>
+<p>Last week you wrote the word list yourself. Today an algorithm writes it: you give it texts with a known label (the training set), it learns which words go with which label, and you test the resulting classifier on texts it has never seen (the test set). This is <strong>supervised</strong> classification, and you build the lecture’s workflow step by step with <code>tidymodels</code>: split, recipe, model, workflow, fit, predict, evaluate. Then you swap the algorithm while the recipe and the evaluation stay the same, and compare the results.</p>
+<section id="from-the-lecture-to-the-lab" class="level3">
+<h3 class="anchored" data-anchor-id="from-the-lecture-to-the-lab">From the lecture to the lab</h3>
+<ul>
+<li><em>The pipeline with a classifier</em>: the sketch in section 2.</li>
+<li><em>Hold part back</em> and <em>Testing is validation</em>: section 3.</li>
+<li><em>A classifier, end to end</em> (the recipe in four steps, the workflow, specify and fit, predict the test set, the confusion matrix three by three, the numbers you report): sections 4 to 6 use the lecture’s code.</li>
+<li><em>Swap the algorithm</em> and <em>Three algorithms, one test set</em>: section 7.</li>
+<li><em>Where every method lands</em>, the table from van Atteveldt et al.&nbsp;(2021): Part 2, where you try to beat that table’s machine-learning rows.</li>
+</ul>
+</section>
+<section id="the-data" class="level3">
+<h3 class="anchored" data-anchor-id="the-data">The data</h3>
+<p><strong>Part 1</strong> uses the lecture’s 5,250 abstracts of scientific papers from arXiv, the online archive where researchers share their papers: 1,750 each from computer science, physics and statistics. The label is the discipline the authors filed the paper under. One row is one paper, with its title and abstract.</p>
+<p><strong>Part 2</strong> uses the data behind van Atteveldt, van der Velden and Boukes (2021), the paper that closed the lecture: 6,322 headlines from Dutch newspapers and news sites about the economy, from February to July 2015, each hand-coded as negative, neutral or positive. 284 of them are the paper’s test set, on which its Table 2 is computed. You do not need to read Dutch.</p>
+<div class="cadc-note">
+<div class="cadc-note__label">
+<p>BEFORE YOU START</p>
+</div>
+<ol type="1">
+<li><strong>At home, before the lab:</strong> install the packages for this week in the console (this takes a few minutes): <code>install.packages(c("tidymodels", "textrecipes", "glmnet", "discrim", "naivebayes", "LiblineaR", "stopwords"))</code>.</li>
+<li>Download <a href="files/week03-lab-a.zip">the lab folder</a> (version 3b261334) and unzip it. It holds the Part 1 script, the Part 2 skeleton, the abstracts and the Dutch headlines.</li>
+<li>Open <code>week03-lab-a-part1.qmd</code> in RStudio.</li>
+</ol>
+<p>Trouble with the download, the zip, or a file R cannot find? See <a href="../setup.html#zip">Setup help</a>.</p>
+</div>
+</section>
+<section id="check-in" class="level2">
+<h2 class="anchored" data-anchor-id="check-in">Check-in</h2>
+<div class="cadc-note cadc-note--check">
+<div class="cadc-note__label">
+<p>FIRST 10 MINUTES · ON YOUR OWN</p>
+</div>
+<p>A few short questions about Monday’s lecture, answered on Canvas, without notes or AI.</p>
+<p>Not graded, but required: you need at least six of the eight check-ins to pass the course.</p>
+</div>
+</section>
+<section id="part-1-which-discipline-wrote-this-abstract" class="level2">
+<h2 class="anchored" data-anchor-id="part-1-which-discipline-wrote-this-abstract">Part 1 · Which discipline wrote this abstract?</h2>
+<section id="getting-to-know-the-data" class="level3">
+<h3 class="anchored" data-anchor-id="getting-to-know-the-data">1 · Getting to know the data</h3>
+<p>The first chunk loads <code>tidyverse</code>, <code>tidymodels</code> (split to evaluation) and <code>textrecipes</code> (the text steps for <code>tidymodels</code>), reads the abstracts and counts them per discipline.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(tidyverse)</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(tidymodels)</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(textrecipes)</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>science <span class="ot">&lt;-</span> <span class="fu">read_csv</span>(<span class="st">"science-abstracts.csv"</span>) <span class="sc">|&gt;</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">label =</span> <span class="fu">factor</span>(label))</span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>science <span class="sc">|&gt;</span> <span class="fu">count</span>(label)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<p><code>science</code> has one row per paper: <code>id</code>, <code>label</code> (the discipline), <code>title</code> and <code>text</code> (title plus abstract). <code>tidymodels</code> needs <code>label</code> as a <em>factor</em>, a variable with a fixed set of categories, to treat the task as classification. With 1,750 abstracts per discipline, always predicting the same one gives an accuracy of .33, the floor any classifier has to beat clearly.</p>
+<p>Before any model reads these texts, read one abstract per discipline yourself (run the chunk a few times to see others). Could you tell them apart? Which words gave the discipline away?</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>science <span class="sc">|&gt;</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(label) <span class="sc">|&gt;</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">slice_sample</span>(<span class="at">n =</span> <span class="dv">1</span>) <span class="sc">|&gt;</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">pull</span>(text)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+</section>
+<section id="sketch-the-pipeline-first" class="level3">
+<h3 class="anchored" data-anchor-id="sketch-the-pipeline-first">2 · Sketch the pipeline first</h3>
+<p>In week 2, the hand-coded texts only checked your dictionary. Now they have two jobs: some teach the model, the others test whether what it learned holds for texts it has not seen.</p>
+<div class="cadc-paper">
+<div class="cadc-paper__label">
+<p>ON PAPER · ON YOUR OWN · 5 MIN</p>
+</div>
+<p>Sketch the lecture’s pipeline for this task, a box per step with arrows between them, and answer these five questions next to it:</p>
+<ol type="1">
+<li>Which texts are labelled, and by whom?</li>
+<li>How do you split them, and why?</li>
+<li>How is a text turned into numbers?</li>
+<li>Which model learns from them?</li>
+<li>How, and on which texts, do you find out whether it works?</li>
+</ol>
+<p>Mark the route of the training texts and of the test texts. Sections 3 to 6 build each box in code.</p>
+</div>
+</section>
+<section id="split-first" class="level3">
+<h3 class="anchored" data-anchor-id="split-first">3 · Split first</h3>
+<div class="cadc-flow" style="--cadc-accent:var(--cadc-era-3)" aria-hidden="true"><span class="is-now">split</span><span>recipe</span><span>model</span><span>workflow</span><span>fit</span><span>predict</span><span>evaluate</span></div>
+<p>Sections 3 to 6 turn your sketch into the seven steps of the lecture’s workflow. The chips under each heading show where you are: green for the steps the section covers, grey for those already done.</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 33%">
+<col style="width: 33%">
+<col style="width: 33%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Step</th>
+<th>Function</th>
+<th>What it does</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>split</td>
+<td><code>initial_split()</code></td>
+<td>puts part of the labelled abstracts aside as a test set</td>
+</tr>
+<tr class="even">
+<td>recipe</td>
+<td><code>recipe()</code>, <code>step_*()</code></td>
+<td>describes how a text becomes numbers</td>
+</tr>
+<tr class="odd">
+<td>model</td>
+<td><code>multinom_reg()</code></td>
+<td>chooses the algorithm and its settings</td>
+</tr>
+<tr class="even">
+<td>workflow</td>
+<td><code>workflow()</code></td>
+<td>joins the recipe and the model into one object</td>
+</tr>
+<tr class="odd">
+<td>fit</td>
+<td><code>fit()</code></td>
+<td>trains the recipe and the model on the training set</td>
+</tr>
+<tr class="even">
+<td>predict</td>
+<td><code>predict()</code></td>
+<td>lets the trained model label the test set</td>
+</tr>
+<tr class="odd">
+<td>evaluate</td>
+<td><code>conf_mat()</code>, <code>metric_set()</code></td>
+<td>compares those labels with the true ones</td>
+</tr>
+</tbody>
+</table>
+<p>The first step puts 20% of the abstracts aside. The model never sees them during training, so they can stand in for the new texts it will classify later.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">42</span>)                                   <span class="co"># the split is reproducible</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>split <span class="ot">&lt;-</span> <span class="fu">initial_split</span>(science, <span class="at">prop =</span> .<span class="dv">8</span>,     <span class="co"># 80% training, 20% test</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>                       <span class="at">strata =</span> label)         <span class="co"># each class keeps its share</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>train_data <span class="ot">&lt;-</span> <span class="fu">training</span>(split)</span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>test_data  <span class="ot">&lt;-</span> <span class="fu">testing</span>(split)</span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a><span class="fu">nrow</span>(train_data)</span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a><span class="fu">nrow</span>(test_data)</span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a>test_data <span class="sc">|&gt;</span> <span class="fu">count</span>(label)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<ul>
+<li><code>set.seed(42)</code> fixes the random draw of <code>initial_split()</code>, so you get the lecture’s split.</li>
+<li><code>prop = .8</code> gives 4,200 abstracts for training and 1,050 for the test.</li>
+<li><code>strata = label</code> draws within each discipline, so each keeps its share: 350 test abstracts per discipline.</li>
+<li><code>training()</code> and <code>testing()</code> take the two sets out of the split.</li>
+</ul>
+<p>Leave <code>test_data</code> alone until section 6: a model always looks better on texts it has already seen.</p>
+</section>
+<section id="the-recipe" class="level3">
+<h3 class="anchored" data-anchor-id="the-recipe">4 · The recipe</h3>
+<div class="cadc-flow" style="--cadc-accent:var(--cadc-era-3)" aria-hidden="true"><span class="is-done">split</span><span class="is-now">recipe</span><span>model</span><span>workflow</span><span>fit</span><span>predict</span><span>evaluate</span></div>
+<p>A <em>recipe</em> writes down how a text becomes numbers. It learns what it needs from the training data and applies it unchanged to every later text, the test set included. These are the lecture’s four steps:</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>rec <span class="ot">&lt;-</span> <span class="fu">recipe</span>(label <span class="sc">~</span> text, <span class="at">data =</span> train_data) <span class="sc">|&gt;</span>   <span class="co"># predict label from text</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">step_tokenize</span>(text) <span class="sc">|&gt;</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">step_stopwords</span>(text) <span class="sc">|&gt;</span></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">step_tokenfilter</span>(text, <span class="at">min_times =</span> <span class="dv">20</span>, <span class="at">max_tokens =</span> <span class="dv">1000</span>) <span class="sc">|&gt;</span></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">step_tf</span>(text)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<ul>
+<li><code>recipe(label ~ text, ...)</code> predicts <code>label</code> (left of the <code>~</code>) from <code>text</code> (right of it).</li>
+<li><code>step_tokenize()</code> splits each abstract into words, like <code>unnest_tokens()</code> in week 1.</li>
+<li><code>step_stopwords()</code> drops frequent English words such as <em>the</em> and <em>of</em>, which occur in every discipline.</li>
+<li><code>step_tokenfilter()</code> keeps the 1,000 most frequent of the words seen at least 20 times in the training abstracts (3,690 words qualify). Rare words teach the model nothing reliable, and fewer columns fit faster.</li>
+<li><code>step_tf()</code> counts how often each kept word occurs in each abstract (term frequency).</li>
+</ul>
+<p>A recipe does nothing until you use it: <code>prep()</code> learns the 1,000 words from the training data, and <code>bake()</code> applies them (<code>new_data = NULL</code> means the data it was prepared on). The result is week 1’s document–term matrix:</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>rec <span class="sc">|&gt;</span> <span class="fu">prep</span>() <span class="sc">|&gt;</span> <span class="fu">bake</span>(<span class="at">new_data =</span> <span class="cn">NULL</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<p>It has 4,200 rows and 1,001 columns, mostly zeros: the label plus one count per word, such as <code>tf_text_quantum</code>. The test abstracts are later counted on the same 1,000 words; a word that occurs only in the test set is ignored. You only call <code>prep()</code> and <code>bake()</code> here to look: the workflow in section 5 runs both for you.</p>
+</section>
+<section id="model-workflow-fit" class="level3">
+<h3 class="anchored" data-anchor-id="model-workflow-fit">5 · Model, workflow, fit</h3>
+<div class="cadc-flow" style="--cadc-accent:var(--cadc-era-3)" aria-hidden="true"><span class="is-done">split</span><span class="is-done">recipe</span><span class="is-now">model</span><span class="is-now">workflow</span><span class="is-now">fit</span><span>predict</span><span>evaluate</span></div>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>logit_spec <span class="ot">&lt;-</span> <span class="fu">multinom_reg</span>(<span class="at">penalty =</span> <span class="fl">0.01</span>, <span class="at">mixture =</span> <span class="dv">1</span>) <span class="sc">|&gt;</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">set_engine</span>(<span class="st">"glmnet"</span>) <span class="sc">|&gt;</span></span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">set_mode</span>(<span class="st">"classification"</span>)</span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>logit_wf <span class="ot">&lt;-</span> <span class="fu">workflow</span>() <span class="sc">|&gt;</span></span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">add_recipe</span>(rec) <span class="sc">|&gt;</span></span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">add_model</span>(logit_spec)</span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a>m_logit <span class="ot">&lt;-</span> <span class="fu">fit</span>(logit_wf, <span class="at">data =</span> train_data)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<ul>
+<li><code>multinom_reg()</code> is the lecture’s logistic regression for more than two classes: a weight per word per discipline, summed and turned into three probabilities. <code>penalty = 0.01</code> punishes large weights, so 1,000 words cannot memorise 4,200 abstracts (overfitting); <code>mixture = 1</code> (the lasso) sets many weights to exactly zero.</li>
+<li><code>set_engine("glmnet")</code> names the R package that does the computing, and <code>set_mode("classification")</code> says the outcome is a category.</li>
+<li><code>workflow()</code> joins recipe and model, so every text passes through the same recipe first.</li>
+<li><code>fit()</code> does the learning; until then, the specification only describes the model. It prepares the recipe on <code>train_data</code> and estimates the weights in about ten seconds. <code>m_logit</code> is the trained classifier.</li>
+</ul>
+</section>
+<section id="predict-and-evaluate" class="level3">
+<h3 class="anchored" data-anchor-id="predict-and-evaluate">6 · Predict and evaluate</h3>
+<div class="cadc-flow" style="--cadc-accent:var(--cadc-era-3)" aria-hidden="true"><span class="is-done">split</span><span class="is-done">recipe</span><span class="is-done">model</span><span class="is-done">workflow</span><span class="is-done">fit</span><span class="is-now">predict</span><span class="is-now">evaluate</span></div>
+<p>Now the test set comes back. <code>predict()</code> runs the 1,050 test abstracts through recipe and model and returns one column, <code>.pred_class</code>, in the row order of <code>test_data</code>; <code>bind_cols()</code> puts the true label next to it. Last week you counted the confusion matrix and computed precision and recall by hand; here <code>conf_mat()</code> and <code>metric_set()</code> do that. <code>conf_mat()</code> shows the truth in the columns and the predictions in the rows, with the hits on the diagonal. With three classes, precision, recall and F1 are averaged over the disciplines (<em>macro</em>).</p>
+<p><strong>Exercise 1:</strong> Write down which two disciplines you expect the model to confuse most. Then predict the discipline of the abstracts in <code>test_data</code> with <code>m_logit</code>, put the true labels next to the predictions, and compute the confusion matrix and the accuracy, precision, recall and F1. Was your guess right?</p>
+<p>Tip: <code>predict(m_logit, new_data = test_data) |&gt; bind_cols(select(test_data, label))</code>, then <code>conf_mat(truth = label, estimate = .pred_class)</code>. For the four numbers: <code>class_metrics &lt;- metric_set(accuracy, precision, recall, f_meas)</code>, used like <code>conf_mat()</code>.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="co"># your code here</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+</section>
+<section id="swap-the-algorithm" class="level3">
+<h3 class="anchored" data-anchor-id="swap-the-algorithm">7 · Swap the algorithm</h3>
+<div class="cadc-flow" style="--cadc-accent:var(--cadc-era-3)" aria-hidden="true"><span class="is-done">split</span><span class="is-now">recipe</span><span class="is-now">model</span><span class="is-done">workflow</span><span class="is-done">fit</span><span class="is-done">predict</span><span class="is-done">evaluate</span></div>
+<p>Trying another algorithm now means changing one object, the model. Split and evaluation stay the same, so a difference in the scores comes from the algorithm alone. The lecture’s linear support vector machine (SVM) is sensitive to the scale of its inputs, so its recipe gets one extra step, <code>step_normalize(all_predictors())</code>, which puts every word column on the same scale (mean 0, standard deviation 1). That is why the recipe chip is green too.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>svm_wf <span class="ot">&lt;-</span> <span class="fu">workflow</span>() <span class="sc">|&gt;</span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">add_recipe</span>(rec <span class="sc">|&gt;</span> <span class="fu">step_normalize</span>(<span class="fu">all_predictors</span>())) <span class="sc">|&gt;</span></span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">add_model</span>(<span class="fu">svm_linear</span>() <span class="sc">|&gt;</span></span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>              <span class="fu">set_engine</span>(<span class="st">"LiblineaR"</span>) <span class="sc">|&gt;</span></span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>              <span class="fu">set_mode</span>(<span class="st">"classification"</span>))</span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a>m_svm <span class="ot">&lt;-</span> <span class="fu">fit</span>(svm_wf, <span class="at">data =</span> train_data)</span>
+<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a>pred_svm <span class="ot">&lt;-</span> <span class="fu">predict</span>(m_svm, <span class="at">new_data =</span> test_data) <span class="sc">|&gt;</span></span>
+<span id="cb8-10"><a href="#cb8-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">bind_cols</span>(<span class="fu">select</span>(test_data, label))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<p>Naive Bayes, the lecture’s “dictionary the data wrote”, learns from the counts how typical each word is of each discipline. In its specification below, <code>usepoisson = TRUE</code> says the inputs are counts, and <code>Laplace = 1</code> adds one to every count, so a word never seen in one discipline does not rule it out. It needs raw counts, so it takes the original <code>rec</code> without normalisation.</p>
+<p><strong>Exercise 2:</strong> Build a workflow with the recipe <code>rec</code> and the Naive Bayes model <code>nb_spec</code> from the chunk below, fit it on the training data, and predict the test set. Then make one table that compares the three models on accuracy, precision, recall and F1. Which model would you pick? Is the difference large enough to matter?</p>
+<p>Tip: apply <code>class_metrics</code> to each model’s predictions, add the model’s name with <code>mutate(model = "naive bayes")</code>, and stack the three with <code>bind_rows()</code>. To judge the difference, count how many of the 1,050 test abstracts one or two points of accuracy are.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(discrim)</span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>nb_spec <span class="ot">&lt;-</span> <span class="fu">naive_Bayes</span>(<span class="at">Laplace =</span> <span class="dv">1</span>) <span class="sc">|&gt;</span></span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">set_engine</span>(<span class="st">"naivebayes"</span>, <span class="at">usepoisson =</span> <span class="cn">TRUE</span>) <span class="sc">|&gt;</span></span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">set_mode</span>(<span class="st">"classification"</span>)</span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a><span class="co"># your code here</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+</section>
+</section>
+<section id="part-2-on-your-own-beat-the-paper" class="level2">
+<h2 class="anchored" data-anchor-id="part-2-on-your-own-beat-the-paper">Part 2 · On your own: beat the paper</h2>
+<div class="cadc-note">
+<div class="cadc-note__label">
+<p>ABOUT 35 MINUTES · IN THE ROOM · NOT HANDED IN · AI PERMITTED</p>
+</div>
+<p>Open <code>week03-lab-a-part2.qmd</code> from the lab folder; <code>ecosent-headlines.csv</code> is next to it. This part stays in the room; this week’s homework is the second part of Thursday’s lab.</p>
+</div>
+<p>You know this data from the lecture: 6,322 Dutch newspaper headlines about the economy, hand-coded as negative, neutral or positive by van Atteveldt, van der Velden and Boukes (2021). Besides <code>id</code> and <code>label</code>, the file has <code>headline</code> as printed (<em>Rabobank voorspelt flinke stijging hypotheekrente</em>); <code>lemmata</code>, the same with every word in its dictionary form (<em>Rabobank voorspellen flink stijging hypotheekrente</em>), so different forms of a word count as one; and <code>set</code>: <code>train</code> for the 6,038 headlines you may learn from, <code>test</code> for the 284 on which the paper reports its results:</p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Model in the paper</th>
+<th>Accuracy</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Naive Bayes</td>
+<td>.58</td>
+</tr>
+<tr class="even">
+<td>Support vector machine</td>
+<td>.57</td>
+</tr>
+<tr class="odd">
+<td>Convolutional neural network</td>
+<td>.63</td>
+</tr>
+<tr class="even">
+<td>(Best dictionary, week 2)</td>
+<td>.46</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Your question:</strong> Can a classifier you build beat the paper’s machine-learning results on the same test headlines?</p>
+<section id="the-rules" class="level3">
+<h3 class="anchored" data-anchor-id="the-rules">The rules</h3>
+<ul>
+<li>Train only on the headlines with <code>set == "train"</code>. The 284 test headlines are your <code>test_data</code>.</li>
+<li>Compare settings on a <strong>validation</strong> part: split the training headlines once more with <code>initial_split()</code>.</li>
+<li>Use the test headlines <strong>once</strong>, at the end, for the setting you chose. If you try several settings on them and keep the best, the test set has helped to choose, and its score no longer shows how the model does on unseen headlines.</li>
+</ul>
+</section>
+<section id="what-you-can-change" class="level3">
+<h3 class="anchored" data-anchor-id="what-you-can-change">What you can change</h3>
+<p>You can change any step of the Part 1 workflow, in any combination. None of these options needs an extra package.</p>
+<p>In the recipe:</p>
+<ul>
+<li>Use <code>headline</code> instead of <code>lemmata</code>, in <code>recipe()</code> and in every step.</li>
+<li>Drop Dutch stop words: <code>step_stopwords(lemmata, language = "nl")</code> after <code>step_tokenize()</code>.</li>
+<li>Add pairs of neighbouring words (<em>flink stijging</em>): <code>step_tokenize(lemmata, token = "ngrams", options = list(n = 2, n_min = 1))</code>.</li>
+<li>Keep more or fewer words with <code>max_tokens</code> and <code>min_times</code> in <code>step_tokenfilter()</code>. Without <code>max_tokens</code>, it keeps only 100.</li>
+<li>Weight counts by how rare a word is, like week 2’s tf-idf: <code>step_tfidf()</code> instead of <code>step_tf()</code>.</li>
+</ul>
+<p>In the model:</p>
+<ul>
+<li>Logistic regression with another <code>penalty</code>: smaller uses more words, larger fewer. With too large a penalty, every weight is zero and the model predicts one label for all headlines. Keep <code>max_tokens</code> at 1,000 or below: with 2,000 words, one fit takes minutes instead of seconds.</li>
+<li>Naive Bayes (Exercise 2) with another <code>Laplace</code>. It needs counts from <code>step_tf()</code>.</li>
+<li>The linear SVM (section 7), with <code>step_normalize(all_predictors())</code> in the recipe. A larger <code>cost</code> lets it follow the training headlines more closely.</li>
+</ul>
+<p>Other algorithms, such as a random forest, are listed at <a href="https://www.tidymodels.org/find/parsnip/">tidymodels.org</a>; most need one more package.</p>
+</section>
+<section id="how-to-work" class="level3">
+<h3 class="anchored" data-anchor-id="how-to-work">How to work</h3>
+<p>Treat it as a small experiment:</p>
+<ol type="1">
+<li>Start with the workflow from Part 1, adapted to <code>lemmata</code>. Train it on the training part and check its accuracy on the validation part. This is your first result.</li>
+<li>Change one thing, for example the number of words or the algorithm, and check again. If you change two things at once, you cannot tell which one made the difference. Write each attempt and its accuracy in the table in the skeleton.</li>
+<li>Compare every accuracy with the <strong>majority baseline</strong>: the accuracy you would get by always guessing the most common label, <em>neutral</em>. That guess is right for about four in ten training headlines, so a model has only learned something from the words if it does clearly better.</li>
+<li>When you have found your best version, train it once more on all training headlines (training and validation part together), and test it on the 284 test headlines. Do this once, at the very end, and compare the result with the paper.</li>
+</ol>
+<p>The headlines come back in week 4, when a language model takes the same test.</p>
+
+
+</section>
+</section>
+
+</main> <!-- /main -->
+<script>
+// Quarto remembers the dark/light toggle in localStorage only over http(s). On
+// file:// URLs (opening _site/*.html directly) it deliberately forgets it, so
+// every new page starts light again. Persist it there too, under Quarto's own
+// key. This include sits before Quarto's script, so the setTimeout lets Quarto's
+// DOMContentLoaded handler, which defines the toggle, run first.
+(function () {
+  if (window.location.protocol !== "file:") return;
+  var KEY = "quarto-color-scheme";
+  window.document.addEventListener("DOMContentLoaded", function () { setTimeout(function () {
+    var toggle = window.quartoToggleColorScheme;
+    if (!toggle) return;
+    // On file:// Quarto starts every page in the default (light) scheme.
+    var dark = false;
+    try { dark = window.localStorage.getItem(KEY) === "alternate"; } catch (e) {}
+    if (dark) toggle();
+    window.quartoToggleColorScheme = function () {
+      toggle();
+      dark = !dark;
+      try { window.localStorage.setItem(KEY, dark ? "alternate" : "default"); } catch (e) {}
+    };
+  }, 0); });
+})();
+</script>
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    // Ensure there is a toggle, if there isn't float one in the top right
+    if (window.document.querySelector('.quarto-color-scheme-toggle') === null) {
+      const a = window.document.createElement('a');
+      a.classList.add('top-right');
+      a.classList.add('quarto-color-scheme-toggle');
+      a.href = "";
+      a.onclick = function() { try { window.quartoToggleColorScheme(); } catch {} return false; };
+      const i = window.document.createElement("i");
+      i.classList.add('bi');
+      a.appendChild(i);
+      window.document.body.appendChild(a);
+    }
+    setColorSchemeToggle(hasAlternateSentinel())
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+      const outerScaffold = trigger.parentElement.cloneNode(true);
+      const codeEl = outerScaffold.querySelector('code');
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp("https:\/\/masurp\.github\.io\/cadc\/");
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+</div> <!-- /content -->
+<footer class="footer">
+  <div class="nav-footer">
+    <div class="nav-footer-left">
+<p>Monday lecture · Tuesday &amp; Thursday labs · Dr.&nbsp;Philipp K. Masur</p>
+</div>   
+    <div class="nav-footer-center">
+<p><a href="../setup.html">Setup help</a> · <a href="../license.html">License &amp; data sources</a> · <a href="../privacy.html">Privacy</a></p>
+</div>
+    <div class="nav-footer-right">
+<p>Vrije Universiteit Amsterdam · CC BY 4.0</p>
+</div>
+  </div>
+</footer>
+
+
+
+
+<script src="../site_libs/quarto-html/zenscroll-min.js"></script>
+</body></html>
