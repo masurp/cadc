@@ -948,7 +948,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </div>
 </div>
 </div>
-<p><strong>If your laptop does not meet all three,</strong> skip Ollama and use <a href="#course-key">the course key</a> instead.</p>
+<p><strong>If your laptop does not meet all three,</strong> skip Ollama: you will use <a href="#course-key">the course key</a> instead, which comes on Canvas on Tuesday morning.</p>
 </section>
 </div>
 </div>
@@ -1060,9 +1060,9 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </div>
 <section id="course-key" class="level3">
 <h3 class="anchored" data-anchor-id="course-key">If your laptop cannot run the model: the course key</h3>
-<p>If your laptop does not meet step 1, or the model does not answer in step 5, use the course key. It gives you a small model on OpenAI’s servers, <code>gpt-5.4-nano</code>, and you do not need to install anything. The labs’ code changes in one place.</p>
+<p>If your laptop does not meet step 1, or the model does not answer in step 5, use the course key. It gives you a small model on OpenAI’s servers, <code>gpt-5.4-nano</code>, and you do not need to install anything. The labs’ code changes in one place. The key is posted on Canvas on Tuesday morning of week 4; the steps below take five minutes.</p>
 <ol type="1">
-<li><p><strong>Get the key.</strong> It is on Canvas, in the announcement about week 4. The course pays for it; use it for the labs and the homework only. It stops working after the Homework 4 deadline.</p></li>
+<li><p><strong>Get the key</strong> from that announcement on Canvas. The course pays for it; use it for the labs and the homework only. It stops working after the Homework 4 deadline.</p></li>
 <li><p><strong>Save it where R can find it.</strong> In the RStudio Console, run <code>file.edit("~/.Renviron")</code>. A file opens in the editor; it may be empty. Add this line, with the key after the <code>=</code>, without quotes or spaces:</p>
 <pre><code>OPENAI_API_KEY=paste-the-key-here</code></pre>
 <p>Press <kbd>Enter</kbd> at the end of the line, so that the file ends with an empty line. Save the file and restart R (<em>Session &gt; Restart R</em>). R reads this file every time it starts, also when you render.</p></li>
