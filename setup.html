@@ -355,7 +355,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <li><a href="#rstudio" id="toc-rstudio" class="nav-link" data-scroll-target="#rstudio">RStudio in five minutes</a></li>
   <li><a href="#keyboard" id="toc-keyboard" class="nav-link" data-scroll-target="#keyboard">Keyboard</a></li>
   <li><a href="#stuck" id="toc-stuck" class="nav-link" data-scroll-target="#stuck">When something goes wrong</a></li>
-  <li><a href="#week4" id="toc-week4" class="nav-link" data-scroll-target="#week4">Before week 4: a language model on your laptop</a></li>
+  <li><a href="#week4" id="toc-week4" class="nav-link" data-scroll-target="#week4">Before Tuesday of week 4: a language model on your laptop</a></li>
   </ul>
 </nav>
     </div>
@@ -383,7 +383,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </header>
 
 
-<p>Every lab runs on your own laptop, in R and RStudio. The first half of this page is a checklist to work through at home before Tuesday of week 1. The second half is a reference for the moments when the computer gets in the way instead of R: a download you cannot find, a zip that will not open, a file R says does not exist, a key you cannot type.</p>
+<p>Every lab runs on your own laptop, in R and RStudio. The first half of this page is a checklist to work through at home before Tuesday of week 1. The second half is a reference for the moments when the computer gets in the way instead of R: a download you cannot find, a zip that will not open, a file R says does not exist, a key you cannot type. The last section installs a language model on your laptop, <a href="#week4">before week 4</a>.</p>
 <section id="checklist" class="level2">
 <h2 class="anchored" data-anchor-id="checklist">Before Tuesday of week 1</h2>
 <div class="cadc-stage" style="--cadc-accent:var(--cadc-era-1)">
@@ -918,10 +918,171 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <p><strong>Asking for help.</strong> Say what you ran, what you expected, and paste the error as text, not a photo of your screen. For a screenshot, use <kbd>Win</kbd> + <kbd>Shift</kbd> + <kbd>S</kbd> or <kbd>Cmd</kbd> + <kbd>Shift</kbd> + <kbd>4</kbd>, then <kbd>Space</kbd>. If it is about installing, add the output of the <a href="#checklist">setup check</a>.</p>
 </section>
 <section id="week4" class="level2">
-<h2 class="anchored" data-anchor-id="week4">Before week 4: a language model on your laptop</h2>
-<p>The later weeks run a small language model on your own laptop and use a course API key. The instructions and a second check will appear here before week 4. There is nothing to install for it now.</p>
+<h2 class="anchored" data-anchor-id="week4">Before Tuesday of week 4: a language model on your laptop</h2>
+<p>In week 4 a language model codes texts for you. It runs on your own laptop, in a free program called <strong>Ollama</strong>, so the texts you code never leave your computer. Setting it up takes about half an hour, most of it waiting for a download. Do it at home, on a good connection, before the first lab of week 4.</p>
+<p>If your laptop is too old or too small for this, there is a second route: a course key for a small model on OpenAI’s servers. Step 1 tells you which route is yours.</p>
+<div class="cadc-stage" style="--cadc-accent:var(--cadc-era-5)">
+<div class="cadc-stage__n">
+<p>1</p>
+</div>
+<div class="cadc-stage__body">
+<div class="cadc-stage__meta">
+<p>Five minutes</p>
+</div>
+<section id="check-your-laptop-1" class="level3">
+<h3 class="anchored" data-anchor-id="check-your-laptop-1">Check your laptop</h3>
+<p>Your laptop needs all three of these:</p>
+<ul>
+<li><strong>System:</strong> macOS 14 (Sonoma) or newer, or Windows 10 (version 22H2 or newer) or Windows 11.</li>
+<li><strong>Memory:</strong> at least 8 GB. With 16 GB or more you can also run the larger second model that Lab A compares.</li>
+<li><strong>Disk space:</strong> at least 7 GB free: about 4 GB for Ollama, 2 GB for the model, and some room to spare.</li>
+</ul>
+<div class="tabset-margin-container"></div><div class="panel-tabset" data-group="os">
+<ul class="nav nav-tabs" role="tablist"><li class="nav-item" role="presentation"><a class="nav-link active" id="tabset-5-1-tab" data-bs-toggle="tab" data-bs-target="#tabset-5-1" role="tab" aria-controls="tabset-5-1" aria-selected="true" href="">Windows</a></li><li class="nav-item" role="presentation"><a class="nav-link" id="tabset-5-2-tab" data-bs-toggle="tab" data-bs-target="#tabset-5-2" role="tab" aria-controls="tabset-5-2" aria-selected="false" href="">macOS</a></li></ul>
+<div class="tab-content" data-group="os">
+<div id="tabset-5-1" class="tab-pane active" role="tabpanel" aria-labelledby="tabset-5-1-tab">
+<p>Open <em>Settings &gt; System &gt; About</em>. <em>Installed RAM</em> is the memory. Under <em>Windows specifications</em>, <em>Edition</em> says Windows 10 or 11, and for Windows 10 <em>Version</em> must be 22H2. For the free disk space, open File Explorer and click <em>This PC</em>: it shows how much of the <em>C:</em> drive is free.</p>
+</div>
+<div id="tabset-5-2" class="tab-pane" role="tabpanel" aria-labelledby="tabset-5-2-tab">
+<p>Open the Apple menu (top left) &gt; <em>About This Mac</em>. It shows the macOS version (it must be 14 or higher), the <em>Memory</em> and the chip. For the free disk space, open <em>System Settings &gt; General &gt; Storage</em>. A Mac with an Intel processor works, but slowly: Ollama can use only its processor there, not its graphics chip.</p>
+</div>
+</div>
+</div>
+<p><strong>If your laptop does not meet all three,</strong> skip Ollama and use <a href="#course-key">the course key</a> instead.</p>
+</section>
+</div>
+</div>
+<div class="cadc-stage" style="--cadc-accent:var(--cadc-era-5)">
+<div class="cadc-stage__n">
+<p>2</p>
+</div>
+<div class="cadc-stage__body">
+<div class="cadc-stage__meta">
+<p>Five minutes</p>
+</div>
+<section id="install-ollama" class="level3">
+<h3 class="anchored" data-anchor-id="install-ollama">Install Ollama</h3>
+<div class="tabset-margin-container"></div><div class="panel-tabset" data-group="os">
+<ul class="nav nav-tabs" role="tablist"><li class="nav-item" role="presentation"><a class="nav-link active" id="tabset-6-1-tab" data-bs-toggle="tab" data-bs-target="#tabset-6-1" role="tab" aria-controls="tabset-6-1" aria-selected="true" href="">Windows</a></li><li class="nav-item" role="presentation"><a class="nav-link" id="tabset-6-2-tab" data-bs-toggle="tab" data-bs-target="#tabset-6-2" role="tab" aria-controls="tabset-6-2" aria-selected="false" href="">macOS</a></li></ul>
+<div class="tab-content" data-group="os">
+<div id="tabset-6-1" class="tab-pane active" role="tabpanel" aria-labelledby="tabset-6-1-tab">
+<ol type="1">
+<li>Go to <a href="https://ollama.com/download">ollama.com/download</a> and click <em>Download for Windows</em>. You get a file <code>OllamaSetup.exe</code>.</li>
+<li>Open it and click <em>Install</em>. Ollama installs into your own account, so it does not need administrator rights.</li>
+<li>When the installation is finished, Ollama runs in the background. Its icon, a small llama, sits in the system tray at the bottom right of the screen (click the small ^ arrow there if you do not see it). If a chat window opens, close it: the labs do not use it.</li>
+</ol>
+</div>
+<div id="tabset-6-2" class="tab-pane" role="tabpanel" aria-labelledby="tabset-6-2-tab">
+<ol type="1">
+<li>Go to <a href="https://ollama.com/download">ollama.com/download</a> and click <em>Download for macOS</em>. You get a file <code>Ollama.dmg</code>.</li>
+<li>Open it and <strong>drag the Ollama icon into the Applications folder</strong> in that window. Then eject the <em>Ollama</em> disk in the Finder sidebar.</li>
+<li>Open Ollama from Applications. If macOS asks whether you are sure you want to open an app downloaded from the internet, click <em>Open</em>.</li>
+<li>Ollama asks whether it may install its command line tool. Allow it, and type your Mac password when asked. Step 4 needs this tool.</li>
+<li>A small llama appears in the menu bar at the top right of the screen. If a chat window opens, close it: the labs do not use it.</li>
+</ol>
+</div>
+</div>
+</div>
+<p><strong>Done when</strong> you see the llama icon. It means Ollama is running.</p>
+</section>
+</div>
+</div>
+<div class="cadc-stage" style="--cadc-accent:var(--cadc-era-5)">
+<div class="cadc-stage__n">
+<p>3</p>
+</div>
+<div class="cadc-stage__body">
+<div class="cadc-stage__meta">
+<p>Five minutes</p>
+</div>
+<section id="open-a-terminal" class="level3">
+<h3 class="anchored" data-anchor-id="open-a-terminal">Open a terminal</h3>
+<p>The model is downloaded with a command typed into a <strong>terminal</strong>. A terminal is a window in which you give your computer instructions by typing them instead of clicking: you type one line, press <kbd>Enter</kbd>, and the computer answers in text. It does nothing except what you type, and this page asks you to type four lines.</p>
+<p>RStudio has a terminal built in, so you do not need another program:</p>
+<ol type="1">
+<li>Open RStudio. In the bottom-left pane, next to the <em>Console</em> tab, click the <em>Terminal</em> tab. If there is no such tab, choose <em>Tools &gt; Terminal &gt; New Terminal</em>.</li>
+<li>A line with a blinking cursor appears, ending in <code>$</code>, <code>%</code> or <code>&gt;</code> depending on your computer. This is the <strong>prompt</strong>: the terminal is waiting for a command.</li>
+</ol>
+<p><strong>Console and Terminal are two different things.</strong> The <em>Console</em> runs R code; the <em>Terminal</em> runs commands for your computer. A terminal command typed into the Console gives <code>Error: unexpected symbol</code>, and R code typed into the Terminal gives an error too. Look at which tab is selected before you type.</p>
+<p><strong>Windows:</strong> if RStudio was open while you installed Ollama, close RStudio and open it again first. Otherwise its terminal does not know the new command yet.</p>
+<p>You can also use the terminal of your system instead of RStudio’s: on a Mac, press <kbd>Cmd</kbd> + <kbd>Space</kbd>, type <em>Terminal</em> and press <kbd>Enter</kbd>; on Windows, press <kbd>Win</kbd>, type <em>PowerShell</em> and press <kbd>Enter</kbd>. The commands are the same.</p>
+</section>
+</div>
+</div>
+<div class="cadc-stage" style="--cadc-accent:var(--cadc-era-5)">
+<div class="cadc-stage__n">
+<p>4</p>
+</div>
+<div class="cadc-stage__body">
+<div class="cadc-stage__meta">
+<p>Ten minutes, mostly waiting</p>
+</div>
+<section id="download-the-model" class="level3">
+<h3 class="anchored" data-anchor-id="download-the-model">Download the model</h3>
+<p>Type this line into the terminal and press <kbd>Enter</kbd>:</p>
+<pre><code>ollama pull llama3.2:3b</code></pre>
+<p>Ollama now downloads a model of 2 GB and shows a progress bar. It is finished when the last line says <code>success</code> and the prompt is back. Then type this line to list the models you have:</p>
+<pre><code>ollama list</code></pre>
+<p>It should show <code>llama3.2:3b</code> with a size of 2.0 GB. Ask it a first question:</p>
+<pre><code>ollama run llama3.2:3b "What is a codebook? Answer in one sentence."</code></pre>
+<p>The first time, the model has to be loaded into memory, which can take half a minute. Then an answer appears, and the prompt comes back.</p>
+<p><strong>With 16 GB of memory or more,</strong> also download the larger model (4.9 GB). Lab A compares the two:</p>
+<pre><code>ollama pull llama3.1:8b</code></pre>
+<p><strong>What you might see:</strong></p>
+<ul>
+<li><em><code>ollama: command not found</code></em> (Mac) or <em><code>'ollama' is not recognized</code></em> (Windows): the terminal does not know Ollama yet. On Windows, restart RStudio. On a Mac, open the Ollama app again and allow the command line tool. Or skip the terminal: run <code>tidyllm::ollama_download_model("llama3.2:3b")</code> in the RStudio <em>Console</em>, which downloads the same model.</li>
+<li><em><code>could not connect to ollama app, is it running?</code></em>: Ollama is not running. Open it from Applications or the Start menu and wait for the llama icon.</li>
+<li><strong>The download stops or fails:</strong> run the same <code>ollama pull</code> line again. It continues where it stopped.</li>
+</ul>
+</section>
+</div>
+</div>
+<div class="cadc-stage" style="--cadc-accent:var(--cadc-era-5)">
+<div class="cadc-stage__n">
+<p>5</p>
+</div>
+<div class="cadc-stage__body">
+<div class="cadc-stage__meta">
+<p>Two minutes</p>
+</div>
+<section id="send-the-first-question-from-r" class="level3">
+<h3 class="anchored" data-anchor-id="send-the-first-question-from-r">Send the first question from R</h3>
+<p>In the labs, R sends the texts to Ollama with the package <code>tidyllm</code>, which you installed in week 1. Run these lines in the RStudio <em>Console</em> (not the Terminal):</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(tidyllm)</span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a><span class="fu">llm_message</span>(<span class="st">"What is a codebook? Answer in one sentence."</span>) <span class="sc">|&gt;</span></span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">chat</span>(<span class="fu">ollama</span>(<span class="at">.model =</span> <span class="st">"llama3.2:3b"</span>)) <span class="sc">|&gt;</span></span>
+<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">get_reply</span>()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p><strong>Done when</strong> a sentence comes back. If R says <em>there is no package called ‘tidyllm’</em>, run <code>install.packages(c("tidyllm", "yardstick"))</code> first. If it says it cannot connect, Ollama is not running: look for the llama icon.</p>
+<p>Ollama has to be running whenever you use it from R. Before each lab, check that the llama icon is there, and open Ollama if it is not.</p>
+</section>
+</div>
+</div>
+<section id="course-key" class="level3">
+<h3 class="anchored" data-anchor-id="course-key">If your laptop cannot run the model: the course key</h3>
+<p>If your laptop does not meet step 1, or the model does not answer in step 5, use the course key. It gives you a small model on OpenAI’s servers, <code>gpt-5.4-nano</code>, and you do not need to install anything. The labs’ code changes in one place.</p>
+<ol type="1">
+<li><p><strong>Get the key.</strong> It is on Canvas, in the announcement about week 4. The course pays for it; use it for the labs and the homework only. It stops working after the Homework 4 deadline.</p></li>
+<li><p><strong>Save it where R can find it.</strong> In the RStudio Console, run <code>file.edit("~/.Renviron")</code>. A file opens in the editor; it may be empty. Add this line, with the key after the <code>=</code>, without quotes or spaces:</p>
+<pre><code>OPENAI_API_KEY=paste-the-key-here</code></pre>
+<p>Press <kbd>Enter</kbd> at the end of the line, so that the file ends with an empty line. Save the file and restart R (<em>Session &gt; Restart R</em>). R reads this file every time it starts, also when you render.</p></li>
+<li><p><strong>Check it.</strong> In the Console, <code>nchar(Sys.getenv("OPENAI_API_KEY")) &gt; 0</code> should print <code>TRUE</code>.</p></li>
+<li><p><strong>Send the first question:</strong></p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb13"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(tidyllm)</span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a><span class="fu">llm_message</span>(<span class="st">"What is a codebook? Answer in one sentence."</span>) <span class="sc">|&gt;</span></span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">chat</span>(<span class="fu">openai</span>(<span class="at">.model =</span> <span class="st">"gpt-5.4-nano"</span>)) <span class="sc">|&gt;</span></span>
+<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">get_reply</span>()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div></li>
+<li><p><strong>In the labs,</strong> wherever the code says <code>ollama(.model = "llama3.2:3b", …)</code>, write <code>openai(.model = "gpt-5.4-nano", …)</code> and keep everything after the model name. Where a lab asks for a second model, use <code>gpt-4o-mini</code>.</p></li>
+</ol>
+<p>Two rules come with the key:</p>
+<ul>
+<li><strong>Never put the key in a script or a <code>.qmd</code> file.</strong> Homework is handed in with its code, and anyone who opens the file can read and use a key in it. The <code>.Renviron</code> file stays on your laptop.</li>
+<li><strong>Your texts leave your laptop.</strong> With the key, every text you code is sent to OpenAI. Say so where your report says <em>where the text went</em>, as the lecture’s slide <em>Before the first call</em> asks.</li>
+</ul>
 
 
+</section>
 </section>
 
 </main> <!-- /main -->

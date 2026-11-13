@@ -1,0 +1,529 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Same text, different name — CADC</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&display=swap">
+<style>
+  /* --- tokens ---------------------------------------------------------------
+     Week 4, so the chrome accent is the same purple as "The prompt is the
+     instrument": both tools are about the instrument rather than the result.
+
+     above the reference = VU blue · below = orange-red (validated pair, dE 20)
+     A level whose interval crosses the reference is drawn GREY, so "we cannot
+     tell" never wears the colour of a finding. */
+  :root{
+    --paper:#faf8f4; --surface:#fff; --panel:#fdfcf9; --strip:#f2f0ea;
+    --hairline:#e7e3d9; --border:#e0dcd0;
+    --ink:#1a1a17; --ink-2:#3a3a34; --ink-3:#5a5a52; --muted:#7a7a70; --faint:#9a9a90;
+    --accent:#6b3f9e; --accent-tint:#f1ebf8;
+    --pos:#2678b0; --neg:#b84a27; --warn:#b8860b;
+    --font:"Space Grotesk", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+    --mono:ui-monospace,SFMono-Regular,Menlo,monospace;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --paper:#10243a; --surface:#16304a; --panel:#142c44; --strip:#1b3550;
+      --hairline:#2c4560; --border:#2c4560;
+      --ink:#e8eaec; --ink-2:#cfd6de; --ink-3:#a8c0d4; --muted:#7d9bb5; --faint:#6d8ba6;
+      --accent:#b48ae0; --accent-tint:#241a33;
+      --pos:#3291d1; --neg:#d26a49; --warn:#d8a93b;
+    }
+  }
+  *{box-sizing:border-box}
+  [hidden]{display:none !important}
+  html,body{margin:0}
+  body{font-family:var(--font); background:var(--paper); color:var(--ink);
+       font-size:14px; line-height:1.5; padding:0 20px 24px}
+  .band{height:3px; background:var(--accent); margin:0 -20px 13px; opacity:.9}
+  .eyebrow{font-size:10px; font-weight:700; letter-spacing:.1em; text-transform:uppercase;
+           color:var(--accent); margin-bottom:5px}
+  h1{font-size:15px; font-weight:700; margin:0}
+  .sub{font-size:12px; color:var(--ink-3); margin:4px 0 14px; max-width:82ch}
+  .sub b{color:var(--ink-2); font-weight:500}
+
+  .bnd{border-top:1px solid var(--hairline); padding-top:12px; margin-bottom:16px}
+  .qn{display:flex; align-items:baseline; gap:9px; margin-bottom:10px}
+  .qn .num{flex:0 0 20px; height:20px; border-radius:50%; background:var(--accent);
+    color:#fff; font-size:11px; font-weight:700; display:flex; align-items:center;
+    justify-content:center}
+  .qn h2{font-size:13px; font-weight:700; margin:0}
+  .qn p{font-size:11.5px; color:var(--muted); margin:0}
+
+  .row{display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin-bottom:10px}
+  .lbl{font-size:10px; font-weight:700; letter-spacing:.08em; text-transform:uppercase;
+       color:var(--muted); margin-right:2px; flex:0 0 auto}
+  button{font-family:inherit; font-size:12px; color:var(--ink-2); cursor:pointer;
+    background:var(--surface); border:1px solid var(--border); border-radius:999px;
+    padding:5px 11px; transition:.12s}
+  button:hover{border-color:var(--accent)}
+  button[aria-pressed="true"]{background:var(--accent); border-color:var(--accent);
+    color:#fff; font-weight:500}
+  /* Three tiers of control, deliberately not alike, because they are not the
+     same kind of choice:
+       task   -- which study you are looking at   (largest, filled pill)
+       model  -- which instrument produced it     (segmented, ink, square)
+       levers -- parameters inside that study     (small accent pills)
+     Making the model look like another parameter invited reading it as one. */
+  .taskrow button{font-size:13.5px; padding:9px 18px; font-weight:500;
+    border-width:1.5px}
+
+  .modelseg{display:inline-flex; border:1px solid var(--border); border-radius:8px;
+    overflow:hidden; background:var(--surface)}
+  .modelseg button{border:0; border-right:1px solid var(--hairline);
+    border-radius:0; padding:6px 14px; font-size:12px; background:transparent}
+  .modelseg button:last-child{border-right:0}
+  .modelseg button:hover{background:var(--strip)}
+  .modelseg button[aria-pressed="true"]{background:var(--ink); color:var(--paper);
+    font-weight:600}
+  input[type=range]{accent-color:var(--accent); width:230px; vertical-align:middle}
+
+  .card{background:var(--surface); border:1px solid var(--hairline); border-radius:10px;
+        padding:13px 15px}
+  .grid2{display:grid; grid-template-columns:1fr 300px; gap:14px; align-items:start}
+  @media (max-width:760px){ .grid2{grid-template-columns:1fr} }
+
+  .k{font-weight:700; color:var(--ink)}
+  .go{color:var(--pos); font-weight:700}
+  .no{color:var(--neg); font-weight:700}
+  .big{font-size:26px; font-weight:700; line-height:1.1; color:var(--accent)}
+  .cap{font-size:11px; color:var(--muted); margin-top:7px; line-height:1.5}
+  .note{font-size:11.5px; color:var(--ink-3); background:var(--accent-tint);
+        border-radius:8px; padding:9px 11px; margin-top:10px; line-height:1.55}
+  svg{display:block; width:100%; height:auto; overflow:visible}
+  text{font-family:var(--font)}
+
+  details{margin-top:16px; border:1.5px solid var(--accent); border-radius:10px;
+          background:var(--surface); overflow:hidden}
+  summary{cursor:pointer; padding:12px 15px; font-size:13px; font-weight:600;
+          color:var(--accent); background:var(--accent-tint); list-style:none}
+  summary:hover{filter:brightness(.97)}
+  summary small{display:block; font-weight:400; font-size:11.5px; color:var(--ink-3);
+    margin-top:3px; letter-spacing:0}
+  summary::-webkit-details-marker{display:none}
+  summary::before{content:"▸ "; color:var(--accent); font-weight:700}
+  details[open] summary::before{content:"▾ "}
+  .pex{border-top:1px solid var(--hairline); padding:11px 13px}
+  .pex h4{margin:0 0 6px; font-size:11px; letter-spacing:.06em; text-transform:uppercase;
+          color:var(--muted); font-weight:700}
+  pre{margin:0; font-family:var(--mono); font-size:11px; line-height:1.55;
+      white-space:pre-wrap; word-break:break-word; color:var(--ink-2);
+      background:var(--strip); border-radius:6px; padding:9px 11px}
+  pre.reply{background:var(--accent-tint); color:var(--ink-2); margin-top:7px}
+  .badge{display:inline-block; font-size:9.5px; font-weight:700; letter-spacing:.06em;
+    text-transform:uppercase; color:#fff; background:var(--warn); border-radius:4px;
+    padding:2px 6px; margin-left:7px; vertical-align:middle}
+  .warnnote{font-size:11px; color:var(--ink-3); background:#fdf6e3; border-radius:6px;
+    padding:8px 10px; margin-top:8px; line-height:1.5}
+  @media (prefers-color-scheme: dark){ .warnnote{background:#3a2f18} }
+</style>
+</head>
+<body>
+<div class="band"></div>
+<div class="eyebrow">Week 4 · LLMs as instruments</div>
+<h1 id="title">Same text, different name</h1>
+<p class="sub" id="lede"></p>
+
+<div class="row taskrow"><span class="lbl">Task</span><span id="taskBtns"></span></div>
+<div class="row"><span class="lbl">Model</span><span id="modelBtns" class="modelseg"></span>
+  <span id="compliance" style="font-size:11.5px;color:var(--muted);margin-left:6px"></span></div>
+
+<!-- 1 ------------------------------------------------------------------ -->
+<div class="bnd">
+  <div class="qn"><div class="num">1</div>
+    <div><h2 id="q1">Does it matter who it came from?</h2>
+    <p id="q1sub"></p></div></div>
+  <div class="row" id="constructRow" hidden>
+    <span class="lbl">Coded for</span><span id="constructBtns"></span></div>
+  <div class="row"><span class="lbl">Attribute</span><span id="attrBtns"></span></div>
+  <div class="row"><span class="lbl">Design</span><span id="designBtns"></span></div>
+
+  <div class="grid2">
+    <div class="card"><svg id="plot" viewBox="0 0 560 300" role="img"
+      aria-label="Estimated score per attribute level"></svg></div>
+    <div>
+      <div class="card"><div class="big" id="spread">—</div>
+        <div class="cap" id="spreadCap"></div></div>
+      <div class="note" id="verdict"></div>
+    </div>
+  </div>
+
+  <details id="promptBox">
+    <summary>Read the prompt the model was actually given
+      <small>The instrument itself &mdash; you cannot judge a measurement without it.</small>
+    </summary>
+    <div id="promptBody"></div>
+  </details>
+</div>
+
+<!-- 2 ------------------------------------------------------------------ -->
+<div class="bnd">
+  <div class="qn"><div class="num">2</div>
+    <div><h2>How many runs before you could tell?</h2>
+    <p>Drag the sample size. The estimate is redrawn from that many rounds.</p></div></div>
+  <div class="row">
+    <span class="lbl" id="nLbl">Rounds</span>
+    <input type="range" id="nSlider" min="10" max="600" step="5" value="600">
+    <span id="nOut" style="font-family:var(--mono); font-size:12px; color:var(--ink-2)"></span>
+    <button id="resample">Draw again</button>
+    <button id="placebo" aria-pressed="false">Placebo: shuffle the labels</button>
+  </div>
+  <div class="note" id="nNote"></div>
+</div>
+
+<!-- 3 ------------------------------------------------------------------ -->
+<div class="bnd">
+  <div class="qn"><div class="num">3</div>
+    <div><h2 id="q3"></h2><p id="q3sub"></p></div></div>
+  <div class="grid2">
+    <div class="card"><svg id="plot3" viewBox="0 0 560 210" role="img"></svg></div>
+    <div class="note" id="note3" style="margin-top:0"></div>
+  </div>
+</div>
+
+<script src="data.js"></script>
+<script>
+(function(){
+  const D = window.CADC_BIAS, $ = s => document.querySelector(s);
+  const TASKS = Object.keys(D.tasks);
+
+  function rng(seed){ return function(){ seed|=0; seed=seed+0x6D2B79F5|0;
+    let t=Math.imul(seed^seed>>>15,1|seed); t=t+Math.imul(t^t>>>7,61|t)^t;
+    return ((t^t>>>14)>>>0)/4294967296; }; }
+
+  const MODELS = D.meta.models, MLAB = D.meta.modelLabels;
+  const state = {task:"hiring", model:MODELS[0], construct:null, attr:null,
+                 coupling:"independent", n:600, placebo:false, seed:7};
+  const T  = () => D.tasks[state.task];
+  const SI = () => T().fields.length;            // scores sit after the fields
+  const cell = () => T().cells.find(c => c.model===state.model &&
+                      c.coupling===state.coupling &&
+                      (!c.construct || c.construct===state.construct)) || T().cells[0];
+
+  function sample(){
+    const rounds = cell().rounds, r = rng(state.seed);
+    const idx = rounds.map((_,i)=>i);
+    for (let i=idx.length-1;i>0;i--){ const j=(r()*(i+1))|0; [idx[i],idx[j]]=[idx[j],idx[i]]; }
+    return idx.slice(0, Math.min(state.n, rounds.length)).map(i=>rounds[i]);
+  }
+
+  // Every attribute is randomised independently of the others, so a level's mean
+  // already IS its marginal effect -- nothing to fit, nothing to control for.
+  function estimate(rounds, fi, shuffle){
+    const by=new Map(), r=rng(state.seed ^ 0x9e37), si=SI();
+    for (const rd of rounds){
+      let labs = rd.map(c=>c[fi]);
+      if (shuffle) for (let i=labs.length-1;i>0;i--){ const j=(r()*(i+1))|0;
+        [labs[i],labs[j]]=[labs[j],labs[i]]; }
+      rd.forEach((c,k)=>{ const L=labs[k];
+        if(!by.has(L)) by.set(L,[]); by.get(L).push(c[si]/1000); });
+    }
+    const out=[];
+    for (const [L,v] of by){
+      if (v.length<2) continue;
+      const m=v.reduce((a,b)=>a+b,0)/v.length;
+      const sd=Math.sqrt(v.reduce((a,b)=>a+(b-m)*(b-m),0)/v.length);
+      out.push({level:L, mean:m, se:sd/Math.sqrt(v.length), n:v.length});
+    }
+    return out.sort((a,b)=>b.mean-a.mean);
+  }
+
+  // Null: reassign levels WITHIN each round, which destroys a real effect while
+  // preserving the round structure and the score distribution.
+  function nullSpread(rounds, fi, iters){
+    const r=rng(state.seed ^ 0x1234), out=[], si=SI();
+    for (let it=0; it<iters; it++){
+      const by=new Map();
+      for (const rd of rounds){
+        const labs=rd.map(c=>c[fi]);
+        for (let i=labs.length-1;i>0;i--){ const j=(r()*(i+1))|0;
+          [labs[i],labs[j]]=[labs[j],labs[i]]; }
+        rd.forEach((c,k)=>{ const L=labs[k];
+          if(!by.has(L)) by.set(L,[]); by.get(L).push(c[si]/1000); });
+      }
+      const ms=[...by.values()].filter(v=>v.length>1)
+        .map(v=>v.reduce((a,b)=>a+b,0)/v.length);
+      if (ms.length) out.push(Math.max(...ms)-Math.min(...ms));
+    }
+    return out.sort((a,b)=>a-b);
+  }
+
+  const NS="http://www.w3.org/2000/svg";
+  const el=(n,a)=>{ const e=document.createElementNS(NS,n);
+    for(const k in a) e.setAttribute(k,a[k]); return e; };
+
+  function draw(svg, rows, labels, ref, lo, hi){
+    const W=560, padL=152, padR=24, top=14, rowH=26;
+    const H=Math.max(110, top+rows.length*rowH+34);
+    svg.setAttribute("viewBox",`0 0 ${W} ${H}`); svg.textContent="";
+    const x=v=>padL+(v-lo)/(hi-lo)*(W-padL-padR);
+    const ticks=[lo, (lo+ref)/2, ref, (ref+hi)/2, hi];
+    ticks.forEach(t=>{
+      const isRef=Math.abs(t-ref)<1e-9;
+      svg.appendChild(el("line",{x1:x(t),x2:x(t),y1:top-4,y2:top+rows.length*rowH,
+        stroke:isRef?"var(--faint)":"var(--hairline)","stroke-width":isRef?1.4:1}));
+      const lb=el("text",{x:x(t),y:top+rows.length*rowH+18,"text-anchor":"middle",
+        "font-size":10.5,fill:"var(--muted)"});
+      lb.textContent=t.toFixed(2).replace(/^0/,""); svg.appendChild(lb);
+    });
+    rows.forEach((d,i)=>{
+      const y=top+i*rowH+rowH/2;
+      const nm=el("text",{x:padL-12,y:y+4,"text-anchor":"end","font-size":12,
+        fill:"var(--ink-2)"}); nm.textContent=labels[d.level]; svg.appendChild(nm);
+      const a=d.mean-1.96*d.se, b=d.mean+1.96*d.se;
+      const col = b<ref ? "var(--neg)" : a>ref ? "var(--pos)" : "var(--muted)";
+      svg.appendChild(el("line",{x1:x(Math.max(lo,a)),x2:x(Math.min(hi,b)),y1:y,y2:y,
+        stroke:col,"stroke-width":2.6,"stroke-linecap":"round",opacity:.55}));
+      svg.appendChild(el("circle",{cx:x(Math.min(hi,Math.max(lo,d.mean))),cy:y,r:4.6,
+        fill:col}));
+    });
+  }
+
+  function drawBars(svg, rows, fmt, colour){
+    const W=560, padL=152, padR=64, top=10, rowH=24;
+    const H=top+rows.length*rowH+12;
+    svg.setAttribute("viewBox",`0 0 ${W} ${H}`); svg.textContent="";
+    const max=Math.max(1e-6,...rows.map(r=>Math.abs(r.v)));
+    rows.forEach((d,i)=>{
+      const y=top+i*rowH+rowH/2;
+      const nm=el("text",{x:padL-12,y:y+4,"text-anchor":"end","font-size":12,
+        fill:"var(--ink-2)"}); nm.textContent=d.label; svg.appendChild(nm);
+      const w=(W-padL-padR)*(Math.abs(d.v)/max);
+      svg.appendChild(el("rect",{x:padL,y:y-7,width:Math.max(1.5,w),height:14,rx:3,
+        fill:colour(d), opacity:.85}));
+      const t=el("text",{x:padL+Math.max(1.5,w)+8,y:y+4,"font-size":11,
+        fill:"var(--ink-3)"}); t.textContent=fmt(d.v); svg.appendChild(t);
+    });
+  }
+
+  function renderPrompts(){
+    const ex=T().examples||[], box=$("#promptBody");
+    box.textContent="";
+    let wanted = state.task==="annotation"
+      ? ex.filter(e=>!e.construct || e.construct===state.construct) : ex;
+    const mine = wanted.filter(e=>!e.model || e.model===state.model);
+    if (mine.length) wanted = mine;
+    (wanted.length?wanted:ex).forEach(e=>{
+      const d=document.createElement("div"); d.className="pex";
+      const h=document.createElement("h4"); h.textContent=e.label;
+      if (e.exact===false){ const b=document.createElement("span");
+        b.className="badge"; b.textContent="reconstructed"; h.appendChild(b); }
+      d.appendChild(h);
+      const pre=document.createElement("pre"); pre.textContent=e.prompt; d.appendChild(pre);
+      if (e.reply){ const r=document.createElement("pre"); r.className="reply";
+        r.textContent="→ "+e.reply; d.appendChild(r); }
+      if (e.exact===false){
+        const w=document.createElement("div"); w.className="warnnote";
+        w.innerHTML="<b>Rebuilt, not recorded.</b> This cell was run before the "+
+          "runner stored prompts verbatim, and the template was edited afterwards "+
+          "— the vacancy then said <i>junior</i> communications officer. The "+
+          "structure is right; treat the exact wording as approximate.";
+        d.appendChild(w);
+      }
+      box.appendChild(d);
+    });
+  }
+
+  function render(){
+    const t=T(), fi=t.fields.indexOf(state.attr);
+    const rounds=sample(), rows=estimate(rounds, fi, state.placebo);
+    const labels=t.attrs[state.attr].levels;
+    const all=rounds.flatMap(rd=>rd.map(c=>c[SI()]/1000));
+    const grand=all.reduce((a,b)=>a+b,0)/all.length;
+    const ref = t.ref==null ? grand : t.ref;
+    const span=Math.max(.08, ...rows.map(d=>Math.abs(d.mean-ref)+2*d.se))*1.25;
+    draw($("#plot"), rows, labels, ref, ref-span, ref+span);
+
+    const spread = rows.length ? rows[0].mean-rows[rows.length-1].mean : 0;
+    const nul = nullSpread(rounds, fi, 200);
+    const p = nul.length ? nul.filter(v=>v>=spread).length/nul.length : NaN;
+    const n95 = nul.length ? nul[Math.floor(.95*nul.length)] : NaN;
+
+    $("#spread").textContent=(spread*100).toFixed(1)+" pp";
+    $("#spread").style.color = p<.05 ? "var(--accent)" : "var(--muted)";
+    $("#spreadCap").innerHTML =
+      `between the best and worst level of <b>${t.attrs[state.attr].label.toLowerCase()}</b>.`+
+      `<br>Chance alone would give ${(n95*100).toFixed(1)} pp or less, 19 times in 20.`+
+      (t.ref==null?`<br>The line sits at the overall rate, ${grand.toFixed(3)}.`:"");
+
+    const nm=t.attrs[state.attr].label.toLowerCase();
+    $("#verdict").innerHTML = state.placebo
+      ? `<span class="k">Placebo.</span> The levels were reassigned at random, so any
+         gap here is noise. If ${(spread*100).toFixed(1)} pp still looks like a result,
+         remember that when you read the real one.`
+      : p<.05
+        ? `<span class="go">Outside the null.</span> A gap this size came up in fewer
+           than 5% of shuffles, so the model is responding to ${nm}. That it is
+           <em>detectable</em> is not the same as it being <em>large</em>.`
+        : `<span class="no">Inside the null.</span> Shuffling the labels produces gaps
+           this big routinely, so this sample cannot show that the model responds to
+           ${nm} at all.`;
+
+    // A "round" is a slate of applicants in one task and a POST in the other, so
+    // the unit is named rather than assumed -- and the note's thresholds are a
+    // FRACTION of the maximum, not a flat 40. With only 25 posts a flat cut-off
+    // fired at full sample and told the reader their complete data set was where
+    // a hand-run experiment stops.
+    const maxN=cell().rounds.length, per=cell().rounds[0].length;
+    const unit = state.task==="hiring" ? "Rounds" : "Posts";
+    $("#nLbl").textContent = unit;
+    // The range has to reach genuinely small samples: with 25 posts a min of 10
+    // is 40% of the data, and Part 2 is entirely about what happens below that.
+    const sl=$("#nSlider");
+    sl.max=maxN; sl.min = state.task==="hiring" ? 10 : 2;
+    sl.step = state.task==="hiring" ? 5 : 1;
+    const shown=Math.min(state.n,maxN);
+    $("#nOut").textContent = state.task==="hiring"
+      ? `${shown} of ${maxN}`
+      : `${shown} of ${maxN}  ·  ${(shown*per).toLocaleString()} codings`;
+    // The two tasks get different notes because their sample size means
+    // different things. A hiring round is one judgement; an annotation "round" is
+    // ONE POST coded forty times, so three posts is already 120 codings and the
+    // author effect can clear the null there. What stays uncertain in the
+    // annotation task is not the estimate, it is whether three posts speak for a
+    // corpus. Claiming the intervals are wide when they are not would be its own
+    // small lie.
+    const frac = state.n / maxN;
+    $("#nNote").innerHTML = state.task === "hiring"
+      ? (frac <= .2
+        ? `<span class="k">This is about where a hand-run experiment stops.</span> It is
+           also an interval wide enough to hold almost any story you wanted to tell.
+           Drag right and watch the bars close before trusting any ordering here.`
+        : frac >= .7
+          ? `<span class="k">At this size the ordering steadies.</span> Note what did
+             <em>not</em> happen: the intervals shrank, the gap did not grow. More rounds
+             buy precision, never a bigger effect.`
+          : `In between: some levels have separated from the line, others have not. The
+             ones that have not are not "no effect" — they are "not enough rounds".`)
+      : (frac <= .2
+        ? `<span class="k">Few posts, but not few observations.</span> Each post is coded
+           ${per} times, so even this handful is ${(shown*per).toLocaleString()} codings —
+           enough for the author effect to clear the null. What you cannot claim from
+           ${shown} posts is that the effect holds for <em>a corpus</em>: the estimate is
+           steady, its generalisation is not.`
+        : frac >= .7
+          ? `<span class="k">The gap gets smaller as posts are added, not larger.</span>
+             A few posts can make the effect look bigger than it is, because one text the
+             coder is unsure about swings the whole estimate. Breadth of texts is what
+             buys you the right to generalise.`
+          : `In between. Watch the spread as you drag: it drifts down toward the
+             full-sample value rather than up. Small samples flatter an effect.`);
+
+    const c = cell(), tot = c.rounds.length + c.refused.length;
+    $("#compliance").textContent = state.task==="hiring"
+      ? `answered ${c.rounds.length} of ${tot} rounds (${(100*c.rounds.length/tot).toFixed(0)}%)`
+      : `${c.rounds.length} posts \u00d7 ${c.rounds[0].length} authors, none refused`;
+
+    renderPrompts();
+    state.task==="hiring" ? renderRefusals() : renderDownstream(rows, labels, grand);
+  }
+
+  function renderRefusals(){
+    $("#q3").textContent="And the rounds it would not answer";
+    $("#q3sub").textContent="Refusals are excluded from everything above, and are not evenly spread.";
+    const c=cell(), fi=T().fields.indexOf("nationality"), levs=T().attrs.nationality.levels;
+    const tot=new Array(levs.length).fill(0), ref=new Array(levs.length).fill(0);
+    const bump=(rds,arr)=>rds.forEach(rd=>{ const s=new Set();
+      rd.forEach(x=>s.add(x[fi])); s.forEach(L=>arr[L]++); });
+    bump(c.rounds,tot); bump(c.refused,tot); bump(c.refused,ref);
+    const rows=levs.map((L,i)=>({label:L, v: tot[i]?ref[i]/tot[i]:0}))
+      .sort((a,b)=>b.v-a.v);
+    drawBars($("#plot3"), rows, v=>(v*100).toFixed(1)+"%",
+             d=>d.v>0?"var(--warn)":"var(--hairline)");
+    const rr=c.refused.length/(c.refused.length+c.rounds.length);
+    $("#note3").innerHTML=
+      `The model declined <span class="k">${(rr*100).toFixed(1)}%</span> of rounds here —
+       <em>"I can't provide a ranking of candidates based on their age, nationality, or
+       gender."</em> Those rounds are dropped from every number above.<br><br>
+       They are not dropped evenly. A refusal is a decision about the candidates in
+       front of it, so the estimates you just read are conditional on the model
+       agreeing to answer — and that condition is related to the thing being measured.`;
+  }
+
+  // The annotation payload: a per-item wobble of two or three points does not look
+  // like much until it is carried to the corpus level, which is where it will be
+  // read as a finding about people.
+  function renderDownstream(rows, labels, grand){
+    const q=(T().short||{})[state.construct] || T().constructs[state.construct];
+    $("#q3").textContent="What this does to your study";
+    $("#q3sub").textContent="The same wobble, carried up to the number you would publish.";
+    const N=10000;
+    const bars=rows.map(d=>({label:labels[d.level], v:d.mean}));
+    drawBars($("#plot3"), bars, v=>Math.round(v*N).toLocaleString(),
+             d=>d.v>grand?"var(--pos)":"var(--neg)");
+    const top=rows[0], bot=rows[rows.length-1];
+    const rel=((top.mean-bot.mean)/bot.mean*100);
+    $("#note3").innerHTML=
+      `Code <span class="k">${N.toLocaleString()}</span> posts with this coder and
+       report the rate per group. You would write that posts by
+       <span class="k">${labels[top.level]}</span> authors are
+       <span class="k">${rel.toFixed(0)}% more likely</span> to be coded
+       <em>${q}</em> than posts by
+       <span class="k">${labels[bot.level]}</span> authors —
+       ${Math.round(top.mean*N).toLocaleString()} against
+       ${Math.round(bot.mean*N).toLocaleString()}.<br><br>
+       <span class="k">Every post was identical.</span> The texts never changed; only
+       the name attached to them did. That finding is entirely your instrument, and
+       nothing in the output would have told you.`;
+  }
+
+  function chips(host, items, get, set){
+    const box=$(host); box.textContent="";
+    items.forEach((it,i)=>{
+      const b=document.createElement("button");
+      b.textContent=it; b.setAttribute("aria-pressed", get()===i);
+      b.onclick=()=>{ set(i); [...box.children].forEach((c,j)=>
+        c.setAttribute("aria-pressed", get()===j)); render(); };
+      box.appendChild(b);
+    });
+  }
+
+  function buildTask(){
+    const t=T();
+    state.attr = t.fields.includes("nationality") ? "nationality" : t.fields[0];
+    const cons = t.constructs ? Object.keys(t.constructs) : null;
+    state.construct = cons ? cons[0] : null;
+    $("#constructRow").hidden = !cons;
+    if (cons) chips("#constructBtns", cons.map(k=>t.constructs[k]),
+                    ()=>Object.keys(t.constructs).indexOf(state.construct),
+                    i=>state.construct=Object.keys(t.constructs)[i]);
+    chips("#attrBtns", t.fields.map(f=>t.attrs[f].label),
+          ()=>t.fields.indexOf(state.attr), i=>state.attr=t.fields[i]);
+    const cps=[...new Set(t.cells.map(c=>c.coupling))];
+    chips("#designBtns", cps.map(k=>t.cells.find(c=>c.coupling===k).couplingLabel),
+          ()=>cps.indexOf(state.coupling), i=>state.coupling=cps[i]);
+    state.n = cell().rounds.length;
+    $("#nSlider").value = state.n;
+    $("#lede").innerHTML = state.task==="hiring"
+      ? `Four applicants, the <b>same work history word for word</b>. Only the name,
+         nationality, age, gender and university differ, and each was randomised
+         independently. There is no honest reason to rank one above another — so
+         whatever order comes back is the model telling you what it does with a name.`
+      : `One real post, coded again and again, <b>the text never changing</b> — only
+         the author attached to it. Any difference in the code is error by
+         construction: the coder is contradicting itself on identical input. No gold
+         standard is needed to see that.`;
+    $("#q1sub").textContent = state.task==="hiring"
+      ? "Pick an attribute. The line is indifference between four applicants."
+      : "Pick what it was coding for, then an attribute. The line is the overall rate.";
+    render();
+  }
+
+  chips("#modelBtns", MODELS.map(m=>MLAB[m]),
+        ()=>MODELS.indexOf(state.model),
+        i=>{ state.model=MODELS[i]; state.n=cell().rounds.length;
+             $("#nSlider").value=state.n; });
+  chips("#taskBtns", TASKS.map(k=>D.tasks[k].label),
+        ()=>TASKS.indexOf(state.task), i=>{ state.task=TASKS[i]; buildTask(); });
+
+  $("#nSlider").oninput = e=>{ state.n=+e.target.value; render(); };
+  $("#resample").onclick = ()=>{ state.seed=(Math.random()*1e9)|0; render(); };
+  $("#placebo").onclick = e=>{ state.placebo=!state.placebo;
+    e.target.setAttribute("aria-pressed", state.placebo); render(); };
+
+  buildTask();
+})();
+</script>
+</body>
+</html>

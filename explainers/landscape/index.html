@@ -1,0 +1,158 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The models, September 2026</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&display=swap">
+<style>
+  /* ==========================================================================
+     Week 4 lecture explainer. The language models a researcher can use in
+     autumn 2026, sorted by the one distinction that matters for a study:
+     where the text goes. Three columns — closed models behind an API, open
+     weights, and what runs on the laptop in this course — filled in one per
+     click, then three questions to ask of any of them.
+
+     CHECK BEFORE CLASS. Names and dates were compiled on 2026-09-13 from
+     vendor announcements and press coverage (OpenAI GPT-6 Astra, 3 Sep 2026;
+     Anthropic Claude Fable 5.1, 1 Sep 2026; Google Gemini 3.8, Sep 2026;
+     xAI Grok 4.6, Aug 2026; DeepSeek V4, Aug 2026; Alibaba Qwen 3.8, Aug
+     2026; Mistral Medium 3.5, Apr 2026; Meta Llama 4, 2025). They will be
+     out of date by the lecture; the columns will not. The local column lists
+     what this deck actually ran, with the sizes Ollama reports.
+     Click / Enter / space; #N opens at step N.
+     ========================================================================== */
+  :root{
+    --ink:#1a1a17; --ink-2:#3a3a34; --ink-3:#5a5a52; --muted:#7a7a70; --faint:#9a9a90;
+    --hair:#e7e3d9; --border:#e0dcd0; --surface:#ffffff; --strip:#f2f0ea; --paper:#faf8f4;
+    --accent:oklch(0.55 0.15 38); --accent-tint:oklch(0.95 0.03 38);
+    --a:#2678b0; --a-tint:#e8f1f8; --b:#b84a27; --b-tint:#fbeee8;
+    --font:"Space Grotesk", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+    --mono:ui-monospace, SFMono-Regular, Menlo, monospace;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0; height:100%}
+  body{font-family:var(--font); background:transparent; color:var(--ink);
+       display:flex; align-items:center; justify-content:center;
+       overflow:hidden; cursor:pointer; -webkit-tap-highlight-color:transparent}
+  svg{width:100%; height:100%; display:block}
+  text{font-family:var(--font); fill:var(--ink)}
+  .col{fill:var(--surface); stroke:var(--border); stroke-width:1.1; rx:8; ry:8}
+  .colhead{font-size:11px; font-weight:700; fill:var(--ink)}
+  .colsub{font-size:9.5px; fill:var(--ink-3)}
+  .lab{font-size:8.5px; font-weight:700; letter-spacing:.08em; fill:var(--accent)}
+  .row{fill:var(--paper); stroke:var(--hair); stroke-width:.9; rx:5; ry:5}
+  .row.local{fill:var(--accent-tint); stroke:var(--accent)}
+  .org{font-size:9px; font-weight:700; letter-spacing:.06em; fill:var(--muted)}
+  .model{font-size:11px; font-weight:700; fill:var(--ink)}
+  .when{font-size:9px; fill:var(--ink-3)}
+  .mono{font-family:var(--mono); font-size:10px; fill:var(--ink)}
+  .size{font-size:9px; fill:var(--ink-3); text-anchor:end}
+  .q{font-size:8.5px; font-weight:700; letter-spacing:.08em; fill:var(--muted)}
+  .ans{font-size:11px; fill:var(--ink-2)}
+  .ans.bad{fill:var(--b); font-weight:700} .ans.good{fill:var(--a); font-weight:700}
+  .foot{font-size:9px; fill:var(--faint)}
+  .step{font-size:10.5px; fill:#b6b2a8; text-anchor:end}
+  .fade{transition:opacity .45s ease}
+  .hid{opacity:0}
+</style>
+</head>
+<body>
+<svg id="chart" viewBox="0 0 1000 440" preserveAspectRatio="xMidYMid meet" role="img"
+     aria-label="The language models available in September 2026 in three columns: closed models behind an API, open-weight models, and the models that run on a laptop through Ollama in this course; then three questions about each column: where the text goes, whether the version can be pinned, and what a text costs.">
+  <g id="cols"></g>
+  <g id="hud"></g>
+</svg>
+<noscript><p style="max-width:34em;margin:2em;font-family:sans-serif">Needs JavaScript: the language
+models of 2026, sorted by where your text goes.</p></noscript>
+
+<script>
+(function () {
+  "use strict";
+  var NS = "http://www.w3.org/2000/svg";
+  function el(t, a) { var e = document.createElementNS(NS, t); for (var k in a) if (a[k] != null) e.setAttribute(k, a[k]); return e; }
+  function txt(p, s, a) { var t = el("text", a || {}); t.textContent = s; p.appendChild(t); return t; }
+  function g(p, a) { var e = el("g", a || {}); p.appendChild(e); return e; }
+  var root = document.getElementById("cols"), gHud = document.getElementById("hud");
+  function fit(p, s, a, width) {
+    var t = txt(p, s, a), w = typeof t.getComputedTextLength === "function" ? t.getComputedTextLength() : s.length * 5.6;
+    if (w > width) t.setAttribute("textLength", width), t.setAttribute("lengthAdjust", "spacingAndGlyphs");
+    return t;
+  }
+
+  var COLS = [
+    { head: "Closed", sub: "weights secret · used through the vendor's API", x: 24,
+      rows: [["OPENAI", "GPT-6 Astra", "Sep 2026 · GPT-5.6 Sol before it"],
+             ["ANTHROPIC", "Claude Fable 5.1", "Sep 2026 · Opus 5, Sonnet 5, Haiku 4.5"],
+             ["GOOGLE", "Gemini 3.8", "Sep 2026 · Flash and Pro tiers"],
+             ["xAI", "Grok 4.6", "Aug 2026"]] },
+    { head: "Open weights", sub: "download the weights · run them anywhere, or rent them", x: 348,
+      rows: [["META", "Llama 4", "2025 · Muse Spark 1.3, Sep 2026 (check)"],
+             ["DEEPSEEK", "DeepSeek V4", "Aug 2026 · near frontier, cheap"],
+             ["ALIBABA", "Qwen 3.8", "Aug 2026 · Qwen 2.5 runs in this deck"],
+             ["MISTRAL · GOOGLE · MOONSHOT", "Mistral Medium 3.5 · Gemma 4 · Kimi K2", "2025 to 2026 · some open, some not"]] },
+    { head: "On this laptop", sub: "open weights, shrunk, run through Ollama · this course", x: 672,
+      rows: [["META", "llama3.2:3b", "2.0 GB · what a student laptop runs"],
+             ["META", "llama3.1:8b", "4.9 GB · the cold open's model"],
+             ["GOOGLE", "gemma3:12b · gemma4:26b", "8.1 GB · 17 GB"],
+             ["ALIBABA", "qwen2.5:32b", "19 GB · the largest this deck ran"]] }
+  ];
+  /* The three questions are answered INSIDE each column, under a rule, on the last
+     click: an earlier version put them in a table under the frame, which did not
+     read as being about the boxes above it. */
+  var CW = 304, CY = 14, CH = 392, PAD = 14, RH = 46, RY0 = 64, QY = CY + 290;
+  var QUESTIONS = [
+    ["WHERE THE TEXT GOES", ["to the vendor's servers", "to whoever hosts it", "nowhere: it stays on the laptop"], ["bad", "", "good"]],
+    ["CAN THE VERSION BE PINNED?", ["only until it is retired", "yes, forever", "yes, forever"], ["bad", "good", "good"]],
+    ["WHAT A TEXT COSTS", ["cents, per token", "cents, or GPU hours", "electricity, and time"], ["", "", ""]]
+  ];
+
+  var groups = [];
+  /* frame: the three columns and their headers are always there */
+  var frame = g(root, {});
+  COLS.forEach(function (c) {
+    frame.appendChild(el("rect", { "class": "col", x: c.x, y: CY, width: CW, height: CH }));
+    txt(frame, c.head, { x: c.x + PAD, y: CY + 26, "class": "colhead" });
+    fit(frame, c.sub, { x: c.x + PAD, y: CY + 42, "class": "colsub" }, CW - 2 * PAD);
+  });
+  txt(frame, "SEPTEMBER 2026 · THE NAMES CHANGE MONTHLY; THE COLUMNS DO NOT", { x: 24, y: CY + CH + 18, "class": "lab" });
+
+  COLS.forEach(function (c, ci) {
+    var G = g(root, { "class": "fade hid" });
+    c.rows.forEach(function (r, i) {
+      var y = RY0 + i * (RH + 8);
+      G.appendChild(el("rect", { "class": "row" + (ci === 2 ? " local" : ""), x: c.x + PAD, y: y, width: CW - 2 * PAD, height: RH }));
+      fit(G, r[0], { x: c.x + PAD + 10, y: y + 14, "class": "org" }, CW - 2 * PAD - 20);
+      fit(G, r[1], { x: c.x + PAD + 10, y: y + 29, "class": ci === 2 ? "mono" : "model" }, CW - 2 * PAD - 20);
+      fit(G, r[2], { x: c.x + PAD + 10, y: y + 41, "class": "when" }, CW - 2 * PAD - 20);
+    });
+    groups.push(G);
+  });
+  /* the questions, answered in each column under a rule */
+  var Q = g(root, { "class": "fade hid" });
+  COLS.forEach(function (c, ci) {
+    Q.appendChild(el("line", { x1: c.x + PAD, y1: QY - 14, x2: c.x + CW - PAD, y2: QY - 14, stroke: "#e0dcd0" }));
+    QUESTIONS.forEach(function (q, qi) {
+      var y = QY + qi * 34;
+      txt(Q, q[0], { x: c.x + PAD, y: y, "class": "q" });
+      fit(Q, q[1][ci], { x: c.x + PAD, y: y + 15, "class": "ans " + q[2][ci] }, CW - 2 * PAD);
+    });
+  });
+
+  var counter = txt(gHud, "", { x: 980, y: 432, "class": "step" });
+  var MAX = 3;
+  var state = Math.max(0, Math.min(MAX, parseInt((location.hash || "").slice(1), 10) || 0));
+  function render() {
+    groups.forEach(function (G, i) { G.setAttribute("class", "fade" + (state >= i ? "" : " hid")); });
+    Q.setAttribute("class", "fade" + (state >= 3 ? "" : " hid"));
+    counter.textContent = (state + 1) + " / " + (MAX + 1);
+  }
+  function advance() { if (state >= MAX) return; state += 1; render(); }
+  render();
+  window.addEventListener("hashchange", function () { state = Math.max(0, Math.min(MAX, parseInt((location.hash || "").slice(1), 10) || 0)); render(); });
+  document.body.addEventListener("click", advance);
+  document.body.addEventListener("keydown", function (e) { if (e.key === "Enter" || e.key === " ") advance(); });
+})();
+</script>
+</body>
+</html>

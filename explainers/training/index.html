@@ -1,0 +1,262 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>How a language model is trained</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&display=swap">
+<style>
+  /* ==========================================================================
+     Week 4 lecture explainer. The three training phases behind the model a
+     researcher prompts, as three cards — pre-training, instruction tuning,
+     preference tuning — and then the reinforcement-learning loop that the
+     third one runs on, drawn once, because "RL" is a word the room hears
+     daily and has never seen a picture of (Philipp, 2026-09-14).
+
+     Same card vocabulary as explainers/steps and steps-llm: a scene on paper
+     at the top, a number, a title, measured body text; nothing is placed at a
+     fixed offset that has not been measured against the card's inner width.
+
+     The numbers are orders of magnitude, not measurements, and the file says
+     so on the figure: the vendors publish token counts and hardware only
+     sometimes, and never for the current frontier (see explainers/scale).
+     Ranges used: pre-training 10^12–10^13 tokens, weeks to months on tens of
+     thousands of accelerators; instruction tuning 10^4–10^5 written examples;
+     preference tuning 10^5–10^6 comparisons. Sources for the SHAPE of the
+     pipeline: Ouyang et al. 2022 (InstructGPT: SFT -> reward model -> PPO);
+     for the reasoning variant, RL against automatically checkable answers in
+     maths and code (o1, 2024; DeepSeek-R1, 2025).
+     Click / Enter / space; #N opens at step N.
+     ========================================================================== */
+  :root{
+    --ink:#1a1a17; --ink-2:#3a3a34; --ink-3:#5a5a52; --muted:#7a7a70; --faint:#9a9a90;
+    --hair:#e7e3d9; --border:#e0dcd0; --surface:#ffffff; --strip:#f2f0ea; --paper:#faf8f4;
+    --accent:oklch(0.55 0.15 38); --accent-tint:oklch(0.95 0.03 38);
+    --a:#2678b0; --a-tint:#e8f1f8; --b:#b84a27; --b-tint:#fbeee8; --g:#2a8558; --g-tint:#e4f2ea;
+    --font:"Space Grotesk", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+    --mono:ui-monospace, SFMono-Regular, Menlo, monospace;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0; height:100%}
+  body{font-family:var(--font); background:transparent; color:var(--ink);
+       display:flex; align-items:center; justify-content:center;
+       overflow:hidden; cursor:pointer; -webkit-tap-highlight-color:transparent}
+  svg{width:100%; height:100%; display:block}
+  text{font-family:var(--font); fill:var(--ink)}
+  .card{fill:var(--surface); stroke:var(--border); stroke-width:1.1}
+  .scene{fill:var(--paper)}
+  .n{font-size:26px; font-weight:700; fill:var(--accent)}
+  .title{font-size:13px; font-weight:700; fill:var(--ink)}
+  .body{font-size:11px; fill:var(--ink-3)}
+  .cap{font-size:9.5px; fill:var(--ink-3)}
+  .cap.mid{text-anchor:middle}
+  .kicker{font-size:9px; font-weight:700; letter-spacing:.08em; fill:var(--accent)}
+  .kicker.grey{fill:var(--muted)}
+  .page{fill:var(--surface); stroke:var(--border); stroke-width:.9}
+  .pageline{stroke:var(--hair); stroke-width:1.1}
+  .pageline.dark{stroke:var(--ink-3); stroke-width:1.4}
+  .tok rect{fill:var(--surface); stroke:var(--border); stroke-width:.9; rx:2.5; ry:2.5}
+  .tok text{font-size:8px; fill:var(--ink-2); text-anchor:middle}
+  .tok.blank rect{fill:var(--accent-tint); stroke:var(--accent); stroke-width:1.2}
+  .tok.blank text{fill:var(--accent); font-weight:700}
+  .oval{fill:var(--surface); stroke:var(--ink-2); stroke-width:1.1}
+  .oval.accent{stroke:var(--accent); fill:var(--accent-tint)}
+  .ovtext{font-size:9.5px; font-weight:700; fill:var(--ink); text-anchor:middle}
+  .ovsub{font-size:8px; fill:var(--ink-3); text-anchor:middle}
+  .arrow{fill:none; stroke:var(--ink-3); stroke-width:1.3; stroke-linecap:round; stroke-linejoin:round}
+  .arrow.accent{stroke:var(--accent)}
+  .chev{fill:none; stroke:var(--faint); stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round}
+  .pick{fill:var(--g-tint); stroke:var(--g); stroke-width:1.2}
+  .pickmark{fill:none; stroke:var(--g); stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round}
+  .drop{fill:var(--surface); stroke:var(--border); stroke-width:.9}
+  .ic{color:var(--ink-2)} .ic.accent{color:var(--accent)} .ic.green{color:var(--g)}
+  .node{fill:var(--surface); stroke:var(--accent); stroke-width:1.3}
+  .nodetext{font-size:10.5px; font-weight:700; fill:var(--ink); text-anchor:middle}
+  .nodesub{font-size:9px; fill:var(--ink-3); text-anchor:middle}
+  .loopband{fill:var(--accent-tint); stroke:var(--accent); stroke-width:1.1}
+  .looplab{font-size:9px; font-weight:700; letter-spacing:.08em; fill:var(--accent)}
+  .note{font-size:10px; fill:var(--ink-3)}
+  .note tspan.k{font-weight:700; fill:var(--ink)}
+  .step{font-size:10.5px; fill:#b6b2a8; text-anchor:end}
+  .fade{transition:opacity .45s ease}
+  .hid{opacity:0}
+</style>
+</head>
+<body>
+<svg id="chart" viewBox="0 0 1000 440" preserveAspectRatio="xMidYMid meet" role="img"
+     aria-label="How a language model is trained, in three cards and a loop: pre-training on trillions of tokens by predicting the next token, which produces a base model that only continues text; instruction tuning on tens of thousands of written instruction-and-answer pairs, after which it answers; preference tuning, where people compare two answers and a reward model learns their preference; and the reinforcement-learning loop that the third phase runs on — the model writes, a score comes back, the weights move toward higher scores.">
+  <g id="cards"></g>
+  <g id="loop"></g>
+  <g id="hud"></g>
+</svg>
+<noscript><p style="max-width:34em;margin:2em;font-family:sans-serif">Needs JavaScript: the three training
+phases of a language model, and the reinforcement-learning loop.</p></noscript>
+
+<script>
+(function () {
+  "use strict";
+  var NS = "http://www.w3.org/2000/svg";
+  function el(t, a) { var e = document.createElementNS(NS, t); for (var k in a) if (a[k] != null) e.setAttribute(k, a[k]); return e; }
+  function txt(p, s, a) { var t = el("text", a || {}); t.textContent = s; p.appendChild(t); return t; }
+  function tsp(t, s, a) { var x = el("tspan", a || {}); x.textContent = s; t.appendChild(x); return x; }
+  function g(p, a) { var e = el("g", a || {}); p.appendChild(e); return e; }
+  var root = document.getElementById("cards"), gLoop = document.getElementById("loop"), gHud = document.getElementById("hud");
+
+  var GLYPH = {
+    book:  '<path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>',
+    pen:   '<path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/>',
+    thumb: '<path d="M7 22V11"/><path d="M7 11l4.2-8.4a1.9 1.9 0 0 1 2.7 2.1L12.7 9H18a2 2 0 0 1 2 2.4l-1.6 7A2 2 0 0 1 16.4 20H7"/>',
+    cycle: '<path d="M21 12a9 9 0 1 1-2.6-6.3"/><path d="M21 3v6h-6"/>'
+  };
+  function icon(p, name, x, y, size, cls) {
+    var e = el("svg", { x: x, y: y, width: size, height: size, viewBox: "0 0 24 24", "class": "ic " + (cls || ""),
+                        fill: "none", stroke: "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round" });
+    e.innerHTML = GLYPH[name]; p.appendChild(e); return e;
+  }
+  /* measured text: wrap to a width, or shrink one line to fit */
+  function measure(p, s, cls) { var t = txt(p, s, { x: -999, y: -999, "class": cls }); var w = typeof t.getComputedTextLength === "function" ? t.getComputedTextLength() : s.length * 5.6; p.removeChild(t); return w; }
+  function wrap(p, s, o) {
+    var words = s.split(/\s+/), lines = [], cur = "";
+    words.forEach(function (wd) { var t = cur ? cur + " " + wd : wd; if (cur && measure(p, t, o.cls) > o.width) { lines.push(cur); cur = wd; } else cur = t; });
+    if (cur) lines.push(cur);
+    lines.forEach(function (ln, i) { txt(p, ln, { x: o.x, y: o.y + i * o.lh, "class": o.cls, "text-anchor": o.anchor }); });
+    return lines.length;
+  }
+  function fit(p, s, a, width) {
+    var t = txt(p, s, a), w = typeof t.getComputedTextLength === "function" ? t.getComputedTextLength() : s.length * 5.6;
+    if (w > width) t.setAttribute("textLength", width), t.setAttribute("lengthAdjust", "spacingAndGlyphs");
+    return t;
+  }
+
+  var CW = 310, GAP = 16, X0 = 24, CY = 24, CH = 268, PAD = 15, IW = CW - 2 * PAD, SCENE_H = 118;
+
+  function page(p, x, y, w, h, dark) {
+    p.appendChild(el("rect", { "class": "page", x: x, y: y, width: w, height: h, rx: 2 }));
+    for (var i = 0; i < 3; i++) p.appendChild(el("line", { "class": "pageline" + (dark && i === 0 ? " dark" : ""), x1: x + 5, y1: y + 8 + i * 5.5, x2: x + w - 5, y2: y + 8 + i * 5.5 }));
+  }
+  function stack(p, x, y, w, h, n, dark) { for (var i = n - 1; i >= 0; i--) page(p, x + i * 3, y - i * 3, w, h, dark && i === 0); }
+  function oval(p, cx, cy, rx, ry, label, sub, cls) {
+    p.appendChild(el("ellipse", { "class": "oval " + (cls || ""), cx: cx, cy: cy, rx: rx, ry: ry }));
+    txt(p, label, { x: cx, y: cy + (sub ? -1 : 3), "class": "ovtext" });
+    if (sub) txt(p, sub, { x: cx, y: cy + 10, "class": "ovsub" });
+  }
+  function arrow(p, x1, y1, x2, y2, cls) {
+    var dx = x2 - x1, dy = y2 - y1, L = Math.sqrt(dx * dx + dy * dy) || 1, ux = dx / L, uy = dy / L, nx = -uy, ny = ux;
+    p.appendChild(el("path", { "class": "arrow " + (cls || ""), d: "M" + x1 + "," + y1 + " L" + x2 + "," + y2 +
+      " M" + (x2 - 5 * ux + 3.5 * nx) + "," + (y2 - 5 * uy + 3.5 * ny) + " L" + x2 + "," + y2 + " L" + (x2 - 5 * ux - 3.5 * nx) + "," + (y2 - 5 * uy - 3.5 * ny) }));
+  }
+
+  /* ---- the three scenes; each gets (p, x, y): top-left of the inner area --------- */
+  var SCENES = [
+    function (p, x, y) {                       /* pre-training */
+      icon(p, "book", x, y + 2, 15, "accent"); txt(p, "EVERYTHING WRITTEN DOWN", { x: x + 20, y: y + 13, "class": "kicker" });
+      stack(p, x + 2, y + 34, 54, 44, 4);
+      wrap(p, "the web, books, code", { x: x + 2, y: y + 92, width: 62, lh: 10.5, cls: "cap" });
+      arrow(p, x + 72, y + 52, x + 96, y + 52);
+      var tx = x + 104, toks = ["the", "cat", "sat", "on", "the"];
+      toks.forEach(function (w, i) { var k = g(p, { "class": "tok" }); k.appendChild(el("rect", { x: tx + i * 26, y: y + 42, width: 24, height: 14 })); txt(k, w, { x: tx + i * 26 + 12, y: y + 52 }); });
+      var b = g(p, { "class": "tok blank" }); b.appendChild(el("rect", { x: tx + 5 * 26, y: y + 42, width: 24, height: 14 })); txt(b, "?", { x: tx + 5 * 26 + 12, y: y + 52 });
+      wrap(p, "predict the next token, over and over", { x: tx, y: y + 72, width: IW - 100, lh: 10.5, cls: "cap" });
+      txt(p, "no labels: the text is its own answer key", { x: tx, y: y + 88, "class": "cap" });
+    },
+    function (p, x, y) {                       /* instruction tuning */
+      icon(p, "pen", x, y + 2, 15, "accent"); txt(p, "WRITTEN BY PEOPLE, ON PURPOSE", { x: x + 20, y: y + 13, "class": "kicker" });
+      for (var i = 0; i < 2; i++) {
+        var px = x + 2 + i * 62, py = y + 34;
+        stack(p, px, py, 52, 44, 3, true);
+        txt(p, i ? "answer" : "instruction", { x: px + 26, y: py + 56, "class": "cap mid", "font-size": "8.5" });
+      }
+      txt(p, "50,000 pairs", { x: x + 2, y: y + 104, "class": "cap" });
+      arrow(p, x + 132, y + 52, x + 158, y + 52);
+      oval(p, x + 214, y + 52, 54, 26, "the model", "learns to ANSWER", "accent");
+      wrap(p, "days, not months", { x: x + 214, y: y + 96, width: 120, lh: 10.5, cls: "cap", anchor: "middle" });
+    },
+    function (p, x, y) {                       /* preference tuning */
+      icon(p, "thumb", x, y + 2, 15, "accent"); txt(p, "PEOPLE COMPARE, A MODEL COPIES", { x: x + 20, y: y + 13, "class": "kicker" });
+      txt(p, "one question, two answers", { x: x + 2, y: y + 34, "class": "cap" });
+      var ay = y + 42;
+      p.appendChild(el("rect", { "class": "pick", x: x + 2, y: ay, width: 74, height: 26, rx: 3 }));
+      txt(p, "A", { x: x + 12, y: ay + 17, "class": "cap", "font-weight": "700", fill: "#2a8558" });
+      p.appendChild(el("path", { "class": "pickmark", d: "M" + (x + 60) + "," + (ay + 13) + " l4,4 7,-8" }));
+      p.appendChild(el("line", { "class": "pageline", x1: x + 22, y1: ay + 10, x2: x + 54, y2: ay + 10 }));
+      p.appendChild(el("line", { "class": "pageline", x1: x + 22, y1: ay + 17, x2: x + 48, y2: ay + 17 }));
+      p.appendChild(el("rect", { "class": "drop", x: x + 2, y: ay + 32, width: 74, height: 26, rx: 3 }));
+      txt(p, "B", { x: x + 12, y: ay + 49, "class": "cap", "font-weight": "700", fill: "#7a7a70" });
+      p.appendChild(el("line", { "class": "pageline", x1: x + 22, y1: ay + 42, x2: x + 54, y2: ay + 42 }));
+      p.appendChild(el("line", { "class": "pageline", x1: x + 22, y1: ay + 49, x2: x + 44, y2: ay + 49 }));
+      arrow(p, x + 84, ay + 29, x + 108, ay + 29);
+      oval(p, x + 166, ay + 29, 56, 27, "a reward", "model, scoring", "accent");
+      arrow(p, x + 228, ay + 29, x + 252, ay + 29);
+      txt(p, "score", { x: x + 262, y: ay + 26, "class": "cap", "font-weight": "700", fill: "#b84a27" });
+      txt(p, "0 – 10", { x: x + 262, y: ay + 37, "class": "cap" });
+      txt(p, "it learns which answer people prefer", { x: x + 2, y: y + 112, "class": "cap" });
+    }
+  ];
+  var TEXT = [
+    ["Pre-training", "Months on tens of thousands of chips, paid for once by the vendor. What comes out is a base model: it continues text. Ask it a question and it may answer with three more questions."],
+    ["Instruction tuning", "A second, small phase on examples of an instruction and a good answer, written by people. Same machinery, a thousandth of the data. Now it answers the question you asked."],
+    ["Preference tuning", "People see two answers to one question and say which is better. A reward model learns to imitate that judgement, so the preference can be applied a million times without them."]
+  ];
+
+  var cards = SCENES.map(function (scene, i) {
+    var x = X0 + i * (CW + GAP), c = g(root, { "class": "fade hid" });
+    c.appendChild(el("rect", { "class": "card", x: x, y: CY, width: CW, height: CH, rx: 8 }));
+    c.appendChild(el("rect", { "class": "scene", x: x + 1, y: CY + 1, width: CW - 2, height: SCENE_H + 2 * PAD - 2, rx: 7 }));
+    scene(c, x + PAD, CY + PAD);
+    var ty = CY + SCENE_H + 2 * PAD;
+    txt(c, i + 1, { x: x + PAD, y: ty + 32, "class": "n" });
+    fit(c, TEXT[i][0], { x: x + PAD + 24, y: ty + 30, "class": "title" }, IW - 24);
+    wrap(c, TEXT[i][1], { x: x + PAD, y: ty + 52, width: IW, lh: 13.5, cls: "body" });
+    if (i > 0) c.appendChild(el("path", { "class": "chev", d: "M" + (x - 12) + "," + (CY + 70) + " l6,6 -6,6" }));
+    return c;
+  });
+
+  /* ---- the loop: what "reinforcement learning" means, drawn once ------------------ */
+  var gRL = g(gLoop, { "class": "fade hid" });
+  (function () {
+    var LY = 304, LH = 94, x0 = X0, x1 = X0 + 3 * CW + 2 * GAP;
+    gRL.appendChild(el("rect", { "class": "loopband", x: x0, y: LY, width: x1 - x0, height: LH, rx: 8 }));
+    icon(gRL, "cycle", x0 + 14, LY + 12, 15, "accent");
+    txt(gRL, "REINFORCEMENT LEARNING · WHAT PHASE 3 ACTUALLY RUNS ON", { x: x0 + 34, y: LY + 23, "class": "looplab" });
+    txt(gRL, "and again, millions of times", { x: x1 - 16, y: LY + 23, "class": "cap", "text-anchor": "end" });
+    var NODES = [["the model", "writes an answer"], ["a score", "how good was it?"], ["the weights move", "toward higher scores"], ["the model", "a little different"]];
+    var nw = 148, ny = LY + 32, nh = 32, span = (x1 - x0) - 2 * 22, step = (span - nw) / (NODES.length - 1);
+    NODES.forEach(function (n, i) {
+      var nx = x0 + 22 + i * step;
+      gRL.appendChild(el("rect", { "class": "node", x: nx, y: ny, width: nw, height: nh, rx: 6 }));
+      fit(gRL, n[0], { x: nx + nw / 2, y: ny + 14, "class": "nodetext" }, nw - 12);
+      fit(gRL, n[1], { x: nx + nw / 2, y: ny + 26, "class": "nodesub" }, nw - 12);
+      if (i) arrow(gRL, nx - step + nw + 4, ny + nh / 2, nx - 5, ny + nh / 2, "accent");
+    });
+    var lastx = x0 + 22 + 3 * step;
+    gRL.appendChild(el("path", { "class": "arrow accent", d: "M" + (lastx + nw / 2) + "," + (ny + nh + 3) + " V" + (ny + nh + 14) + " H" + (x0 + 22 + nw / 2) + " V" + (ny + nh + 6) +
+      " m-3.5,5 l3.5,-5 3.5,5" }));
+  })();
+  var gNote = g(gLoop, { "class": "fade hid" });
+  (function () {
+    var t1 = txt(gNote, "", { x: X0, y: 412, "class": "note" });
+    tsp(t1, "Where the score comes from is the whole difference. ");
+    tsp(t1, "From people", { "class": "k" }); tsp(t1, ", it is a chat model, tuned to be liked.");
+    var t2 = txt(gNote, "", { x: X0, y: 428, "class": "note" });
+    tsp(t2, "From an automatic check", { "class": "k" });
+    tsp(t2, " — does the code run, is the proof right — it is a reasoning model, and nobody has to watch.");
+  })();
+
+  var counter = txt(gHud, "", { x: 980, y: 432, "class": "step" });
+  var MAX = 4;
+  var state = Math.max(0, Math.min(MAX, parseInt((location.hash || "").slice(1), 10) || 0));
+  function render() {
+    cards.forEach(function (c, i) { c.setAttribute("class", "fade" + (i <= state ? "" : " hid")); });
+    gRL.setAttribute("class", "fade" + (state >= 3 ? "" : " hid"));
+    gNote.setAttribute("class", "fade" + (state >= 4 ? "" : " hid"));
+    counter.textContent = (state + 1) + " / " + (MAX + 1);
+  }
+  function advance() { if (state >= MAX) return; state += 1; render(); }
+  render();
+  window.addEventListener("hashchange", function () { state = Math.max(0, Math.min(MAX, parseInt((location.hash || "").slice(1), 10) || 0)); render(); });
+  document.body.addEventListener("click", advance);
+  document.body.addEventListener("keydown", function (e) { if (e.key === "Enter" || e.key === " ") advance(); });
+})();
+</script>
+</body>
+</html>

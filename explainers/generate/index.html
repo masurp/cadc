@@ -1,0 +1,245 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Next token</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="../shared/net3d.css">
+<style>
+  .run{font-size:12.5px; fill:var(--ink-2)}
+  .run tspan.new{fill:var(--accent); font-weight:700}
+  .run tspan.mut{fill:var(--muted)}
+  .run tspan.k{fill:var(--ink); font-weight:700}
+  .tokl{font-family:var(--mono); font-size:10.5px; fill:var(--ink-2)}
+  .tokl.top{fill:var(--ink); font-weight:700}
+  .val{font-size:9.5px; fill:var(--muted); font-variant-numeric:tabular-nums}
+  .val.top{fill:var(--accent); font-weight:700}
+  .barbg{fill:rgba(255,255,255,.04)}
+  .rule{stroke:var(--faint); stroke-width:.8}
+</style>
+</head>
+<!-- ===========================================================================
+  WEEK 4 — cold open, for the dark title band. A language model doing the one
+  thing it does: given the text so far, a probability for every token in its
+  vocabulary. The tower on the left is Llama 3.1 8B's 32 layers, drawn; the
+  numbers on the right are REAL — data.js holds the ten most probable next
+  tokens at every step of a greedy continuation, produced by that model through
+  Ollama's log-probability output (_scripts/build_generate.py). The explainer
+  replays them; no model runs in the browser.
+  Steps: the machine → the first distribution → the sentence assembling token
+  by token (auto-plays; click to skip) → done → a classification prompt: the
+  label is the first token of the answer → a borderline review → a review the
+  model is unsure about. Click / Enter / space; #N opens at step N.
+=========================================================================== -->
+<body>
+<div class="stage">
+  <canvas id="c"></canvas>
+  <svg id="o" viewBox="0 0 1000 440" preserveAspectRatio="xMidYMid meet" role="img"
+       aria-label="A 32-layer language model drawn as a tower. A prompt enters at the bottom, and on the right the ten most probable next tokens appear with their real probabilities. The most probable token is appended and the sentence assembles. Then a classification prompt: the label is the first token of the answer, and it too is the top of a distribution.">
+    <g id="labels"></g>
+    <g id="text"></g>
+    <g id="bars" class="fade hid"></g>
+    <g id="panel"></g>
+    <g id="hud"></g>
+  </svg>
+</div>
+<noscript><p style="max-width:34em;margin:2em;font-family:sans-serif;color:#fff">Needs JavaScript: a language
+model predicting the next token, with real probabilities.</p></noscript>
+
+<script src="data.js"></script>
+<script>
+(function () {
+  "use strict";
+  var NS = "http://www.w3.org/2000/svg";
+  function el(t, a) { var e = document.createElementNS(NS, t); for (var k in a) if (a[k] != null) e.setAttribute(k, a[k]); return e; }
+  function txt(p, s, a) { var t = el("text", a || {}); t.textContent = s; p.appendChild(t); return t; }
+  function tsp(t, s, a) { var x = el("tspan", a || {}); x.textContent = s; t.appendChild(x); return x; }
+  function g(p, a) { var e = el("g", a || {}); p.appendChild(e); return e; }
+  function clear(n) { while (n.firstChild) n.removeChild(n.firstChild); }
+  function $(id) { return document.getElementById(id); }
+  function rgba(c, a) { return "rgba(" + c[0] + "," + c[1] + "," + c[2] + "," + a + ")"; }
+  function mix(a, b, t) { return [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, a[2] + (b[2] - a[2]) * t]; }
+  var COL = { acc: [79, 192, 141], ink: [232, 234, 236], slate: [70, 96, 122], deep: [28, 52, 78], amber: [240, 178, 80] };
+  var reduced = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  /* word-wrapped prose with classed runs (same as the other dark explainers) */
+  function wrap(parent, parts, o) {
+    var words = []; parts.forEach(function (p) { p[0].split(/\s+/).forEach(function (w) { if (w) words.push([w, p[1]]); }); });
+    var probe = txt(parent, "", { x: -9999, y: -9999, "class": o.cls || "sm" });
+    function width(str) { probe.textContent = str; return typeof probe.getComputedTextLength === "function" ? probe.getComputedTextLength() : str.length * 6; }
+    var lines = [[]], cur = "";
+    words.forEach(function (w) { var t = cur ? cur + " " + w[0] : w[0]; if (cur && width(t) > o.width) { lines.push([]); cur = w[0]; } else cur = t; lines[lines.length - 1].push(w); });
+    parent.removeChild(probe);
+    lines.forEach(function (ln, i) { var t = txt(parent, "", { x: o.x, y: o.y + i * o.lh, "class": o.cls || "sm" }); ln.forEach(function (w, k) { tsp(t, (k ? " " : "") + w[0], w[1] ? { "class": w[1] } : {}); }); });
+  }
+  /* token-wrapped text: items carry their own leading spaces, so a line may only
+     break before a token that starts with one, and whitespace is preserved */
+  function wrapTokens(parent, items, o) {
+    var probe = txt(parent, "", { x: -9999, y: -9999, "class": o.cls, style: "white-space:pre" });
+    function width(str) { probe.textContent = str; return typeof probe.getComputedTextLength === "function" ? probe.getComputedTextLength() : str.length * 6.4; }
+    var lines = [[]], cur = "";
+    items.forEach(function (it) {
+      var s = it.s, cand = cur + s;
+      if (cur && s.charAt(0) === " " && width(cand) > o.width) { lines.push([]); cur = s.slice(1); lines[lines.length - 1].push({ s: s.slice(1), cls: it.cls }); }
+      else { cur = cand; lines[lines.length - 1].push(it); }
+    });
+    parent.removeChild(probe);
+    lines.forEach(function (ln, i) {
+      var t = txt(parent, "", { x: o.x, y: o.y + i * o.lh, "class": o.cls, style: "white-space:pre" });
+      ln.forEach(function (it) { tsp(t, it.s, it.cls ? { "class": it.cls } : {}); });
+    });
+  }
+
+  var D = window.GEN, STEPS = D.cont.steps, PREFIX = D.cont.prefix, N = D.layers || 32;
+
+  /* ---- the tower (canvas) --------------------------------------------------- */
+  var cv = $("c"), ctx = cv.getContext("2d"), W = 1000, H = 440;
+  function resize() { var dpr = window.devicePixelRatio || 1, r = cv.getBoundingClientRect(); cv.width = Math.round(r.width * dpr); cv.height = Math.round(r.height * dpr); ctx.setTransform(cv.width / W, 0, 0, cv.height / H, 0, 0); }
+  window.addEventListener("resize", resize); resize();
+  var TX = 262, TY0 = 318, TY1 = 76, TW = 196, DX = 26, DY = -11;
+  var pulse = { on: false, t: 0, dur: 900, done: null }, glow = 0;
+  function sphere(x, y, r, base, glowA) {
+    if (glowA > 0) { var gl = ctx.createRadialGradient(x, y, r * .5, x, y, r * 3.2); gl.addColorStop(0, rgba(base, .5 * glowA)); gl.addColorStop(1, rgba(base, 0)); ctx.fillStyle = gl; ctx.beginPath(); ctx.arc(x, y, r * 3.2, 0, 6.2832); ctx.fill(); }
+    var gr = ctx.createRadialGradient(x - r * .35, y - r * .4, r * .1, x, y, r);
+    gr.addColorStop(0, rgba(mix(base, COL.ink, .75), 1)); gr.addColorStop(.4, rgba(mix(base, COL.ink, .2), 1)); gr.addColorStop(1, rgba(mix(base, COL.deep, .55), 1));
+    ctx.fillStyle = gr; ctx.beginPath(); ctx.arc(x, y, r, 0, 6.2832); ctx.fill();
+  }
+  function tower(now) {
+    var lit = pulse.on ? pulse.t * (N + 1) - .5 : -99;
+    for (var i = 0; i < N; i++) {
+      var f = i / (N - 1), k = 1 - .12 * f, w = TW * k, h = 5.4 * k, x = TX - w / 2, y = TY0 - (TY0 - TY1) * f;
+      var dx = DX * k, dy = DY * k, sh = .5 + .5 * Math.sin(now / 1600 + i * .35);
+      var near = Math.max(0, 1 - Math.abs(i - lit) / 2.2), base = mix(COL.slate, COL.acc, near);
+      ctx.fillStyle = rgba(mix(base, COL.ink, .28), .55 + .12 * sh + .35 * near);   /* top face */
+      ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x + w, y); ctx.lineTo(x + w + dx, y + dy); ctx.lineTo(x + dx, y + dy); ctx.closePath(); ctx.fill();
+      ctx.fillStyle = rgba(base, .5 + .1 * sh + .45 * near);                        /* front face */
+      ctx.fillRect(x, y, w, h);
+      ctx.fillStyle = rgba(mix(base, COL.deep, .45), .7 + .3 * near);               /* side face */
+      ctx.beginPath(); ctx.moveTo(x + w, y); ctx.lineTo(x + w + dx, y + dy); ctx.lineTo(x + w + dx, y + dy + h); ctx.lineTo(x + w, y + h); ctx.closePath(); ctx.fill();
+      if (near > 0) { ctx.fillStyle = rgba(COL.acc, .35 * near); ctx.fillRect(x - 6, y - 1, w + 12, h + 2); }
+    }
+    /* the beam: the text going in at the bottom, the output at the top */
+    if (pulse.on) {
+      var yb = TY0 + 16 - (TY0 + 16 - (TY1 - 8)) * Math.min(1, pulse.t), bg = ctx.createLinearGradient(0, TY0 + 16, 0, yb);
+      bg.addColorStop(0, rgba(COL.acc, 0)); bg.addColorStop(1, rgba(COL.acc, .9));
+      ctx.strokeStyle = bg; ctx.lineWidth = 2.2; ctx.beginPath(); ctx.moveTo(TX + DX * .45, TY0 + 16); ctx.lineTo(TX + DX * .45, yb); ctx.stroke();
+      sphere(TX + DX * .45, yb, 3.2, COL.acc, 1);
+    }
+    sphere(TX + DX * .45, TY1 - 24, 9.5, glow > .02 ? mix(COL.slate, COL.acc, glow) : COL.slate, glow);
+    /* the input: four faint dots under the tower, breathing */
+    for (var d = 0; d < 4; d++) { var bx = TX - 30 + d * 20 + DX * .45, ba = .25 + .25 * Math.sin(now / 700 + d); ctx.fillStyle = rgba(COL.acc, ba); ctx.beginPath(); ctx.arc(bx, TY0 + 20, 2.2, 0, 6.2832); ctx.fill(); }
+  }
+
+  /* ---- SVG: labels, running text, bars, panel ------------------------------ */
+  (function () {
+    var L = $("labels");
+    txt(L, (D.model || "").toUpperCase().replace(":", " · ") + " · 32 LAYERS · 8 BILLION WEIGHTS · RUNNING ON THIS LAPTOP", { x: 40, y: 30, "class": "lab" });
+    txt(L, "INPUT", { x: TX + DX * .45 + 58, y: TY0 + 24, "class": "lab" });
+    txt(L, "OUTPUT", { x: TX + DX * .45 + 20, y: TY1 - 20, "class": "lab" });
+  })();
+  var BX = 596, BX1 = 700, BW = 200, BY0 = 60, BDY = 21, ROWS = 10, bars = [];
+  (function () {
+    var B = $("bars");
+    txt(B, "NEXT TOKEN · THE TEN MOST PROBABLE OF " + (D.vocab || 128256).toLocaleString("en-US"), { x: BX, y: 30, "class": "lab" });
+    for (var i = 0; i < ROWS; i++) {
+      var y = BY0 + i * BDY, row = g(B, {});
+      row.appendChild(el("rect", { "class": "barbg", x: BX1, y: y - 7, width: BW, height: 12, rx: 2 }));
+      var r = el("rect", { x: BX1, y: y - 7, width: 0, height: 12, rx: 2, fill: rgba(COL.slate, 1) }); row.appendChild(r);
+      bars.push({ row: row, rect: r, lab: txt(row, "", { x: BX, y: y + 3.5, "class": "tokl" }), val: txt(row, "", { x: BX1 + 6, y: y + 3, "class": "val" }), w: 0, tw: 0 });
+    }
+  })();
+  var target = null, tweenT0 = 0;
+  function setBars(top, chosenFirst) {
+    target = top; tweenT0 = performance.now();
+    bars.forEach(function (b, i) {
+      var t = top[i]; b.from = b.w;
+      if (!t) { b.tw = 0; b.lab.textContent = ""; b.val.textContent = ""; return; }
+      b.tw = Math.max(1.5, t[1] * BW);
+      b.lab.textContent = t[0].replace(/^ /, "▁").replace(/\n/g, "↵");
+      b.lab.setAttribute("class", "tokl" + (i === 0 && chosenFirst ? " top" : ""));
+      b.val.textContent = t[1] < .005 ? "<1%" : Math.round(t[1] * 100) + "%";
+      b.val.setAttribute("class", "val" + (i === 0 && chosenFirst ? " top" : ""));
+      b.rect.setAttribute("fill", i === 0 && chosenFirst ? rgba(COL.acc, .95) : rgba(COL.slate, 1));
+    });
+  }
+  function tweenBars(now) {
+    if (!target) return;
+    var k = reduced ? 1 : Math.min(1, (now - tweenT0) / 380), e = k < .5 ? 2 * k * k : 1 - Math.pow(-2 * k + 2, 2) / 2;
+    bars.forEach(function (b) { b.w = b.from + (b.tw - b.from) * e; b.rect.setAttribute("width", b.w.toFixed(1)); b.val.setAttribute("x", (BX1 + 6 + b.w).toFixed(1)); });
+    if (k >= 1) target = null;
+  }
+  function setText(items) { var T = $("text"); clear(T); wrapTokens(T, items, { x: 40, y: 372, width: 505, lh: 17, cls: "run" }); }
+  function runText(upto) {
+    var items = [{ s: PREFIX }];
+    for (var i = 0; i <= upto; i++) items.push({ s: STEPS[i].token, cls: i === upto ? "new" : null });
+    return items;
+  }
+  function panel(parts) { var P = $("panel"); clear(P); wrap(P, parts, { x: BX, y: 300, width: 378, lh: 15 }); }
+  var counter = txt($("hud"), "", { x: 980, y: 432, "class": "step" });
+
+  /* ---- frame loop ------------------------------------------------------------- */
+  var last = 0;
+  function frame(now) {
+    var dt = Math.min(50, now - last || 16); last = now;
+    if (pulse.on) { pulse.t += dt / pulse.dur; if (pulse.t >= 1) { pulse.on = false; glow = 1; if (pulse.done) { var f = pulse.done; pulse.done = null; f(); } } }
+    glow = Math.max(0, glow - dt / 1400);
+    ctx.clearRect(0, 0, W, H);
+    tower(now);
+    tweenBars(now);
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+  function startPulse(cb) { if (reduced) { glow = 1; cb(); return; } pulse.on = true; pulse.t = 0; pulse.done = cb; }
+
+  /* ---- states ------------------------------------------------------------------ */
+  var MAX = 6, state = 0, prev = -1, pos = -1, timer = null;
+  function showStep(i, animate) {
+    pos = i;
+    var reveal = function () { $("bars").setAttribute("class", "fade"); setBars(STEPS[i].top, true); setText(runText(i)); };
+    if (animate) { setText(runText(i - 1 >= 0 ? i - 1 : -1)); startPulse(reveal); } else reveal();
+  }
+  function play() {
+    clearTimeout(timer);
+    if (pos >= STEPS.length - 1) { state = 3; render(); return; }
+    showStep(pos + 1, true);
+    timer = setTimeout(play, reduced ? 40 : 1500);
+  }
+  var TOP = STEPS[0].top;
+  function render() {
+    clearTimeout(timer); pulse.on = false; pulse.done = null;
+    if (state === 0) {
+      $("bars").setAttribute("class", "fade hid"); setText([{ s: PREFIX }]);
+      panel([["A language model does one thing. Given the text so far, it produces a "], ["probability for every token", "k"], [" in its vocabulary — " + (D.vocab || 128256).toLocaleString("en-US") + " of them. The prompt is at the bottom. Click to run it."]]);
+    } else if (state === 1) {
+      showStep(0, prev === 0);
+      panel([["The ten most probable next tokens, of " + (D.vocab || 128256).toLocaleString("en-US") + ". "], ["“" + STEPS[0].token.trim() + "”", "a"], [" won with " + Math.round(STEPS[0].p * 100) + "%; " + "“" + TOP[1][0].trim() + "” and “" + TOP[2][0].trim() + "” were close. Nothing is written yet: this is a table of numbers."]]);
+    } else if (state === 2) {
+      if (prev !== 1) showStep(0, false);
+      panel([["The chosen token goes on the end, the whole text goes back in, and the model produces the next distribution. "], ["Every token is one pass through all 32 layers.", "k"], [" Click to skip to the end."]]);
+      timer = setTimeout(play, reduced ? 40 : 700);
+    } else if (state === 3) {
+      showStep(STEPS.length - 1, false);
+      panel([[STEPS.length + " tokens, " + STEPS.length + " distributions. "], ["Nothing was “written”", "k"], [": at temperature 0 the most probable token is taken every time, so the same prompt gives the same sentence. Above 0 the model samples from the bars, and the sentence changes from run to run."]]);
+    } else {
+      var c = D.cls[state - 4];
+      $("bars").setAttribute("class", "fade");
+      setText([{ s: c.instruction, cls: "mut" }, { s: " " + c.review, cls: "k" }]);
+      startPulse(function () { setBars(c.top, true); });
+      if (state === 4) panel([["A classification is the same operation. ", ""], ["The prompt ends, and the first token of the answer is the label.", "k"], [" Nothing was trained on reviews: the instruction is the codebook, written in words."]]);
+      if (state === 5) panel([["A borderline sentence. The label is still the top of a distribution: "], [c.top[0][0].trim().toLowerCase() + " " + Math.round(c.top[0][1] * 100) + "%", "a"], [", " + c.top[1][0].trim().toLowerCase() + " " + Math.round(c.top[1][1] * 100) + "%. The rest of the distribution never reaches your data frame — unless you ask for it."]]);
+      if (state === 6) panel([["Here the model is unsure: "], [c.top[0][0].trim().toLowerCase() + " " + Math.round(c.top[0][1] * 100) + "%", "a"], [", " + c.top[1][0].trim().toLowerCase() + " " + Math.round(c.top[1][1] * 100) + "% — a label the codebook did not offer. "], ["What you report is one word. What the model computed is this chart.", "k"], [" This lecture is about the distance between the two."]]);
+    }
+    counter.textContent = (state + 1) + " / " + (MAX + 1); prev = state;
+  }
+  state = Math.max(0, Math.min(MAX, parseInt((location.hash || "").slice(1), 10) || 0));
+  function advance() { if (state >= MAX) return; state += 1; render(); }
+  render();
+  window.addEventListener("hashchange", function () { state = Math.max(0, Math.min(MAX, parseInt((location.hash || "").slice(1), 10) || 0)); render(); });
+  document.body.addEventListener("click", advance);
+  document.body.addEventListener("keydown", function (e) { if (e.key === "Enter" || e.key === " ") advance(); });
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(function () { render(); });
+})();
+</script>
+</body>
+</html>

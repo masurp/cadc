@@ -1,0 +1,222 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The steps of classification with a language model</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&display=swap">
+<style>
+  /* ==========================================================================
+     Week 4 lecture explainer. The five cards of explainers/steps, with the one
+     that changes: nothing is trained, so the coded sample is not split — all
+     of it scores the prompt — and step 2 is writing the codebook into a prompt
+     for a model somebody else trained. Same layout engine as steps (cards,
+     measured text, glyphs), same worked numbers where they still apply.
+     Scene numbers are the worked example's, not measurements. Click / Enter /
+     space; #N opens at step N. No caption band: the narration is in the
+     slide's speaker notes.
+     ========================================================================== */
+  :root{
+    --ink:#1a1a17; --ink-2:#3a3a34; --ink-3:#5a5a52; --muted:#7a7a70; --faint:#9a9a90;
+    --hair:#e7e3d9; --border:#e0dcd0; --surface:#ffffff; --strip:#f2f0ea; --paper:#faf8f4;
+    --accent:oklch(0.55 0.15 38); --accent-tint:oklch(0.95 0.03 38);
+    --a:#2678b0; --a-tint:#e8f1f8; --b:#b84a27; --b-tint:#fbeee8; --c:#6f5aa8; --c-tint:#ece7f5;
+    --font:"Space Grotesk", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+    --mono:ui-monospace, SFMono-Regular, Menlo, monospace;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0; height:100%}
+  body{font-family:var(--font); background:transparent; color:var(--ink);
+       display:flex; align-items:center; justify-content:center;
+       overflow:hidden; cursor:pointer; -webkit-tap-highlight-color:transparent}
+  svg{width:100%; height:100%; display:block}
+  text{font-family:var(--font); fill:var(--ink)}
+  .card{fill:var(--surface); stroke:var(--border); stroke-width:1.1}
+  .card.changed{stroke:var(--accent); stroke-width:1.6}
+  .scene{fill:var(--paper)}
+  .n{font-size:30px; font-weight:700; fill:var(--accent)}
+  .title{font-size:12.5px; font-weight:700; fill:var(--ink)}
+  .body{font-size:10.5px; fill:var(--ink-3)}
+  .cap{font-size:9.5px; fill:var(--ink-3)}
+  .kicker{font-size:9px; font-weight:700; letter-spacing:.08em; fill:var(--accent)}
+  .kicker.warn{fill:var(--b)}
+  .kicker.grey{fill:var(--muted)}
+  .page{fill:var(--surface); stroke:var(--border); stroke-width:.9}
+  .pageline{stroke:var(--hair); stroke-width:1.1}
+  .prompt{fill:var(--accent-tint); stroke:var(--accent); stroke-width:1}
+  .promptline{stroke:var(--accent); stroke-width:1.1; stroke-opacity:.55}
+  .mono{font-family:var(--mono); font-size:6.9px; fill:var(--ink-2)}  /* 7.2 put "politics = …" on the sheet edge */
+  .chip rect{rx:2.5; ry:2.5; stroke-width:.9}
+  .chip text{font-size:6.8px; font-weight:700; text-anchor:middle}
+  .chip.a rect{fill:var(--a-tint); stroke:var(--a)} .chip.a text{fill:var(--a)}
+  .chip.b rect{fill:var(--b-tint); stroke:var(--b)} .chip.b text{fill:var(--b)}
+  .chip.c rect{fill:var(--c-tint); stroke:var(--c)} .chip.c text{fill:var(--c)}
+  .sq.a{fill:var(--a)} .sq.b{fill:var(--b)} .sq.c{fill:var(--c)}
+  .ic{color:var(--ink-2)} .ic.accent{color:var(--accent)} .ic.warn{color:var(--b)}
+  .oval{fill:var(--surface); stroke:var(--ink-2); stroke-width:1}
+  .spark{fill:var(--accent)}
+  .cell{fill:var(--surface); stroke:var(--hair); stroke-width:.8}
+  .cell.diag{fill:var(--accent-tint)}
+  .celltext{font-size:8.5px; fill:var(--ink-2); text-anchor:middle}
+  .big{font-size:18px; font-weight:700; fill:var(--accent)}
+  .axis{stroke:var(--border); stroke-width:1}
+  .arrow{fill:none; stroke:var(--ink-3); stroke-width:1.3; stroke-linecap:round; stroke-linejoin:round}
+  .chev{fill:none; stroke:var(--faint); stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round}
+  .gone{stroke:var(--faint); stroke-width:1; stroke-dasharray:3 2.5; fill:none}
+  .gonetext{font-size:8.5px; fill:var(--faint); text-decoration:line-through}
+  .step{font-size:10.5px; fill:#b6b2a8; text-anchor:end}
+  .fade{transition:opacity .45s ease}
+  .hid{opacity:0}
+</style>
+</head>
+<body>
+<svg id="chart" viewBox="0 0 1000 440" preserveAspectRatio="xMidYMid meet" role="img"
+     aria-label="The steps of text classification with a large language model, one card per step: hand-code a sample of texts, write the codebook into a prompt for a pre-trained model, score the prompt on the whole coded sample, apply it to the texts nobody coded, analyse the labels as a variable. Nothing is trained and nothing is split.">
+  <g id="cols"></g>
+  <g id="hud"></g>
+</svg>
+<noscript><p style="max-width:34em;margin:2em;font-family:sans-serif">Needs JavaScript: the steps
+of text classification with a language model.</p></noscript>
+
+<script>
+(function () {
+  "use strict";
+  var NS = "http://www.w3.org/2000/svg";
+  function el(t, a) { var e = document.createElementNS(NS, t); for (var k in a) if (a[k] != null) e.setAttribute(k, a[k]); return e; }
+  function txt(p, s, a) { var t = el("text", a || {}); t.textContent = s; p.appendChild(t); return t; }
+  function g(p, a) { var e = el("g", a || {}); p.appendChild(e); return e; }
+  var root = document.getElementById("cols"), gHud = document.getElementById("hud");
+
+  var GLYPH = {
+    handcode: '<rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="M9 14l2 2 4-4"/>',
+    prompt:   '<path d="M4 4h16v12H8l-4 4z"/><path d="M8 8h8M8 11h5"/>',
+    sealed:   '<rect x="4" y="10.5" width="16" height="10.5" rx="2"/><path d="M8 10.5V7a4 4 0 0 1 8 0v3.5"/>'
+  };
+  function icon(p, name, x, y, size, cls) {
+    var e = el("svg", { x: x, y: y, width: size, height: size, viewBox: "0 0 24 24", "class": "ic " + (cls || ""),
+                        fill: "none", stroke: "currentColor", "stroke-width": "1.75", "stroke-linecap": "round", "stroke-linejoin": "round" });
+    e.innerHTML = GLYPH[name]; p.appendChild(e); return e;
+  }
+  function measure(p, s, cls) { var t = txt(p, s, { x: -999, y: -999, "class": cls }); var w = typeof t.getComputedTextLength === "function" ? t.getComputedTextLength() : s.length * 5.6; p.removeChild(t); return w; }
+  function wrap(p, s, o) {
+    var words = s.split(/\s+/), lines = [], cur = "";
+    words.forEach(function (wd) { var t = cur ? cur + " " + wd : wd; if (cur && measure(p, t, o.cls) > o.width) { lines.push(cur); cur = wd; } else cur = t; });
+    if (cur) lines.push(cur);
+    lines.forEach(function (ln, i) { txt(p, ln, { x: o.x, y: o.y + i * o.lh, "class": o.cls }); });
+    return lines.length;
+  }
+  function fit(p, s, a, width) {
+    var t = txt(p, s, a), w = typeof t.getComputedTextLength === "function" ? t.getComputedTextLength() : s.length * 5.6;
+    if (w > width) t.setAttribute("textLength", width), t.setAttribute("lengthAdjust", "spacingAndGlyphs");
+    return t;
+  }
+
+  var TOPICS = [["sport", "a"], ["politics", "b"], ["economy", "c"]];
+  var CW = 176, GAP = 16, X0 = 24, CY = 26, CH = 388, PAD = 14, IW = CW - 2 * PAD, SCENE_H = 160;
+
+  function page(p, x, y, w, h, cls) {
+    p.appendChild(el("rect", { "class": cls || "page", x: x, y: y, width: w, height: h, rx: 2 }));
+    for (var i = 0; i < 3; i++) p.appendChild(el("line", { "class": cls === "prompt" ? "promptline" : "pageline", x1: x + 5, y1: y + 7 + i * 5, x2: x + w - 5, y2: y + 7 + i * 5 }));
+  }
+  function chip(p, x, y, w, t, cls) {   /* the label is squeezed rather than allowed past the chip's edge */
+    var k = g(p, { "class": "chip " + cls });
+    k.appendChild(el("rect", { x: x, y: y, width: w, height: 10 }));
+    var t2 = txt(k, t, { x: x + w / 2, y: y + 7.5 }),
+        tw = typeof t2.getComputedTextLength === "function" ? t2.getComputedTextLength() : t.length * 3.8;
+    if (tw > w - 5) t2.setAttribute("textLength", w - 5), t2.setAttribute("lengthAdjust", "spacingAndGlyphs");
+  }
+  function stack(p, x, y, w, h, n) { for (var i = n - 1; i >= 0; i--) page(p, x + i * 2.5, y - i * 2.5, w, h); }
+  function oval(p, cx, cy, rx, ry, label, sub) {   /* spark above the label: beside it, the two collided */
+    p.appendChild(el("ellipse", { "class": "oval", cx: cx, cy: cy, rx: rx, ry: ry }));
+    var s = g(p, { transform: "translate(" + (cx - 5) + "," + (cy - 18) + ") scale(.5)" });
+    s.appendChild(el("path", { "class": "spark", d: "M10 0l2.4 6.6L19 9l-6.6 2.4L10 18l-2.4-6.6L1 9l6.6-2.4z" }));
+    txt(p, label, { x: cx, y: cy + 2, "class": "cap", "text-anchor": "middle", "font-weight": "700", fill: "#1a1a17" });
+    txt(p, sub, { x: cx, y: cy + 13.5, "class": "cap", "text-anchor": "middle", "font-size": "7.5" });
+  }
+
+  var SCENES = [
+    function (p, x, y) {
+      icon(p, "handcode", x, y, 16, "accent"); txt(p, "n = 200", { x: x + 22, y: y + 12, "class": "kicker" });
+      TOPICS.forEach(function (t, i) { var sx = x + 4 + i * 48, sy = y + 40; stack(p, sx, sy, 40, 50, 3); chip(p, sx + 4, sy + 36, 32, t[0], t[1]); });
+      wrap(p, "coded by people, with a codebook — as before", { x: x, y: y + 122, width: IW, lh: 13, cls: "cap" });
+    },
+    function (p, x, y) {
+      icon(p, "prompt", x, y, 16, "accent"); txt(p, "THE PROMPT", { x: x + 22, y: y + 12, "class": "kicker" });
+      page(p, x + 2, y + 26, 58, 66, "prompt");
+      txt(p, "codebook:", { x: x + 6, y: y + 50, "class": "mono" });
+      txt(p, "sport = …", { x: x + 6, y: y + 60, "class": "mono" });
+      txt(p, "politics = …", { x: x + 6, y: y + 70, "class": "mono" });
+      txt(p, "text: {…}", { x: x + 6, y: y + 84, "class": "mono" });
+      p.appendChild(el("path", { "class": "arrow", d: "M" + (x + 66) + "," + (y + 58) + " h16 m-5,-4 l5,4 -5,4" }));
+      oval(p, x + 116, y + 58, 32, 20, "a language", "model");
+      /* the two things that are gone */
+      p.appendChild(el("rect", { "class": "gone", x: x + 2, y: y + 104, width: IW - 4, height: 22, rx: 3 }));
+      txt(p, "split · train · sealed test set", { x: x + 8, y: y + 118, "class": "gonetext" });
+      wrap(p, "trained by somebody else, on text you will never see", { x: x, y: y + 140, width: IW, lh: 12, cls: "cap" });
+    },
+    function (p, x, y) {
+      var cx = x + 22, cy = y + 16, cs = 24, M = [[61, 5, 2], [4, 57, 6], [5, 8, 52]];
+      txt(p, "THE MODEL SAID", { x: cx + 1.5 * cs, y: cy - 6, "class": "kicker", "text-anchor": "middle", fill: "#7a7a70" });
+      TOPICS.forEach(function (t, i) {
+        p.appendChild(el("rect", { "class": "sq " + t[1], x: cx + i * cs + cs / 2 - 4, y: cy, width: 8, height: 4, rx: 1 }));
+        p.appendChild(el("rect", { "class": "sq " + t[1], x: cx - 12, y: cy + 8 + i * cs + cs / 2 - 4, width: 4, height: 8, rx: 1 }));
+        for (var j = 0; j < 3; j++) {
+          p.appendChild(el("rect", { "class": "cell" + (i === j ? " diag" : ""), x: cx + j * cs, y: cy + 8 + i * cs, width: cs, height: cs }));
+          txt(p, M[i][j], { x: cx + (j + .5) * cs, y: cy + 8 + (i + .5) * cs + 3, "class": "celltext" });
+        }
+      });
+      txt(p, "HUMAN", { x: cx - 18, y: cy + 8 + 1.5 * cs + 3, "class": "kicker", fill: "#7a7a70", transform: "rotate(-90 " + (cx - 18) + " " + (cy + 8 + 1.5 * cs + 3) + ")", "text-anchor": "middle" });
+      txt(p, "F1 = .85", { x: x, y: y + 122, "class": "big" });
+      wrap(p, "on all 200 coded texts: none were used for training", { x: x, y: y + 138, width: IW, lh: 12.5, cls: "cap" });
+    },
+    function (p, x, y) {
+      txt(p, "n = 100,000", { x: x, y: y + 12, "class": "kicker" });
+      var seq = "abcaabcabacb";
+      for (var i = 0; i < 12; i++) { var px = x + (i % 4) * 39, py = y + 24 + Math.floor(i / 4) * 38; page(p, px, py, 30, 30); chip(p, px + 3, py + 17, 24, TOPICS["abc".indexOf(seq[i])][0], seq[i]); }
+      wrap(p, "labelled by the model: 100,000 prompts", { x: x, y: y + 146, width: IW, lh: 12.5, cls: "cap" });
+    },
+    function (p, x, y) {
+      var bx = x + 6, by = y + 14, bw = 10, bh = 80, data = [[.55, .3, .15], [.35, .5, .15], [.4, .25, .35]];
+      p.appendChild(el("line", { "class": "axis", x1: bx - 4, y1: by + bh, x2: bx + 142, y2: by + bh }));
+      data.forEach(function (d, k) {
+        d.forEach(function (v, i) { p.appendChild(el("rect", { "class": "sq " + "abc"[i], x: bx + k * 48 + i * (bw + 2), y: by + bh - v * bh, width: bw, height: v * bh, rx: 1 })); });
+        txt(p, "outlet " + (k + 1), { x: bx + k * 48 + 17, y: by + bh + 11, "class": "cap", "text-anchor": "middle", "font-size": "8" });
+      });
+      TOPICS.forEach(function (t, i) { p.appendChild(el("rect", { "class": "sq " + t[1], x: bx + i * 48, y: by + bh + 20, width: 7, height: 7, rx: 1 })); txt(p, t[0], { x: bx + i * 48 + 10, y: by + bh + 26.5, "class": "cap", "font-size": "8" }); });
+      wrap(p, "with F1 = .85, the prompt and the model beside it", { x: x, y: y + 140, width: IW, lh: 12.5, cls: "cap" });
+    }
+  ];
+  var TEXT = [
+    ["Hand-code a sample", "Unchanged. A set of texts coded by people with a codebook is still the only place meaning enters — and the only thing the model is scored against."],
+    ["Write the prompt", "The codebook goes into the prompt, in words, with the text to code. The model was trained by somebody else; nothing is split and nothing is trained, so there is no test set to seal."],
+    ["Score on the coded sample", "Every coded text is scored, because none was used for training. Confusion matrix, precision, recall, F1: the numbers of weeks 2 and 3, unchanged."],
+    ["Apply to the corpus", "Only if the score is acceptable. Every text is one prompt, so the cost is per text, in seconds or in cents — and the model must be the same one that was scored."],
+    ["Analyse the labels", "The predicted codes become a variable, as before. The validation figures travel with them — and now the prompt and the model version do too."]
+  ];
+
+  var cols = SCENES.map(function (scene, i) {
+    var x = X0 + i * (CW + GAP), c = g(root, { "class": "fade hid" });
+    c.appendChild(el("rect", { "class": "card" + (i === 1 || i === 2 ? " changed" : ""), x: x, y: CY, width: CW, height: CH, rx: 8 }));
+    c.appendChild(el("rect", { "class": "scene", x: x + 1, y: CY + 1, width: CW - 2, height: SCENE_H + 2 * PAD - 2, rx: 7 }));
+    scene(c, x + PAD, CY + PAD);
+    var ty = CY + SCENE_H + 2 * PAD;
+    txt(c, i + 1, { x: x + PAD, y: ty + 36, "class": "n" });
+    fit(c, TEXT[i][0], { x: x + PAD + 26, y: ty + 33, "class": "title" }, IW - 26);
+    wrap(c, TEXT[i][1], { x: x + PAD, y: ty + 58, width: IW, lh: 13.5, cls: "body" });
+    if (i > 0) c.appendChild(el("path", { "class": "chev", d: "M" + (x - 12) + "," + (CY + 96) + " l6,6 -6,6" }));
+    return c;
+  });
+
+  var counter = txt(gHud, "", { x: 980, y: 432, "class": "step" });
+  var MAX = 4;
+  var state = Math.max(0, Math.min(MAX, parseInt((location.hash || "").slice(1), 10) || 0));
+  function render() { cols.forEach(function (c, i) { c.setAttribute("class", "fade" + (i <= state ? "" : " hid")); }); counter.textContent = (state + 1) + " / " + (MAX + 1); }
+  function advance() { if (state >= MAX) return; state += 1; render(); }
+  render();
+  window.addEventListener("hashchange", function () { state = Math.max(0, Math.min(MAX, parseInt((location.hash || "").slice(1), 10) || 0)); render(); });
+  document.body.addEventListener("click", advance);
+  document.body.addEventListener("keydown", function (e) { if (e.key === "Enter" || e.key === " ") advance(); });
+})();
+</script>
+</body>
+</html>

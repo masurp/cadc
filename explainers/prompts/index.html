@@ -1,0 +1,552 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The prompt is the instrument — CADC</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&display=swap">
+<style>
+  /* --- tokens ---------------------------------------------------------------
+     Week 4. Chrome accent is PURPLE rather than the era hue, because the tool
+     needs three label colours and orange-red is already the negative class in
+     five earlier tools. Continuity of the class encoding beats continuity of
+     the chrome.
+
+     positive = VU blue · negative = orange-red (validated pair, CVD ΔE 20)
+     mixed    = hueless grey: it is the "no verdict" class
+     models   = a light-to-dark INK ramp, never a hue, so model identity can
+                never be confused with a label. */
+  :root{
+    --paper:#faf8f4; --surface:#fff; --panel:#fdfcf9; --strip:#f2f0ea;
+    --hairline:#e7e3d9; --border:#e0dcd0;
+    --ink:#1a1a17; --ink-2:#3a3a34; --ink-3:#5a5a52; --muted:#7a7a70; --faint:#9a9a90;
+    --accent:#6b3f9e; --accent-tint:#f1ebf8; --accent-2:#8d63bf;
+    --pos:#2678b0; --pos-tint:#e8f1f8;
+    --neg:#b84a27; --neg-tint:#fbeee8;
+    --mid:#8b8a86; --mid-tint:#eeedea;
+    --m1:#c2beb4; --m2:#8a857a; --m3:#3a382f;
+    --font:"Space Grotesk", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+    --mono:ui-monospace,SFMono-Regular,Menlo,monospace;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --paper:#10243a; --surface:#16304a; --panel:#142c44; --strip:#1b3550;
+      --hairline:#2c4560; --border:#2c4560;
+      --ink:#e8eaec; --ink-2:#cfd6de; --ink-3:#a8c0d4; --muted:#7d9bb5; --faint:#6d8ba6;
+      --accent:#b48ae0; --accent-tint:#241a33; --accent-2:#9a70cc;
+      --pos:#3291d1; --pos-tint:#14304a;
+      --neg:#d26a49; --neg-tint:#3a2118;
+      --mid:#9aa0a4; --mid-tint:#2b3238;
+      --m1:#4a6480; --m2:#89a2ba; --m3:#dfe7ee;
+    }
+  }
+  *{box-sizing:border-box}
+  [hidden]{display:none !important}
+  html,body{margin:0}
+  body{font-family:var(--font); background:var(--paper); color:var(--ink);
+       font-size:14px; line-height:1.5; padding:0 20px 22px}
+
+  .band{height:3px; background:var(--accent); margin:0 -20px 13px; opacity:.9}
+  .eyebrow{font-size:10px; font-weight:700; letter-spacing:.1em; text-transform:uppercase;
+           color:var(--accent); margin-bottom:5px}
+  h1{font-size:15px; font-weight:700; margin:0}
+  .sub{font-size:12px; color:var(--ink-3); margin:4px 0 16px; max-width:78ch}
+  .sub b{color:var(--ink-2); font-weight:500}
+
+  /* --- a band is one question ------------------------------------------- */
+  .bnd{border-top:1px solid var(--hairline); padding-top:12px; margin-bottom:18px}
+  .qn{display:flex; align-items:baseline; gap:9px; margin-bottom:11px}
+  .qn .num{flex:0 0 20px; height:20px; border-radius:50%; background:var(--accent);
+    color:#fff; font-size:11px; font-weight:700; display:flex; align-items:center;
+    justify-content:center; align-self:center}
+  .qn h2{font-size:14px; font-weight:700; margin:0; color:var(--ink); letter-spacing:0;
+         text-transform:none}
+  .qn .sd{font-size:11.5px; color:var(--faint)}
+
+  /* --- A / B prompt cards ------------------------------------------------ */
+  .ab{display:grid; grid-template-columns:1fr 1fr; gap:12px}
+  @media (max-width:820px){ .ab{grid-template-columns:1fr} }
+  .card{border:1px solid var(--border); border-radius:9px; background:var(--panel);
+        padding:10px 12px; position:relative}
+  .card.A{border-top:3px solid var(--accent)}
+  .card.B{border-top:3px solid var(--muted)}
+  .card .tag{font-size:10px; font-weight:700; letter-spacing:.09em; text-transform:uppercase;
+             margin-bottom:8px}
+  .card.A .tag{color:var(--accent)} .card.B .tag{color:var(--muted)}
+  .fl{margin-bottom:8px}
+  .fl .lb{font-size:10.5px; color:var(--muted); margin-bottom:4px; display:block}
+  .seg{display:flex; flex-wrap:wrap; gap:4px}
+  .seg button{font:inherit; font-size:11px; padding:3px 8px; cursor:pointer;
+    border:1px solid var(--border); border-radius:6px; background:var(--surface); color:var(--ink-2)}
+  .seg button:hover{border-color:var(--accent)}
+  .card.A .seg button[aria-pressed=true]{background:var(--accent); border-color:var(--accent); color:#fff}
+  .card.B .seg button[aria-pressed=true]{background:var(--ink-3); border-color:var(--ink-3); color:var(--surface)}
+  .pv{font-family:var(--mono); font-size:10px; line-height:1.5; color:var(--ink-3);
+    background:var(--strip); border-radius:6px; padding:7px 8px; margin-top:8px;
+    max-height:132px; overflow-y:auto; white-space:pre-wrap}
+  /* every box that can scroll fades at its cut edge, so a clipped line reads as
+     "there is more below" rather than as a layout fault */
+  .pv, .dl, .det .raw{
+    -webkit-mask-image:linear-gradient(180deg,#000 calc(100% - 18px),transparent);
+            mask-image:linear-gradient(180deg,#000 calc(100% - 18px),transparent);
+  }
+  .pv.at-end, .dl.at-end, .det .raw.at-end{-webkit-mask-image:none; mask-image:none}
+  .pv .hl{color:var(--accent); font-weight:700}
+
+  .mrow{display:flex; align-items:center; gap:9px; margin:11px 0 0; flex-wrap:wrap}
+  .mrow .lb{font-size:11px; color:var(--muted)}
+  .mrow .seg button[aria-pressed=true]{background:var(--ink-3); border-color:var(--ink-3);
+    color:var(--surface)}
+
+  /* --- band 1 result: the headline ---------------------------------------- */
+  .diff{display:grid; grid-template-columns:184px minmax(0,1fr); gap:16px; margin-top:13px;
+        border:1px solid var(--border); border-radius:9px; background:var(--surface);
+        padding:12px 14px}
+  @media (max-width:820px){ .diff{grid-template-columns:1fr} }
+  .bignum{font-size:44px; font-weight:700; line-height:1; color:var(--accent);
+          font-variant-numeric:tabular-nums}
+  .bignum small{display:block; font-size:11.5px; font-weight:400; color:var(--ink-3);
+                margin-top:5px; line-height:1.45}
+  .dl{max-height:196px; overflow-y:auto}
+  .dr{display:flex; align-items:center; gap:8px; padding:3px 4px; border-radius:5px;
+      font-size:12px; cursor:pointer}
+  .dr:hover,.dr.sel{background:var(--accent-tint)}
+  .dr .t{flex:1; color:var(--ink-2); overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+  .pill{font-size:10px; font-weight:700; padding:1px 6px; border-radius:4px; flex:0 0 auto}
+  .pill.pos{background:var(--pos-tint); color:var(--pos)}
+  .pill.neg{background:var(--neg-tint); color:var(--neg)}
+  .pill.mixed{background:var(--mid-tint); color:var(--mid)}
+  .pill.none{background:var(--strip); color:var(--faint)}
+  .none-msg{font-size:12px; color:var(--ink-3); padding:8px 2px}
+  .det{margin-top:9px; padding-top:9px; border-top:1px solid var(--hairline);
+       font-size:11.5px; color:var(--ink-3); line-height:1.55}
+  .det .q{color:var(--ink); font-weight:500}
+  .det .raw{font-family:var(--mono); font-size:10px; color:var(--muted); background:var(--strip);
+    border-radius:5px; padding:6px 8px; margin-top:6px; white-space:pre-wrap;
+    max-height:76px; overflow-y:auto}
+
+  /* --- band 2 ------------------------------------------------------------- */
+  .cb{border:1px solid var(--border); border-left:3px solid var(--accent); border-radius:8px;
+      background:var(--panel); padding:9px 12px; margin-bottom:12px}
+  .cb .top{display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap}
+  .cb .q{font-size:11.5px; color:var(--ink-2); font-weight:500}
+  .cb .d{font-size:10.5px; color:var(--faint); line-height:1.45; margin-top:5px}
+  .cb .seg button[aria-pressed=true]{background:var(--accent); border-color:var(--accent); color:#fff}
+
+  .sc{display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:12px}
+  @media (max-width:820px){ .sc{grid-template-columns:1fr} }
+  .scard{border:1px solid var(--border); border-radius:9px; background:var(--surface); padding:10px 12px}
+  .scard .tag{font-size:10px; font-weight:700; letter-spacing:.09em; text-transform:uppercase;
+              margin-bottom:7px}
+  .scard.A .tag{color:var(--accent)} .scard.B .tag{color:var(--muted)}
+  .met{display:flex; gap:20px}
+  .met > div{flex:1}
+  .met .k{font-size:10px; color:var(--muted); letter-spacing:.04em; text-transform:uppercase}
+  .met .v{font-size:24px; font-weight:700; font-variant-numeric:tabular-nums; line-height:1.15}
+  .met .g{font-size:10.5px; color:var(--faint); line-height:1.4; margin-top:3px}
+
+  .chart{border:1px solid var(--border); border-radius:9px; background:var(--surface);
+         padding:9px 12px 6px}
+  .chart .ct{font-size:11px; color:var(--ink-3); margin-bottom:2px}
+  .chart .cs{font-size:10.5px; color:var(--faint); margin-bottom:4px; line-height:1.45}
+  svg{display:block; width:100%; height:auto}
+  .lg{display:flex; gap:14px; flex-wrap:wrap; font-size:10.5px; color:var(--muted);
+      padding:4px 2px 2px; align-items:center}
+  .lg i{display:inline-block; width:9px; height:9px; border-radius:50%; margin-right:5px;
+        vertical-align:-1px}
+  .foot{font-size:10px; color:var(--faint); margin-top:11px; line-height:1.55}
+  .loading{padding:44px; text-align:center; color:var(--muted); font-size:12px}
+</style>
+</head>
+<body>
+
+<div class="band"></div>
+<div class="eyebrow">Week 4 · LLMs as instruments</div>
+<h1>The prompt is the instrument</h1>
+<p class="sub">An LLM will label anything you ask it to. These 48 film reviews were coded by hand,
+so we can check whether it agrees. Everything below was computed in advance by models running
+<b>on a laptop</b> — nothing is running now.</p>
+
+<div id="app" class="loading">loading…</div>
+<div id="main" hidden>
+
+  <!-- ── 1 ────────────────────────────────────────────────────────────── -->
+  <section class="bnd" style="border-top:none; padding-top:0">
+    <div class="qn"><span class="num">1</span>
+      <h2>Do two wordings give different answers?</h2>
+      <span class="sd">no scores yet — just the two sets of labels</span></div>
+
+    <div class="ab">
+      <div class="card A">
+        <div class="tag">Prompt A</div>
+        <div class="fl"><span class="lb">how it defines <i>mixed</i></span><div class="seg" id="A-def"></div></div>
+        <div class="fl"><span class="lb">technique</span><div class="seg" id="A-tech"></div></div>
+        <div class="pv" id="A-pv"></div>
+      </div>
+      <div class="card B">
+        <div class="tag">Prompt B</div>
+        <div class="fl"><span class="lb">how it defines <i>mixed</i></span><div class="seg" id="B-def"></div></div>
+        <div class="fl"><span class="lb">technique</span><div class="seg" id="B-tech"></div></div>
+        <div class="pv" id="B-pv"></div>
+      </div>
+    </div>
+
+    <div class="mrow"><span class="lb">Both prompts run on the same model:</span>
+      <div class="seg" id="model"></div></div>
+
+    <div class="diff">
+      <div>
+        <div class="bignum" id="ndiff">—<small id="ndiff-s"></small></div>
+      </div>
+      <div>
+        <div class="dl" id="dlist"></div>
+        <div class="det" id="det"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── 2 ────────────────────────────────────────────────────────────── -->
+  <section class="bnd">
+    <div class="qn"><span class="num">2</span>
+      <h2>Which one is right?</h2>
+      <span class="sd">now bring in the human codes</span></div>
+
+    <div class="cb">
+      <div class="top"><span class="q">Which human codebook are you scoring against?</span>
+        <div class="seg" id="gold"></div></div>
+      <div class="d" id="gold-d"></div>
+    </div>
+
+    <div class="sc">
+      <div class="scard A"><div class="tag">Prompt A</div><div class="met">
+        <div><div class="k">agrees with the humans</div><div class="v" id="A-acc">—</div>
+          <div class="g">share of the 48 texts it got right</div></div>
+        <div><div class="k">Cohen's &kappa;</div><div class="v" id="A-k">—</div>
+          <div class="g">the same, minus the agreement you would get by guessing</div></div>
+      </div></div>
+      <div class="scard B"><div class="tag">Prompt B</div><div class="met">
+        <div><div class="k">agrees with the humans</div><div class="v" id="B-acc">—</div>
+          <div class="g">share of the 48 texts it got right</div></div>
+        <div><div class="k">Cohen's &kappa;</div><div class="v" id="B-k">—</div>
+          <div class="g">the same, minus the agreement you would get by guessing</div></div>
+      </div></div>
+    </div>
+
+    <div class="chart">
+      <div class="ct">The same prompts, scored against each codebook</div>
+      <div class="cs">Every line is one prompt. <b>Lines that cross</b> are prompts that swap places
+        depending on which codebook the humans used — the model never changed.</div>
+      <svg id="slope" viewBox="0 0 760 170" role="img" aria-label="Accuracy under each codebook"></svg>
+    </div>
+  </section>
+
+  <!-- ── 3 ────────────────────────────────────────────────────────────── -->
+  <section class="bnd">
+    <div class="qn"><span class="num">3</span>
+      <h2>All 36 combinations at once</h2>
+      <span class="sd">for when you need the whole picture</span></div>
+    <div class="chart">
+      <div class="cs">Read <b>down</b> for the effect of the definition, <b>across</b> for the
+        technique, and the <b>spread inside one row</b> is the effect of the model.</div>
+      <svg id="facets" viewBox="0 0 760 250" role="img" aria-label="Accuracy by definition, technique and model"></svg>
+      <div class="lg" id="lg"></div>
+    </div>
+    <div class="foot" id="foot"></div>
+  </section>
+</div>
+
+<script src="data.js"></script>
+<script>
+// --- scroll cues: fade the cut edge only while there is genuinely more to see ---
+(function () {
+  function sync(b) {
+    var more = b.scrollHeight - b.clientHeight > 2;
+    b.classList.toggle("at-end", !more || b.scrollTop + b.clientHeight >= b.scrollHeight - 2);
+  }
+  function wire() {
+    Array.prototype.forEach.call(
+      document.querySelectorAll(".pv, .dl, .raw"), function (b) {
+        sync(b);
+        if (!b.__cued) { b.__cued = 1; b.addEventListener("scroll", function () { sync(b); }); }
+      });
+  }
+  window.addEventListener("load", wire);
+  document.addEventListener("click", function () { setTimeout(wire, 60); }, true);
+  new MutationObserver(function () { wire(); })
+    .observe(document.documentElement, { childList: true, subtree: true });
+})();
+</script>
+<script>
+(function () {
+  var el = function (id) { return document.getElementById(id); };
+  var D = window.CADC_PROMPTS;
+  if (!D) { el("app").textContent = "Could not find data.js next to this page."; return; }
+  el("app").hidden = true; el("main").hidden = false;
+
+  var LBL = { pos: "positive", neg: "negative", mixed: "mixed" };
+  var DEFN = { none: "left undefined", narrow: "narrow", broad: "broad", twoclass: "no mixed class" };
+  var TECHN = { zeroshot: "zero-shot", fewshot: "few-shot", cot: "chain-of-thought" };
+  var DEFS = Object.keys(D.defs), TECHS = D.techs, MODELS = D.models;
+
+  // A and B default to the two rival definitions of the same category. They
+  // score almost identically under one codebook and 25 points apart under the
+  // other, so the slopegraph opens on a crossing rather than on two flat lines.
+  var S = { A: { def: "narrow", tech: "zeroshot" }, B: { def: "broad", tech: "zeroshot" },
+            model: MODELS[0], gold: "narrow", sel: null };
+
+  function seg(host, items, get, set) {
+    var h = el(host); h.innerHTML = "";
+    items.forEach(function (it) {
+      var b = document.createElement("button");
+      b.textContent = it[1];
+      b.setAttribute("aria-pressed", get() === it[0]);
+      b.onclick = function () { set(it[0]); S.sel = null; render(); };
+      h.appendChild(b);
+    });
+  }
+  var pairs = function (o) { return Object.keys(o).map(function (k) { return [k, o[k]]; }); };
+
+  var CLS = ["pos", "neg", "mixed"];
+  function score(pred, gold) {
+    var n = gold.length, ok = 0, i;
+    for (i = 0; i < n; i++) if (pred[i] === gold[i]) ok++;
+    var pe = 0;
+    CLS.forEach(function (c) {
+      var a = 0, b = 0;
+      for (var j = 0; j < n; j++) { if (pred[j] === c) a++; if (gold[j] === c) b++; }
+      pe += (a / n) * (b / n);
+    });
+    var po = ok / n;
+    return { acc: po, k: pe < 1 ? (po - pe) / (1 - pe) : 0 };
+  }
+  var pct = function (v) { return (v * 100).toFixed(0) + "%"; };
+  var run = function (m, d, t) { return (D.runs[m + "|" + d + "|" + t] || {}).preds || []; };
+  var esc = function (s) { return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;"); };
+  var css = function (v) { return getComputedStyle(document.documentElement).getPropertyValue(v).trim(); };
+
+  function preview(side) {
+    var c = S[side], out = esc("You are coding film reviews for a research project.\n") +
+      '<span class="hl">' + esc(D.defs[c.def]) + "</span>";
+    if (c.tech === "fewshot") {
+      out += "\n\n" + D.examples[c.def].map(function (e) {
+        return "Review: " + esc(e[0]) + "\nAnswer: " + esc(e[1]); }).join("\n\n") + "\n";
+    } else if (c.tech === "cot") {
+      out += '\n\n<span class="hl">Think briefly, then end with: Answer: &lt;label&gt;</span>';
+    } else { out += "\nAnswer with exactly one word."; }
+    el(side + "-pv").innerHTML = out + "\n\nReview: …";
+  }
+
+  // ---- SVG helpers --------------------------------------------------------
+  function svg(tag, a) {
+    var e = document.createElementNS("http://www.w3.org/2000/svg", tag);
+    for (var k in a) e.setAttribute(k, a[k]);
+    return e;
+  }
+  function txt(p, x, y, s, fill, size, anchor, weight) {
+    var t = svg("text", { x: x, y: y, fill: fill, "font-size": size || 10,
+      "text-anchor": anchor || "middle", "font-weight": weight || 400 });
+    t.textContent = s; p.appendChild(t);
+  }
+
+  // ---- band 2: slopegraph -------------------------------------------------
+  function drawSlope() {
+    var g = el("slope"); g.innerHTML = "";
+    var W = 760, H = 170, L = 188, R = 122, T = 22, B = 20;
+
+    var items = [];
+    DEFS.forEach(function (d) {
+      TECHS.forEach(function (t) {
+        var p = run(S.model, d, t); if (!p.length) return;
+        items.push({ d: d, t: t, n: score(p, D.gold.narrow).acc, b: score(p, D.gold.broad).acc,
+          isA: d === S.A.def && t === S.A.tech, isB: d === S.B.def && t === S.B.tech });
+      });
+    });
+    // Fit the scale to the data. A fixed 0-100 domain would spend most of the
+    // panel on a range nothing occupies, flattening the crossings that are the
+    // entire point of the chart.
+    var vals = []; items.forEach(function (i) { vals.push(i.n, i.b); });
+    var mn = Math.min.apply(null, vals), mx = Math.max.apply(null, vals);
+    var pad = Math.max(0.03, (mx - mn) * 0.12);
+    var lo = Math.max(0, mn - pad), hi = Math.min(1, mx + pad);
+    var Y = function (v) { return H - B - (v - lo) / (hi - lo) * (H - T - B); };
+    var cF = css("--faint"), cH = css("--hairline"), cA = css("--accent"), cI = css("--ink"),
+        cM = css("--muted"), cI3 = css("--ink-3");
+
+    // No axis ticks: every line that matters has its value printed on its own
+    // endpoint, so a percentage scale would just be more ink to read past.
+    [["narrow", L], ["broad", W - R]].forEach(function (c) {
+      g.appendChild(svg("line", { x1: c[1], x2: c[1], y1: T, y2: H - B, stroke: cH, "stroke-width": 1 }));
+      txt(g, c[1], T - 8, c[0] + " codebook", cI3, 11, "middle", 700);
+    });
+
+    // faint context first, the two chosen prompts on top
+    items.filter(function (i) { return !i.isA && !i.isB; }).forEach(function (i) {
+      g.appendChild(svg("line", { x1: L, y1: Y(i.n), x2: W - R, y2: Y(i.b),
+        stroke: cF, "stroke-width": 1.2, opacity: ".33" }));
+    });
+    // The two chosen prompts often land on the same value at one end, so nudge
+    // their labels apart rather than letting them overprint.
+    var pick = items.filter(function (i) { return i.isA || i.isB; });
+    var yL = pick.map(function (i) { return Y(i.n); }), yR = pick.map(function (i) { return Y(i.b); });
+    function spread(ys) {
+      if (ys.length === 2 && Math.abs(ys[0] - ys[1]) < 14) {
+        var m = (ys[0] + ys[1]) / 2;
+        var lo2 = ys[0] <= ys[1] ? 0 : 1;
+        ys[lo2] = m - 7; ys[1 - lo2] = m + 7;
+      }
+      return ys;
+    }
+    spread(yL); spread(yR);
+
+    pick.forEach(function (i, k) {
+      var col = i.isA ? cA : cM;
+      g.appendChild(svg("line", { x1: L, y1: Y(i.n), x2: W - R, y2: Y(i.b),
+        stroke: col, "stroke-width": 2.6, "stroke-linecap": "round" }));
+      g.appendChild(svg("circle", { cx: L, cy: Y(i.n), r: 4.4, fill: col }));
+      g.appendChild(svg("circle", { cx: W - R, cy: Y(i.b), r: 4.4, fill: col }));
+      txt(g, L - 10, yL[k] + 3.5, pct(i.n), col, 10.5, "end", 700);
+      txt(g, W - R + 10, yR[k] + 3.5, pct(i.b), col, 10.5, "start", 700);
+      txt(g, L - 46, yL[k] + 3.5, (i.isA ? "A · " : "B · ") + DEFN[i.d] + " · " + TECHN[i.t],
+          col, 10, "end", 700);
+    });
+    txt(g, (L + W - R) / 2, H - 4, "the other " + (items.length - 2) + " prompts shown faintly",
+        cF, 9.5, "middle");
+  }
+
+  // ---- band 3: faceted dot plot -------------------------------------------
+  function drawFacets() {
+    var g = el("facets"); g.innerHTML = "";
+    var W = 760, H = 250, L = 96, T = 26, B = 30, GAP = 26, RM = 22;
+    var fw = (W - L - RM - GAP * (TECHS.length - 1)) / TECHS.length;
+    var lo = 0.35, hi = 1.0, rowH = (H - T - B) / DEFS.length;
+    var cF = css("--faint"), cH = css("--hairline"), cA = css("--accent"), cI3 = css("--ink-3");
+    var ramp = [css("--m1"), css("--m2"), css("--m3")];
+    var gold = D.gold[S.gold];
+
+    // facet panels go down first so nothing else is painted over
+    TECHS.forEach(function (t, fi) {
+      var x0 = L + fi * (fw + GAP);
+      g.appendChild(svg("rect", { x: x0 - 6, y: T - 3, width: fw + 12, height: H - T - B + 6,
+        fill: css("--strip"), opacity: ".5", rx: 5 }));
+    });
+
+    DEFS.forEach(function (d, r) {
+      var y = T + rowH * r + rowH / 2;
+      txt(g, L - 10, y + 3.5, DEFN[d], cI3, 10.5, "end", 500);
+      g.appendChild(svg("line", { x1: L, x2: W - RM, y1: T + rowH * (r + 1), y2: T + rowH * (r + 1),
+        stroke: cH, "stroke-width": 1, opacity: r === DEFS.length - 1 ? "0" : ".7" }));
+    });
+
+    TECHS.forEach(function (t, fi) {
+      var x0 = L + fi * (fw + GAP), X = function (v) { return x0 + (v - lo) / (hi - lo) * fw; };
+      txt(g, x0 + fw / 2, T - 11, TECHN[t], cI3, 11, "middle", 700);
+      [0.5, 0.75, 1.0].forEach(function (v) {
+        g.appendChild(svg("line", { x1: X(v), x2: X(v), y1: T, y2: H - B,
+          stroke: cH, "stroke-width": 1, opacity: ".55" }));
+        txt(g, X(v), H - B + 13, pct(v), cF, 9);
+      });
+      DEFS.forEach(function (d, r) {
+        var y = T + rowH * r + rowH / 2;
+        MODELS.forEach(function (m, mi) {
+          var p = run(m, d, t); if (!p.length) return;
+          var v = score(p, gold).acc;
+          var dy = (mi - (MODELS.length - 1) / 2) * 7.5;
+          var isSel = m === S.model &&
+            ((d === S.A.def && t === S.A.tech) || (d === S.B.def && t === S.B.tech));
+          if (isSel) g.appendChild(svg("circle", { cx: X(v), cy: y + dy, r: 7,
+            fill: "none", stroke: cA, "stroke-width": 2 }));
+          g.appendChild(svg("circle", { cx: X(v), cy: y + dy, r: 3.6, fill: ramp[mi],
+            stroke: css("--surface"), "stroke-width": 1 }));
+        });
+      });
+    });
+    el("lg").innerHTML = MODELS.map(function (m, i) {
+      return '<span><i style="background:' + ramp[i] + '"></i>' + esc(m) + "</span>";
+    }).join("") + '<span style="color:var(--accent)">○ the two prompts you chose</span>';
+  }
+
+  // ---- render -------------------------------------------------------------
+  function render() {
+    ["A", "B"].forEach(function (s) {
+      seg(s + "-def", pairs(DEFN), function () { return S[s].def; },
+          function (v) { S[s].def = v; });
+      seg(s + "-tech", pairs(TECHN), function () { return S[s].tech; },
+          function (v) { S[s].tech = v; });
+      preview(s);
+    });
+    seg("model", MODELS.map(function (m) { return [m, m]; }),
+        function () { return S.model; }, function (v) { S.model = v; });
+    seg("gold", [["narrow", "narrow"], ["broad", "broad"]],
+        function () { return S.gold; }, function (v) { S.gold = v; });
+
+    var nMix = D.gold[S.gold].filter(function (x) { return x === "mixed"; }).length;
+    el("gold-d").innerHTML = S.gold === "narrow"
+      ? "<b>Narrow:</b> a human coded each review by the reviewer's overall verdict, calling it " +
+        "<i>mixed</i> only when the review reaches no verdict at all — " + nMix + " of 48 texts."
+      : "<b>Broad:</b> a human called a review <i>mixed</i> whenever it contained both substantial " +
+        "praise and substantial criticism — " + nMix + " of 48 texts.";
+
+    var pa = run(S.model, S.A.def, S.A.tech), pb = run(S.model, S.B.def, S.B.tech);
+    var diff = [];
+    for (var i = 0; i < D.texts.length; i++) if (pa[i] !== pb[i]) diff.push(i);
+    if (S.sel === null) S.sel = diff.length ? diff[0] : 0;
+
+    el("ndiff").innerHTML = diff.length + '<small id="ndiff-s"></small>';
+    el("ndiff-s").innerHTML = diff.length
+      ? "of 48 texts get a <b>different label</b> from these two prompts.<br>" +
+        "Same texts, same model. Only the wording changed."
+      : "The two prompts agree on every text. Try changing one of them.";
+
+    el("dlist").innerHTML = diff.length
+      ? diff.map(function (i) {
+          return '<div class="dr' + (i === S.sel ? " sel" : "") + '" data-i="' + i + '">' +
+            '<span class="t">' + esc(D.texts[i]) + "</span>" +
+            '<span class="pill ' + (pa[i] || "none") + '">A ' + (pa[i] ? LBL[pa[i]] : "—") + "</span>" +
+            '<span class="pill ' + (pb[i] || "none") + '">B ' + (pb[i] ? LBL[pb[i]] : "—") + "</span>" +
+            "</div>"; }).join("")
+      : '<div class="none-msg">Nothing to show — the two prompts produced identical labels.</div>';
+    Array.prototype.forEach.call(el("dlist").querySelectorAll(".dr"), function (n) {
+      n.onclick = function () { S.sel = +n.dataset.i; render(); };
+    });
+
+    var g = D.gold[S.gold], i2 = S.sel;
+    var vk = S.model + "|" + S.A.def, reps = (D.variance || {})[vk] || [];
+    var rr = reps.map(function (r) { return r[i2]; });
+    var raw = ((D.runs[S.model + "|" + S.A.def + "|" + S.A.tech] || {}).raws || [])[i2] || "";
+    var d = '<span class="q">' + esc(D.texts[i2]) + "</span> &nbsp; the humans coded this " +
+      '<span class="pill ' + g[i2] + '">' + LBL[g[i2]] + "</span>";
+    if (rr.length) {
+      var uniq = {}; rr.concat([pa[i2]]).forEach(function (x) { if (x) uniq[x] = 1; });
+      d += "<br>Prompt A re-run three times at temperature 0.8: " +
+        rr.map(function (x) { return x ? LBL[x] : "—"; }).join(", ") +
+        (Object.keys(uniq).length > 1
+          ? ' — <b style="color:var(--neg)">the same prompt gave different answers</b>'
+          : " — same answer every time");
+    }
+    if (raw) d += '<div class="raw">' + esc(raw) + "</div>";
+    el("det").innerHTML = d;
+
+    var sa = score(pa, g), sb = score(pb, g);
+    el("A-acc").textContent = pct(sa.acc); el("A-k").textContent = sa.k.toFixed(2);
+    el("B-acc").textContent = pct(sb.acc); el("B-k").textContent = sb.k.toFixed(2);
+    el("A-acc").style.color = sa.acc >= sb.acc ? css("--accent") : css("--ink");
+    el("B-acc").style.color = sb.acc > sa.acc ? css("--ink") : css("--ink");
+
+    drawSlope(); drawFacets();
+
+    el("foot").innerHTML = "48 reviews, hand-coded for this course on three factual questions " +
+      "(the overall verdict · whether it contains both praise and criticism · whether the verdict " +
+      "is clear). The two codebooks are <b>derived from those same answers</b>, so neither is the " +
+      "true one — they are two defensible readings of one construct. Labels produced offline by " +
+      MODELS.length + " local models via Ollama on " + D.built + "; full data in <code>data/prompt-lab/</code>.";
+  }
+
+  if (window.matchMedia) {
+    var mq = window.matchMedia("(prefers-color-scheme: dark)");
+    (mq.addEventListener ? mq.addEventListener.bind(mq, "change") : mq.addListener.bind(mq))(render);
+  }
+  render();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,230 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>How a word's vector picks up its context</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&display=swap">
+<style>
+  /* ==========================================================================
+     Week 4 lecture explainer. A redraw of the 2024 deck's transformer3
+     Slide5–13 (after 3Blue1Brown 2024): one sentence, "an angry blue dog ran
+     behind a red haired man"; each word gets its static vector, then its
+     position, then attention lets the adjectives flow into the nouns, and
+     the vector for "dog" moves through the space — E(dog) → E(blue dog) →
+     E(blue angry dog). The vector NUMBERS are the illustrative ones from the
+     original figure, not computed; the 3-D coordinates are illustrative too.
+     The pictures are Philipp's own DALL·E images from the 2024 deck (img/),
+     which is what made the original slides land: the word, and what a
+     context-free vector "sees", and what the updated one sees.
+     Eight clicks: the sentence → the vectors and the pictures → positions
+     added → attention lines into dog and man → the updated vectors → E(dog)
+     in space → + blue → + angry. Click / Enter / space; #N opens at step N.
+     ========================================================================== */
+  :root{
+    --ink:#1a1a17; --ink-2:#3a3a34; --ink-3:#5a5a52; --muted:#7a7a70; --faint:#9a9a90;
+    --hair:#e7e3d9; --border:#e0dcd0; --surface:#ffffff; --strip:#f2f0ea; --paper:#faf8f4;
+    --accent:oklch(0.55 0.15 38); --accent-tint:oklch(0.95 0.03 38);
+    --a:#2678b0; --b:#b84a27; --c:#6f5aa8; --g:#2a8558;
+    --font:"Space Grotesk", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+    --mono:ui-monospace, SFMono-Regular, Menlo, monospace;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0; height:100%}
+  body{font-family:var(--font); background:transparent; color:var(--ink);
+       display:flex; align-items:center; justify-content:center;
+       overflow:hidden; cursor:pointer; -webkit-tap-highlight-color:transparent}
+  svg{width:100%; height:100%; display:block}
+  text{font-family:var(--font); fill:var(--ink)}
+  .chip rect{fill:var(--surface); stroke:var(--border); stroke-width:1; rx:4; ry:4}
+  .chip text{font-size:13.5px; font-weight:700; fill:var(--ink); text-anchor:middle}
+  .chip.dog rect,.chip.man rect{stroke:var(--a); stroke-width:1.6}
+  .chip.mod rect{stroke:var(--accent); stroke-width:1.4}
+  .arc{fill:none; stroke:var(--accent); stroke-width:1.6}
+  .pic{stroke:var(--border); stroke-width:1}
+  .vec{font-family:var(--mono); font-size:10px; fill:var(--ink-2); text-anchor:middle}
+  .vbox{fill:none; stroke:var(--border); stroke-width:.9; rx:2; ry:2}
+  .arrow{fill:none; stroke:var(--ink-3); stroke-width:1; stroke-linecap:round}
+  .pos rect{fill:var(--surface); stroke:var(--g); stroke-width:1; rx:2.5; ry:2.5}
+  .pos text{font-size:9.5px; font-weight:700; fill:var(--g); text-anchor:middle}
+  .posarrow{fill:none; stroke:var(--g); stroke-width:1; stroke-dasharray:2 2}
+  .E{font-size:14px; font-weight:700; fill:var(--g); text-anchor:middle}
+  .E2{font-size:14px; font-weight:700; fill:var(--a); text-anchor:middle}
+  .E tspan.s,.E2 tspan.s{font-size:9px}
+  .att{stroke:var(--faint); stroke-width:.7; stroke-opacity:.5}
+  .att.strong{stroke:var(--a); stroke-width:2; stroke-opacity:.95}
+  .att.strong.man{stroke:var(--accent)}
+  .lab{font-size:9.5px; font-weight:700; letter-spacing:.08em; fill:var(--muted)}
+  .floor{fill:var(--strip); stroke:none}
+  .grid{stroke:var(--hair); stroke-width:1}
+  .axis{stroke:var(--ink-3); stroke-width:1.1}
+  .axlab{font-size:9.5px; fill:var(--muted)}
+  .v{fill:none; stroke-width:2.4; stroke-linecap:round}
+  .v.dog{stroke:#d9a41a} .v.blue{stroke:var(--a)} .v.angry{stroke:var(--c)}
+  .vlab{font-size:10.5px; font-weight:700}
+  .vlab.dog{fill:#b8860b} .vlab.blue{fill:var(--a)} .vlab.angry{fill:var(--c)}
+  .step{font-size:10.5px; fill:#b6b2a8; text-anchor:end}
+  .fade{transition:opacity .45s ease}
+  .hid{opacity:0}
+</style>
+</head>
+<body>
+<svg id="chart" viewBox="0 0 1000 440" preserveAspectRatio="xMidYMid meet" role="img"
+     aria-label="One sentence, an angry blue dog ran behind a red haired man: each word gets a static vector and a picture of what that vector sees on its own; positions are added; attention draws lines from angry and blue into dog and from red and haired into man; the updated vectors for dog and man now see a blue angry dog and a red-haired man; finally the vector for dog moves through a three-dimensional space as blue and then angry are folded in.">
+  <defs>
+    <marker id="ah" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#5a5a52"/></marker>
+    <marker id="hd" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#d9a41a"/></marker>
+    <marker id="hb" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#2678b0"/></marker>
+    <marker id="ha" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#6f5aa8"/></marker>
+  </defs>
+  <g id="top"></g>
+  <g id="mid"></g>
+  <g id="space"></g>
+  <g id="hud"></g>
+</svg>
+<noscript><p style="max-width:34em;margin:2em;font-family:sans-serif">Needs JavaScript: how a word's vector
+picks up its context through attention.</p></noscript>
+
+<script>
+(function () {
+  "use strict";
+  var NS = "http://www.w3.org/2000/svg", XL = "http://www.w3.org/1999/xlink";
+  function el(t, a) { var e = document.createElementNS(NS, t); for (var k in a) if (a[k] != null) e.setAttribute(k, a[k]); return e; }
+  function txt(p, s, a) { var t = el("text", a || {}); t.textContent = s; p.appendChild(t); return t; }
+  function tsp(t, s, a) { var x = el("tspan", a || {}); x.textContent = s; t.appendChild(x); return x; }
+  function g(p, a) { var e = el("g", a || {}); p.appendChild(e); return e; }
+  function $(id) { return document.getElementById(id); }
+  var clipN = 0;
+  function img(p, href, x, y, w, cls) {
+    var id = "clip" + (clipN++), cp = el("clipPath", { id: id }); cp.appendChild(el("rect", { x: x, y: y, width: w, height: w, rx: 6, ry: 6 })); p.appendChild(cp);
+    var e = el("image", { x: x, y: y, width: w, height: w, preserveAspectRatio: "xMidYMid slice", "clip-path": "url(#" + id + ")" }); e.setAttribute("href", href); e.setAttributeNS(XL, "xlink:href", href); p.appendChild(e);
+    p.appendChild(el("rect", { "class": cls || "pic", x: x, y: y, width: w, height: w, rx: 6, ry: 6, fill: "none" })); return e;
+  }
+
+  /* ---- the sentence, the pictures, the (illustrative) numbers ------------------- */
+  var W = ["an", "angry", "blue", "dog", "ran", "behind", "a", "red", "haired", "man"];
+  var PIC = { angry: "img/angry.jpg", blue: "img/blue.jpg", dog: "img/dog.jpg", red: "img/red.jpg", haired: "img/haired.jpg", man: "img/man.jpg" };
+  var V = [["+0.01", "+0.12", "+2.22", "−2.01", "+1.45", "+0.05"], ["+3.81", "−7.23", "+3.25", "−2.99", "+0.01", "−5.25"],
+           ["+7.21", "+2.40", "−1.85", "−2.99", "+7.15", "−2.53"], ["+0.22", "−0.98", "+1.25", "−0.01", "+6.45", "+2.86"],
+           ["+4.21", "−2.40", "+6.95", "+2.21", "+2.67", "+8.12"], ["+0.20", "+4.55", "+2.11", "+0.41", "+3.32", "+0.32"],
+           ["+0.01", "+0.12", "+2.24", "+1.96", "+1.45", "+0.05"], ["+3.91", "−6.49", "+3.25", "−2.00", "+0.45", "−2.25"],
+           ["+0.21", "+2.10", "+0.01", "+2.01", "+5.34", "−2.45"], ["+0.05", "−0.99", "−3.25", "−1.01", "+8.45", "+2.05"]];
+  var DEP = [[1, 3], [2, 3], [7, 9], [8, 9]];   /* modifier → noun */
+  var CX = W.map(function (_, i) { return 100 + i * 89; });
+  var Y_PIC = 4, PW = 54, Y_CHIP = 84, CH = 26, Y_VEC = 140, ROW = 14, Y_E = 292, Y_E2 = 374;
+
+  var layers = {};
+  function layer(parent, name, on) { var l = g(parent, { "class": "fade" + (on ? "" : " hid") }); layers[name] = l; return l; }
+  var top = $("top"), mid = $("mid"), sp = $("space");
+
+  /* 0 · the sentence, and who modifies whom */
+  (function () {
+    var l = layer(top, "chips", true);
+    W.forEach(function (w, i) {
+      var cls = "chip" + (w === "dog" || w === "man" ? " " + w : (DEP.some(function (d) { return d[0] === i; }) ? " mod" : ""));
+      var c = g(l, { "class": cls }); c.appendChild(el("rect", { x: CX[i] - 38, y: Y_CHIP, width: 76, height: CH })); txt(c, w, { x: CX[i], y: Y_CHIP + 18 });
+    });
+    /* the arcs into one noun nest: the far modifier lands near the noun's centre and flies higher,
+       the near one lands further left and flies lower, so the arrowheads sit apart and both arcs
+       stay in the band between the chips and the pictures (pictures end at Y_PIC + PW) */
+    DEP.forEach(function (d) { var a = CX[d[0]], far = Math.abs(d[1] - d[0]) > 1, b = CX[d[1]] - (far ? 4 : 22), lift = far ? 40 : 22;
+      l.appendChild(el("path", { "class": "arc", d: "M" + a + "," + (Y_CHIP - 2) + " Q" + ((a + b) / 2) + "," + (Y_CHIP - 2 - lift) + " " + b + "," + (Y_CHIP - 2), "marker-end": "url(#ah)" })); });
+  })();
+  /* 1 · the static vectors and the pictures of what each one sees */
+  (function () {
+    var l = layer(top, "vecs", false);
+    W.forEach(function (w, i) {
+      if (PIC[w]) img(l, PIC[w], CX[i] - PW / 2, Y_PIC, PW);
+      l.appendChild(el("line", { "class": "arrow", x1: CX[i], y1: Y_CHIP + CH + 2, x2: CX[i], y2: Y_VEC - 6, "marker-end": "url(#ah)" }));
+      l.appendChild(el("rect", { "class": "vbox", x: CX[i] - 26, y: Y_VEC - 2, width: 52, height: 6 * ROW + 6 }));
+      V[i].forEach(function (v, k) { txt(l, v, { x: CX[i], y: Y_VEC + 10 + k * ROW, "class": "vec" }); });
+    });
+    txt(l, "STATIC EMBEDDINGS · ONE VECTOR PER WORD, WHATEVER THE SENTENCE", { x: CX[0] - 38, y: Y_VEC + 6 * ROW + 24, "class": "lab" });
+  })();
+  /* 2 · the position, added in */
+  (function () {
+    var l = layer(top, "pos", false);
+    W.forEach(function (w, i) {
+      var p = g(l, { "class": "pos" }); p.appendChild(el("rect", { x: CX[i] - 48, y: Y_VEC - 22, width: 20, height: 14 })); txt(p, i + 1, { x: CX[i] - 38, y: Y_VEC - 11.5 });
+      l.appendChild(el("path", { "class": "posarrow", d: "M" + (CX[i] - 38) + "," + (Y_VEC - 7) + " Q" + (CX[i] - 38) + "," + (Y_VEC + 34) + " " + (CX[i] - 27) + "," + (Y_VEC + 40) }));
+    });
+    txt(l, "+ POSITION 1 … 10", { x: CX[9] + 38, y: Y_VEC + 6 * ROW + 24, "class": "lab", "text-anchor": "end", fill: "#2a8558" });
+  })();
+  /* 3 · attention: every word looks at every other; the adjectives flow into the nouns */
+  (function () {
+    var l = layer(mid, "attn", false);
+    W.forEach(function (w, i) { var t = txt(l, "E", { x: CX[i], y: Y_E, "class": "E" }); tsp(t, String(i + 1), { "class": "s" }); });
+    W.forEach(function (w, i) { var t = txt(l, "E", { x: CX[i], y: Y_E2, "class": "E2" }); tsp(t, String(i + 1), { "class": "s" }); });
+    [3, 9].forEach(function (j) { W.forEach(function (w, i) {
+      var strong = DEP.some(function (d) { return d[0] === i && d[1] === j; }) || i === j;
+      l.appendChild(el("line", { "class": "att" + (strong ? " strong" + (j === 9 ? " man" : "") : ""), x1: CX[i], y1: Y_E + 4, x2: CX[j], y2: Y_E2 - 12 })); }); });
+    txt(l, "ATTENTION · EACH WORD TAKES A WEIGHTED SHARE OF THE OTHERS", { x: CX[0] - 38, y: Y_E - 18, "class": "lab" });
+    txt(l, "BEFORE", { x: CX[0] - 52, y: Y_E, "class": "lab", "text-anchor": "end" });
+    txt(l, "AFTER", { x: CX[0] - 52, y: Y_E2, "class": "lab", "text-anchor": "end" });
+  })();
+  /* 4 · the updated vectors: what dog and man see now */
+  (function () {
+    var l = layer(mid, "after", false);
+    img(l, "img/blue-angry-dog.jpg", CX[3] - 25, Y_E2 + 10, 50); img(l, "img/red-haired-man.jpg", CX[9] - 25, Y_E2 + 10, 50);
+    txt(l, "THE SAME WORD, A DIFFERENT VECTOR: IT NOW CARRIES ITS NEIGHBOURS", { x: CX[6], y: Y_E2 + 40, "class": "lab", "text-anchor": "middle", fill: "#2678b0" });
+  })();
+
+  /* 5–7 · the space: E(dog) → E(blue dog) → E(blue angry dog) --------------------- */
+  var SX = 726, SY = 326, S = 60, C30 = Math.cos(Math.PI / 6), S30 = Math.sin(Math.PI / 6);
+  function pr(v) { return [SX + (v[0] - v[1]) * C30 * S, SY + (v[0] + v[1]) * S30 * S - v[2] * S]; }
+  var E_DOG = [-1.6, 1.2, 2.1], E_BLUE = [-2.6, 1.9, 1.35], E_ANGRY = [-1.2, 3.1, 2.3];
+  (function () {
+    var l = layer(sp, "floor", false);
+    var F = [[-3.2, -1.5, 0], [2.2, -1.5, 0], [2.2, 3.2, 0], [-3.2, 3.2, 0]].map(pr);
+    l.appendChild(el("polygon", { "class": "floor", points: F.map(function (p) { return p.join(","); }).join(" ") }));
+    for (var x = -3; x <= 2; x++) { var a = pr([x, -1.5, 0]), b = pr([x, 3.2, 0]); l.appendChild(el("line", { "class": "grid", x1: a[0], y1: a[1], x2: b[0], y2: b[1] })); }
+    for (var y = -1; y <= 3; y++) { var c = pr([-3.2, y, 0]), d = pr([2.2, y, 0]); l.appendChild(el("line", { "class": "grid", x1: c[0], y1: c[1], x2: d[0], y2: d[1] })); }
+    var o = pr([0, 0, 0]);
+    [[[2.2, 0, 0], "d1"], [[0, 3.2, 0], "d2"], [[0, 0, 3.0], "d3"]].forEach(function (a) { var q = pr(a[0]); l.appendChild(el("line", { "class": "axis", x1: o[0], y1: o[1], x2: q[0], y2: q[1] })); txt(l, a[1], { x: q[0] + 5, y: q[1] + 4, "class": "axlab" }); });
+    txt(l, "THE SAME VECTOR, MOVING AS ITS", { x: 40, y: 150, "class": "lab" });
+    txt(l, "CONTEXT IS FOLDED IN", { x: 40, y: 164, "class": "lab" });
+    txt(l, "three of the hundreds of dimensions, illustrative", { x: 40, y: 180, "class": "axlab" });
+  })();
+  function vec(l, v, cls, marker, label, pic, dx, dy) {
+    var o = pr([0, 0, 0]), q = pr(v);
+    l.appendChild(el("line", { "class": "v " + cls, x1: o[0], y1: o[1], x2: q[0], y2: q[1], "marker-end": "url(#" + marker + ")" }));
+    txt(l, label, { x: q[0] + dx, y: q[1] + dy, "class": "vlab " + cls });
+    if (pic) img(l, pic, q[0] + dx - 2, q[1] + dy + 4, 40);
+  }
+  (function () {
+    var l = layer(sp, "vdog", false); vec(l, E_DOG, "dog", "hd", "E(dog)", "img/dog.jpg", -66, -44);
+    var c = g(l, { "class": "chip" }); c.appendChild(el("rect", { x: 40, y: 204, width: 220, height: 28 })); txt(c, "dog", { x: 150, y: 223 });
+  })();
+  (function () {
+    var l = layer(sp, "vblue", false); vec(l, E_BLUE, "blue", "hb", "E(blue dog)", "img/blue-dog.jpg", -100, 12);
+    var c = g(l, { "class": "chip" }); c.appendChild(el("rect", { x: 40, y: 242, width: 220, height: 28 })); txt(c, "blue dog", { x: 150, y: 261 });
+    var q0 = pr(E_DOG), q1 = pr(E_BLUE); l.appendChild(el("path", { "class": "arrow", d: "M" + q0[0] + "," + q0[1] + " L" + q1[0] + "," + q1[1], "stroke-dasharray": "3 3" }));
+  })();
+  (function () {
+    var l = layer(sp, "vangry", false); vec(l, E_ANGRY, "angry", "ha", "E(blue angry dog)", "img/blue-angry-dog.jpg", 18, -20);
+    var c = g(l, { "class": "chip" }); c.appendChild(el("rect", { x: 40, y: 280, width: 220, height: 28 })); txt(c, "blue angry dog", { x: 150, y: 299 });
+    var q0 = pr(E_BLUE), q1 = pr(E_ANGRY); l.appendChild(el("path", { "class": "arrow", d: "M" + q0[0] + "," + q0[1] + " L" + q1[0] + "," + q1[1], "stroke-dasharray": "3 3" }));
+    txt(l, "each layer of attention moves it again", { x: 40, y: 330, "class": "axlab" });
+  })();
+
+  /* ---- states ------------------------------------------------------------------- */
+  var counter = txt($("hud"), "", { x: 980, y: 432, "class": "step" });
+  var MAX = 7;
+  var SHOW = [   /* which layers are on at each state */
+    ["chips"], ["chips", "vecs"], ["chips", "vecs", "pos"], ["chips", "vecs", "pos", "attn"], ["chips", "vecs", "pos", "attn", "after"],
+    ["chips", "floor", "vdog"], ["chips", "floor", "vdog", "vblue"], ["chips", "floor", "vdog", "vblue", "vangry"]];
+  var state = Math.max(0, Math.min(MAX, parseInt((location.hash || "").slice(1), 10) || 0));
+  function render() {
+    var on = SHOW[state];
+    for (var k in layers) layers[k].setAttribute("class", "fade" + (on.indexOf(k) >= 0 ? "" : " hid"));
+    counter.textContent = (state + 1) + " / " + (MAX + 1);
+  }
+  function advance() { if (state >= MAX) return; state += 1; render(); }
+  render();
+  window.addEventListener("hashchange", function () { state = Math.max(0, Math.min(MAX, parseInt((location.hash || "").slice(1), 10) || 0)); render(); });
+  document.body.addEventListener("click", advance);
+  document.body.addEventListener("keydown", function (e) { if (e.key === "Enter" || e.key === " ") advance(); });
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,379 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>A small language model, in 3D</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="../shared/net3d.css">
+<style>
+  /* the panel on the right is read from the back of the room */
+  .ptitle{font-size:12.5px; font-weight:700; letter-spacing:.09em; fill:var(--accent)}
+  .bul{font-size:16px; fill:var(--ink-2)}
+  .bul tspan.k{font-weight:700; fill:var(--ink)} .bul tspan.a{font-weight:700; fill:var(--accent)}
+  .tag{font-size:10.5px; font-weight:700; letter-spacing:.06em; fill:var(--ink-3)}
+  .tag.a{fill:var(--accent)} .tag.m{fill:var(--amber)}
+  .tok{font-size:12px; font-weight:700; fill:var(--ink); text-anchor:middle}
+  .tok.q{fill:var(--accent)}
+  .big2{font-size:13px; font-weight:700; fill:var(--accent)}
+</style>
+</head>
+<!-- ===========================================================================
+  WEEK 4 — a whole language model, small enough to see, in three dimensions.
+  After Brendan Bycroft's "LLM Visualization" (bbycroft.net/llm, 2023), much
+  simplified: a decoder of the GPT kind with four tokens ("the film was not"),
+  twelve numbers per token, three blocks and a toy vocabulary. Every tile is one
+  number. The vectors of the stream are horizontal floors (tokens across, the
+  twelve numbers in depth) that rise through the blocks; attention and the
+  feed-forward network branch off to the side and are added back.
+
+  What is real and what is drawn:
+    - the SHAPES are a real decoder's: one vector per token, query/key/value of
+      the same size, a 4 x 4 attention table with its upper half masked, a
+      feed-forward layer four times as wide, one score per vocabulary entry
+      for the LAST token only, a softmax.
+    - every NUMBER is invented (seeded), the next-token bars included.
+    - step 6's sizes are Llama 3.1 8B's configuration: 32 blocks, 4,096
+      numbers per token, a vocabulary of 128,256, 8 billion weights. The
+      toy's weight count is computed from its own dimensions below.
+  Steps: the whole model → tokens in → attention → feed-forward → the stack →
+  the next token → the real size. Forward and back: explainers/shared/stepnav.js;
+  #N opens at step N. The camera sways slowly unless reduced motion is set.
+=========================================================================== -->
+<body>
+<div class="stage">
+  <canvas id="c"></canvas>
+  <svg id="o" viewBox="0 0 1000 440" preserveAspectRatio="xMidYMid meet" role="img"
+       aria-label="A tiny language model drawn in three dimensions, one tile per number. Four tokens, the film was not, enter at the bottom as rows copied from an embedding table. In each of three blocks the vectors make queries, keys and values, a four by four table of attention weights with its upper half empty, and pass through a feed-forward layer four times as wide; both results are added to the stream that rises through the blocks. At the top, the last token's vector becomes one score per word in the vocabulary, and a softmax turns them into bars; the tallest is good. Last, the tower grows to Llama 3.1 8B's 32 blocks.">
+    <g id="tags"></g>
+    <g id="panel"></g>
+    <g id="hud"></g>
+  </svg>
+</div>
+<noscript><p style="max-width:34em;margin:2em;font-family:sans-serif;color:#fff">Needs JavaScript: a small
+language model drawn in three dimensions.</p></noscript>
+
+<script src="../shared/stepnav.js"></script>
+<script>
+(function () {
+  "use strict";
+  var NS = "http://www.w3.org/2000/svg";
+  function el(t, a) { var e = document.createElementNS(NS, t); for (var k in a) if (a[k] != null) e.setAttribute(k, a[k]); return e; }
+  function txt(p, s, a) { var t = el("text", a || {}); t.textContent = s; p.appendChild(t); return t; }
+  function tsp(t, s, a) { var x = el("tspan", a || {}); x.textContent = s; t.appendChild(x); return x; }
+  function clear(n) { while (n.firstChild) n.removeChild(n.firstChild); }
+  function $(id) { return document.getElementById(id); }
+  var reduced = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  var COL = { pos: [74, 168, 220], neg: [224, 122, 82], acc: [79, 192, 141], amber: [240, 178, 80],
+              ink: [232, 234, 236], slate: [70, 96, 122], deep: [22, 44, 68], cell: [36, 62, 90] };
+  function rgba(c, a) { return "rgba(" + Math.round(c[0]) + "," + Math.round(c[1]) + "," + Math.round(c[2]) + "," + a.toFixed(3) + ")"; }
+  function mix(a, b, t) { return [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, a[2] + (b[2] - a[2]) * t]; }
+  function ease(t) { t = Math.max(0, Math.min(1, t)); return t < .5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2; }
+  function clamp01(t) { return Math.max(0, Math.min(1, t)); }
+  function rng(seed) { var s = seed >>> 0; return function () { s = (s * 1664525 + 1013904223) >>> 0; return s / 4294967296; }; }
+  /* mostly small numbers, a few large ones, both signs: what a trained vector looks like */
+  function vals(seed, n, m) { var r = rng(seed), out = [];
+    for (var i = 0; i < n; i++) { var row = []; for (var j = 0; j < m; j++) { var u = r() * 2 - 1; row.push(Math.max(-1, Math.min(1, 1.5 * u * u * u + (r() - .5) * .35))); } out.push(row); }
+    return out; }
+
+  /* ---- the toy model --------------------------------------------------------------- */
+  var T = 4, C = 12, L = 3, HID = 4 * C, V = 50, VSHOW = 14, BH = 16, Y0 = 4, BIG = 32;
+  var TOKS = ["the", "film", "was", "not"];
+  /* weights of the toy, from its dimensions: token and position tables, per block the
+     query/key/value/output matrices and the two feed-forward layers (with biases and
+     two layer norms), a final norm; the output layer shares the token table */
+  var TOY_W = V * C + 8 * C + L * (4 * C * C + 4 * C + 2 * C * HID + HID + C + 4 * C) + 2 * C;
+
+  var floors = [];
+  /* a floor: nx by nz tiles in the x-z plane at height y; a token column is two units
+     wide (cw = 2), so the four tokens stay apart on screen */
+  function floor(o) { if (!o.v) o.v = vals(o.seed || (floors.length * 977 + 31), o.nx, o.nz); o.alpha = 1; if (o.y == null) o.y = 0;
+    o.cw = o.cw || 1; o.cz = o.cz || 1; floors.push(o); return o; }
+  var EMB = floor({ id: "emb", x0: -2 - VSHOW, y: 0, z0: 0, nx: VSHOW, nz: C, flow: 0, grp: "emb", fadeEnd: true });
+  var LIT = [3, 7, 10, 12];                       /* the table rows the four tokens are copied from */
+  var E = floor({ id: "E", x0: 0, y: 0, z0: 0, nx: T, nz: C, cw: 2, flow: 0, grp: "in", stream: true,
+    v: TOKS.map(function (_, t) { return EMB.v[LIT[t]].map(function (x, j) { return Math.max(-1, Math.min(1, x + .3 * Math.sin(1.7 * t + .8 * j))); }); }) });
+  function attnVals(seed) { var r = rng(seed), out = [];
+    for (var i = 0; i < T; i++) { var row = [], s = 0; for (var j = 0; j < T; j++) { var w = j <= i ? Math.exp(2.4 * r()) : 0; row.push(w); s += w; }
+      out.push(row.map(function (w, j) { return j <= i ? w / s : null; })); }
+    return out; }
+  var blocks = [];
+  /* every block has the same seven floors; a floor's height is its block's base plus
+     its offset, recomputed each frame because step 6 squeezes the blocks together */
+  for (var b = 0; b < BIG; b++) {
+    var B = { b: b, extra: b >= L };
+    B.Q = floor({ id: "q" + b, x0: 12, off: 3, z0: 0, nx: T, nz: C, cw: 2, flow: 1 + 4 * b, grp: "attn", block: b });
+    B.K = floor({ id: "k" + b, x0: 22, off: 3, z0: 0, nx: T, nz: C, cw: 2, flow: 1 + 4 * b, grp: "attn", block: b });
+    B.V = floor({ id: "v" + b, x0: 32, off: 3, z0: 0, nx: T, nz: C, cw: 2, flow: 1 + 4 * b, grp: "attn", block: b });
+    B.A = floor({ id: "a" + b, x0: 22, off: 6.5, z0: 2, nx: T, nz: T, cw: 2, cz: 2, flow: 2 + 4 * b, grp: "attn", block: b, attn: true, v: attnVals(53 + b) });
+    B.M = floor({ id: "m" + b, x0: 0, off: 8, z0: 0, nx: T, nz: C, cw: 2, flow: 2.5 + 4 * b, grp: "stream", stream: true, block: b });
+    B.H = floor({ id: "h" + b, x0: 12, off: 11, z0: C / 2 - HID / 2, nx: T, nz: HID, cw: 2, flow: 3 + 4 * b, grp: "mlp", block: b });
+    B.S = floor({ id: "s" + b, x0: 0, off: 14, z0: 0, nx: T, nz: C, cw: 2, flow: 4 + 4 * b, grp: "stream", stream: true, block: b });
+    blocks.push(B);
+  }
+  var NV = 24, bh = BH;                           /* bh: the block height in use, 16 → 3 in step 6 */
+  function yb(b) { return Y0 + b * bh; }
+  function OUTY() { return yb(L) + 3 * bh / BH; }
+  var LOG = floor({ id: "logits", x0: 6, z0: -6, nx: 1, nz: NV, cw: 2, flow: 4 * L + 1, grp: "out", top: true });
+  function placeFloors() { floors.forEach(function (F) { if (F.block != null) F.y = yb(F.block) + F.off * bh / BH; else if (F.top) F.y = OUTY(); }); }
+  placeFloors();
+  /* the next-token distribution over the 24 drawn entries: invented, the top four named */
+  var WORDS = { 13: "good", 5: "bad", 19: "great", 9: "funny" };
+  var PROB = (function () { var r = rng(7), p = [];
+    for (var i = 0; i < NV; i++) p.push(.006 + .02 * r());
+    p[13] = .34; p[5] = .14; p[19] = .08; p[9] = .05;
+    var s = p.reduce(function (a, x) { return a + x; }, 0); return p.map(function (x) { return x / s; }); })();
+  LOG.v = [PROB.map(function (p) { return Math.min(1, Math.log(p * 60) / 3.2); })];
+
+  /* ---- camera -------------------------------------------------------------------------- */
+  var cv = $("c"), ctx = cv.getContext("2d"), W = 1000, H = 440;
+  function resize() { var dpr = window.devicePixelRatio || 1, r = cv.getBoundingClientRect(); cv.width = Math.round(r.width * dpr); cv.height = Math.round(r.height * dpr); ctx.setTransform(cv.width / W, 0, 0, cv.height / H, 0, 0); }
+  window.addEventListener("resize", resize); resize();
+  /* per step: look-at point, yaw, pitch, pixels per unit, screen centre */
+  var CAMS = [
+    { t: [11, 28, 6], yaw: -.55, pitch: .5, S: 5.9, cx: 312, cy: 222 },     /* 0 the whole model */
+    { t: [-4, 0, 6], yaw: -.3, pitch: .72, S: 16, cx: 318, cy: 210 },       /* 1 tokens in */
+    { t: [21, 8, 6], yaw: -.28, pitch: .66, S: 10, cx: 336, cy: 232 },     /* 2 attention */
+    { t: [12, 13, 6], yaw: -.95, pitch: .52, S: 7.2, cx: 316, cy: 222 },    /* 3 feed-forward */
+    { t: [11, 28, 6], yaw: -.55, pitch: .5, S: 5.9, cx: 312, cy: 222 },     /* 4 the stack */
+    { t: [7, OUTY() + 4, 6], yaw: -.95, pitch: .34, S: 12, cx: 300, cy: 236 }, /* 5 the next token */
+    { t: [11, Y0 + BIG * 3 / 2, 6], yaw: -.55, pitch: .42, S: 3.2, cx: 312, cy: 214 } /* 6 the real size */
+  ];
+  var cam = JSON.parse(JSON.stringify(CAMS[0])), camFrom = null, camTo = CAMS[0], camT0 = 0, CAMDUR = 1400;
+  var sway = 0, D = 160;
+  function proj(p) {
+    var x = p[0] - cam.t[0], y = p[1] - cam.t[1], z = p[2] - cam.t[2];
+    var yw = cam.yaw + sway, cy_ = Math.cos(yw), sy = Math.sin(yw);
+    var x1 = x * cy_ - z * sy, z1 = x * sy + z * cy_;
+    var cp = Math.cos(cam.pitch), sp = Math.sin(cam.pitch);
+    var y1 = y * cp + z1 * sp, z2 = -y * sp + z1 * cp;
+    var k = D / (D + z2 * Math.min(1, cam.S / 5));
+    return { x: cam.cx + x1 * cam.S * k, y: cam.cy - y1 * cam.S * k, z: z2 };
+  }
+  function lerp(a, b, t) { return a + (b - a) * t; }
+  function tweenCam(now) {
+    if (!camFrom) return;
+    var t = reduced ? 1 : ease((now - camT0) / CAMDUR);
+    ["yaw", "pitch", "cx", "cy"].forEach(function (k) { cam[k] = lerp(camFrom[k], camTo[k], t); });
+    cam.S = Math.exp(lerp(Math.log(camFrom.S), Math.log(camTo.S), t));        /* zoom evenly */
+    for (var i = 0; i < 3; i++) cam.t[i] = lerp(camFrom.t[i], camTo.t[i], t);
+    if (t >= 1) camFrom = null;
+  }
+
+  /* ---- drawing ---------------------------------------------------------------------------- */
+  function quad(a, b, c, d, fill) { ctx.fillStyle = fill; ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.lineTo(c.x, c.y); ctx.lineTo(d.x, d.y); ctx.closePath(); ctx.fill(); }
+  function cellCol(v, lit) {
+    var c = v >= 0 ? COL.pos : COL.neg, base = mix(COL.cell, c, .18 + .82 * Math.abs(v));
+    return lit > 0 ? mix(base, COL.acc, .55 * lit) : base;
+  }
+  function drawFloor(F, a, lit, hiRow) {
+    if (a <= .01) return;
+    var x0 = F.x0, z0 = F.z0, y = F.y, cw = F.cw, cz = F.cz, X = F.nx * cw, Z = F.nz * cz,
+        th = Math.min(.4, .4 * bh / BH * 2), ins = F.nx * F.nz > 300 ? .06 : .1;
+    var c = [proj([x0, y, z0]), proj([x0 + X, y, z0]), proj([x0 + X, y, z0 + Z]), proj([x0, y, z0 + Z])];
+    var d = [proj([x0, y - th, z0]), proj([x0 + X, y - th, z0]), proj([x0 + X, y - th, z0 + Z]), proj([x0, y - th, z0 + Z])];
+    /* the slab: sides, then the top */
+    for (var s = 0; s < 4; s++) { var n = (s + 1) % 4; quad(c[s], c[n], d[n], d[s], rgba(COL.deep, .85 * a)); }
+    quad(c[0], c[1], c[2], c[3], rgba(mix(mix(COL.deep, COL.slate, .35), COL.acc, .6 * lit), .9 * a));
+    if (cam.S < 2.2 || F.block >= L) return;    /* tiny tiles, or the blocks beyond the toy: the slab is enough */
+    for (var i = 0; i < F.nx; i++) for (var j = 0; j < F.nz; j++) {
+      var v = F.v[i][j], xa = x0 + i * cw + ins, xb = x0 + (i + 1) * cw - ins, za = z0 + j * cz + ins, zb = z0 + (j + 1) * cz - ins,
+          p1 = proj([xa, y, za]), p2 = proj([xb, y, za]), p3 = proj([xb, y, zb]), p4 = proj([xa, y, zb]);
+      var fade = F.fadeEnd ? clamp01((i + .5) / 4) : 1;
+      if (F.attn) {
+        if (v == null) { ctx.strokeStyle = rgba(COL.slate, .5 * a); ctx.lineWidth = .7; ctx.beginPath(); ctx.moveTo(p1.x, p1.y); ctx.lineTo(p2.x, p2.y); ctx.lineTo(p3.x, p3.y); ctx.lineTo(p4.x, p4.y); ctx.closePath(); ctx.stroke(); continue; }
+        var on = hiRow === i ? 1 : 0;
+        quad(p1, p2, p3, p4, rgba(mix(mix(COL.cell, COL.acc, .2 + .8 * Math.sqrt(v)), COL.amber, on * .55), a));
+        continue;
+      }
+      var rowLit = F === EMB && LIT.indexOf(i) >= 0 && hiRow === 1 ? 1 : 0;
+      quad(p1, p2, p3, p4, rgba(cellCol(v, Math.max(lit, rowLit)), a * fade * (F === EMB && hiRow === 1 && LIT.indexOf(i) < 0 ? .55 : 1)));
+    }
+  }
+  function line(p, q, col, a, w, dash) {
+    var P = proj(p), Q = proj(q);
+    ctx.strokeStyle = rgba(col, a); ctx.lineWidth = w || 1; ctx.setLineDash(dash || []);
+    ctx.beginPath(); ctx.moveTo(P.x, P.y); ctx.lineTo(Q.x, Q.y); ctx.stroke(); ctx.setLineDash([]);
+  }
+  function curve(p, q, col, a, w) {        /* a gentle S between two floors: up, across, up */
+    var m1 = [p[0], (p[1] + q[1]) / 2, p[2]], m2 = [q[0], (p[1] + q[1]) / 2, q[2]];
+    var P = proj(p), M1 = proj(m1), M2 = proj(m2), Q = proj(q);
+    ctx.strokeStyle = rgba(col, a); ctx.lineWidth = w || 1;
+    ctx.beginPath(); ctx.moveTo(P.x, P.y); ctx.bezierCurveTo(M1.x, M1.y, M2.x, M2.y, Q.x, Q.y); ctx.stroke();
+  }
+  function ctr(F, dy) { return [F.x0 + F.nx * F.cw / 2, F.y + (dy || 0), F.z0 + F.nz * F.cz / 2]; }
+  function bars(a, now) {
+    if (a <= .01) return;
+    var grow = reduced ? 1 : ease((now - barsT0) / 900), x0 = LOG.x0, items = [];
+    for (var j = 0; j < NV; j++) {
+      var h = PROB[j] * 30 * grow, z = LOG.z0 + j + .15, w = .7, xa = x0 + .5, xb = x0 + 1.5;
+      var b0 = proj([xa, LOG.y, z]), b1 = proj([xb, LOG.y, z]), b2 = proj([xb, LOG.y, z + w]), b3 = proj([xa, LOG.y, z + w]);
+      var t0 = proj([xa, LOG.y + h, z]), t1 = proj([xb, LOG.y + h, z]), t2 = proj([xb, LOG.y + h, z + w]), t3 = proj([xa, LOG.y + h, z + w]);
+      items.push({ z: b0.z, j: j, b: [b0, b1, b2, b3], t: [t0, t1, t2, t3] });
+    }
+    items.sort(function (p, q) { return q.z - p.z; });
+    items.forEach(function (it) {
+      var top = it.j === 13, base = top ? COL.acc : mix(COL.slate, COL.ink, .25);
+      quad(it.b[0], it.b[1], it.t[1], it.t[0], rgba(mix(base, COL.deep, .25), a));
+      quad(it.b[1], it.b[2], it.t[2], it.t[1], rgba(mix(base, COL.deep, .5), a));
+      quad(it.t[0], it.t[1], it.t[2], it.t[3], rgba(mix(base, COL.ink, .3), a));
+    });
+  }
+
+  /* ---- what each step shows ------------------------------------------------------------------ */
+  var state = 0, stepT0 = 0, barsT0 = 0, growT0 = 0;
+  function focusOf(F) {
+    switch (state) {
+      case 1: return F.grp === "emb" || F.grp === "in" ? 1 : .12;
+      case 2: return (F.block === 0 && F.grp === "attn") || F === E || F === blocks[0].M ? 1 : .12;
+      case 3: return (F.block === 0 && (F.grp === "mlp" || F === blocks[0].M || F === blocks[0].S)) ? 1 : .12;
+      case 5: return F === LOG || F === blocks[L - 1].S ? 1 : .14;
+      default: return 1;
+    }
+  }
+  function growth(now) { return state < 6 ? 0 : (reduced ? 1 : ease((now - growT0) / 2600)); }
+
+  function frame(now) {
+    tweenCam(now);
+    sway = reduced ? 0 : .13 * Math.sin(now / 4200);
+    ctx.clearRect(0, 0, W, H);
+    var gr = growth(now), nb = L + (BIG - L) * gr, flowT = state === 4 ? ((now - stepT0) / 520) % (4 * L + 3) - 1 : -99;
+    bh = BH + (3 - BH) * Math.min(1, gr * 1.6); placeFloors();
+
+    /* connections first, behind the floors */
+    var la = state === 6 ? .18 : .45;
+    blocks.forEach(function (B, b) {
+      var a = clamp01(nb - b);
+      if (a <= 0) return;
+      var below = b === 0 ? E : blocks[b - 1].S, fa = focusOf(B.S) * a;
+      for (var t = 0; t < T; t++) line([2 * t + 1, below.y, C + .4], [2 * t + 1, B.S.y, C + .4], COL.slate, la * fa, 1, [2, 3]);
+      if (state === 6) return;
+      var fA = Math.max(focusOf(B.Q), focusOf(below)) * a, fM = focusOf(B.H) * a;
+      curve(ctr(below), ctr(B.Q, -.4), COL.slate, .35 * fA, 1.1);
+      curve(ctr(below), ctr(B.K, -.4), COL.slate, .35 * fA, 1.1);
+      curve(ctr(below), ctr(B.V, -.4), COL.slate, .35 * fA, 1.1);
+      curve(ctr(B.Q), ctr(B.A, -.4), COL.acc, .5 * fA, 1.2);
+      curve(ctr(B.K), ctr(B.A, -.4), COL.acc, .5 * fA, 1.2);
+      curve(ctr(B.A), ctr(B.M, -.4), COL.acc, .5 * fA, 1.2);
+      curve(ctr(B.V), ctr(B.M, -.4), COL.slate, .35 * fA, 1.1);
+      curve(ctr(B.M), ctr(B.H, -.4), COL.slate, .35 * fM, 1.1);
+      curve(ctr(B.H), ctr(B.S, -.4), COL.slate, .35 * fM, 1.1);
+    });
+    var outA = state === 6 ? 0 : 1;
+    if (outA) curve([7, blocks[L - 1].S.y, C / 2], ctr(LOG, -.4), COL.acc, .55 * focusOf(LOG), 1.4);
+    /* the four lit table rows, lifted into the stream (step 1) */
+    if (state === 1) LIT.forEach(function (r, t) { curve([EMB.x0 + r + .5, 0, C + .2], [2 * t + 1, 0, C + .2], COL.acc, .8, 1.4); });
+
+    /* floors, far to near */
+    var vis = floors.filter(function (F) {
+      if (F === LOG) F.alpha = outA; else if (F.block != null) F.alpha = clamp01(nb - F.block); else F.alpha = 1;
+      return F.alpha > .01;
+    });
+    vis.forEach(function (F) { F._z = proj(ctr(F)).z; });
+    vis.sort(function (p, q) { return q._z - p._z; });
+    vis.forEach(function (F) {
+      var lit = flowT > -50 ? Math.max(0, 1 - Math.abs(flowT - F.flow) / 1.1) : 0;
+      if (state === 6 && F.block >= L) lit = Math.max(0, 1 - Math.abs((nb - 1) - F.block) / 1.5);
+      var hi = state === 2 && F.attn && F.block === 0 ? T - 1 : (state === 1 ? 1 : -1);
+      drawFloor(F, F.alpha * focusOf(F), lit, hi);
+      if (F === LOG && state === 5) bars(1, now);
+    });
+    /* the drawing fades out before the panel, so no tile ever sits under its text */
+    ctx.save(); ctx.globalCompositeOperation = "destination-out";
+    var gf = ctx.createLinearGradient(570, 0, 630, 0); gf.addColorStop(0, "rgba(0,0,0,0)"); gf.addColorStop(1, "rgba(0,0,0,1)");
+    ctx.fillStyle = gf; ctx.fillRect(570, 0, W - 570, H); ctx.restore();
+    if (top32) top32.setAttribute("class", "tag a fade" + (gr > .97 ? "" : " hid"));
+    placeTags();
+    requestAnimationFrame(frame);
+  }
+
+  /* ---- labels pinned to the model (SVG, re-placed every frame) --------------------------------- */
+  var tagSet = [], top32 = null;
+  function tag(s, p, cls, anchor, dx, dy) { var t = txt($("tags"), s, { "class": cls || "tag", "text-anchor": anchor || "start" }); tagSet.push({ el: t, p: p, dx: dx || 0, dy: dy || 0 }); return t; }
+  function placeTags() { tagSet.forEach(function (t) { var P = proj(typeof t.p === "function" ? t.p() : t.p); t.el.setAttribute("x", (P.x + t.dx).toFixed(1)); t.el.setAttribute("y", (P.y + t.dy).toFixed(1)); }); }
+  function tagsFor(s) {
+    clear($("tags")); tagSet = [];
+    var B0 = blocks[0], top = blocks[L - 1].S;
+    if (s === 0 || s === 4) {
+      tag("TOKENS IN · the film was not", [0, 0, -1.5], "tag", "end", -6, 10);
+      blocks.slice(0, L).forEach(function (B, b) { tag("BLOCK " + (b + 1), [41, yb(b) + 5, C / 2], "tag", "start", 6, 4); });
+      tag("NEXT TOKEN", [6, OUTY() + 1, -7], "tag a", "end", -8, 0);
+    }
+    if (s === 1) {
+      TOKS.forEach(function (w, t) { tag(w, [2 * t + 1, 0, t % 2 ? -3.4 : -1.4], "tok q", "middle", 0, 10); });
+      tag("EMBEDDING TABLE · ONE ROW PER TOKEN OF THE VOCABULARY", [EMB.x0, 0, -1.4], "tag", "start", 0, 16);
+      tag("THE FOUR VECTORS", [8.6, 0, C], "tag a", "start", 8, 0);
+    }
+    if (s === 2) {
+      tag("QUERY", [B0.Q.x0 + 4, B0.Q.y, -1.4], "tag", "middle", 0, 14);
+      tag("KEY", [B0.K.x0 + 4, B0.K.y, -1.4], "tag", "middle", 0, 14);
+      tag("VALUE", [B0.V.x0 + 4, B0.V.y, -1.4], "tag", "middle", 0, 14);
+      tag("ATTENTION WEIGHTS · 4 × 4", [B0.A.x0 + 8, B0.A.y, B0.A.z0 + 8], "tag a", "start", 10, -4);
+      tag("“not” looks back", [B0.A.x0 + 8, B0.A.y, B0.A.z0 + 1], "tag m", "start", 10, 12);
+      tag("+ ADDED TO THE STREAM", [0, B0.M.y, -1], "tag", "start", -4, 18);
+    }
+    if (s === 3) {
+      tag("FEED-FORWARD · FOUR TIMES AS WIDE", [B0.H.x0 + 8, B0.H.y, B0.H.z0], "tag a", "start", 10, 4);
+      tag("+ ADDED TO THE STREAM", [0, B0.S.y, -1], "tag", "end", -8, 6);
+      tag("THE STREAM", [0, B0.M.y, -1], "tag", "end", -8, 6);
+    }
+    if (s === 5) {
+      tag("THE LAST TOKEN'S VECTOR", [6, top.y, -1], "tag", "end", -8, 6);
+      tag("ONE SCORE PER TOKEN", [LOG.x0 + 2, LOG.y, LOG.z0 + NV], "tag", "start", 10, 4);
+      tag("OF THE VOCABULARY, THEN A SOFTMAX", [LOG.x0 + 2, LOG.y, LOG.z0 + NV], "tag", "start", 10, 17);
+      tag("good", [LOG.x0 + 1, LOG.y + PROB[13] * 30, LOG.z0 + 13.5], "big2", "middle", 0, -8);
+      tag("bad", [LOG.x0 + 1, LOG.y + PROB[5] * 30, LOG.z0 + 5.5], "tag", "middle", 0, -7);
+    }
+    if (s === 6) {
+      tag("THE TOY · 3 BLOCKS", function () { return [-1, blocks[L - 1].S.y, 0]; }, "tag", "end", -8, 4);
+      top32 = tag("LLAMA 3.1 8B · 32 BLOCKS", function () { return [-1, blocks[BIG - 1].S.y, 0]; }, "tag a fade hid", "end", -8, 4);
+    }
+  }
+
+  /* ---- the panel ----------------------------------------------------------------------------- */
+  var PX = 640, PW = 330;
+  function wrapPanel(parts, y0) {
+    var gP = $("panel"), words = [], prevSpace = true;
+    parts.forEach(function (p) { var glue = !prevSpace && !/^\s/.test(p[0]); p[0].split(/\s+/).forEach(function (w) { if (w) { words.push([w, p[1], glue]); glue = false; } }); prevSpace = /\s$/.test(p[0]); });
+    var probe = txt(gP, "", { x: -9999, y: -9999, "class": "bul" });
+    function width(s) { probe.textContent = s; return typeof probe.getComputedTextLength === "function" ? probe.getComputedTextLength() : s.length * 8; }
+    var lines = [[]], cur = "";
+    words.forEach(function (w) { var t = cur ? cur + (w[2] ? "" : " ") + w[0] : w[0]; if (cur && !w[2] && width(t) > PW) { lines.push([]); cur = w[0]; } else cur = t; lines[lines.length - 1].push(w); });
+    gP.removeChild(probe);
+    lines.forEach(function (ln, i) { var t = txt(gP, "", { x: PX, y: y0 + i * 22, "class": "bul" }); ln.forEach(function (w, k) { tsp(t, (k && !w[2] ? " " : "") + w[0], w[1] ? { "class": w[1] } : {}); }); });
+    return y0 + lines.length * 22;
+  }
+  var PANEL = [
+    ["A SMALL LANGUAGE MODEL, WHOLE", [[["Every tile is one number. Four tokens go in at the bottom, three blocks work on them, and a next token comes out at the top."]], [["The numbers are invented; the "], ["shapes", "k"], [" are a real decoder's."]]]],
+    ["01 · TOKENS IN", [[["Each token's row is copied out of the "], ["embedding table", "k"], [", and its position is added."]], [["Four tokens, four vectors of twelve numbers each."]]]],
+    ["02 · ATTENTION", [[["Each vector makes a "], ["query", "k"], [", a "], ["key", "k"], [" and a "], ["value", "k"], [". Queries against keys give a 4 × 4 table of weights."]], [["Its empty half is the decoder's rule: no token may look ahead. The weighted values are added to the stream."]]]],
+    ["03 · FEED-FORWARD", [[["Then each vector goes through a network "], ["four times as wide", "k"], [", on its own, and what comes out is added to it."]]]],
+    ["04 · THE STACK", [[["Attention and feed-forward make one "], ["block", "k"], [". The stream of vectors rises through all three, and every block adds to it."]]]],
+    ["05 · THE NEXT TOKEN", [[["At the top only the "], ["last", "k"], [" vector is read: one score for every token in the vocabulary, then a "], ["softmax", "k"], ["."]], [["The tallest bar is the prediction: "], ["good", "a"], ["."]]]],
+    ["06 · THE REAL SIZE", [[["Llama 3.1 8B is the same machine with "], ["32 blocks", "k"], [", 4,096 numbers per token instead of 12, and 128,256 tokens in its vocabulary."]], [["About 8 billion weights. This toy has about " + (Math.round(TOY_W / 1000) * 1000).toLocaleString("en-US") + "."]]]]
+  ];
+  function panel(s) {
+    var gP = $("panel"); clear(gP);
+    txt(gP, PANEL[s][0], { x: PX, y: 70, "class": "ptitle" });
+    var y = 104;
+    PANEL[s][1].forEach(function (par) { y = wrapPanel(par, y) + 12; });
+  }
+
+  /* ---- states ---------------------------------------------------------------------------------- */
+  function go(s, from) {
+    state = s; var now = performance.now(); stepT0 = now;
+    camFrom = JSON.parse(JSON.stringify(cam)); camTo = CAMS[s]; camT0 = now;
+    if (s === 5) barsT0 = now + 500;
+    if (s === 6) growT0 = now + 300;
+    if (s !== 6) top32 = null;
+    tagsFor(s); panel(s);
+  }
+  var nav = CADCStepNav.attach({ max: 6, go: go, hud: $("hud"), x: 980, y: 432 });
+  /* a deep link opens at its step without flying there */
+  cam = JSON.parse(JSON.stringify(CAMS[nav.get()])); camFrom = null; barsT0 = growT0 = -1e6;
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(function () { panel(state); });
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>

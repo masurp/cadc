@@ -1,0 +1,266 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bigger every year</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&display=swap">
+<style>
+  /* ==========================================================================
+     Week 4 lecture explainer. Language-model size, 2018–2026, in two panels
+     that share one log axis: CLOSED (the names the room knows) on the left,
+     OPEN WEIGHTS (the movement) on the right. Six clicks: the published
+     counts up to GPT-3 · the frontier goes dark after GPT-4 (a leak, then
+     vendors' claims, dashed) · the current frontier as ONE bracket of rough
+     guesses · the open movement appearing year by year · the laptop band ·
+     the axis morphing from log to linear over two seconds, which is the
+     point of the figure.
+
+     What the marks mean:
+       filled          a count published by the developer (paper, model card,
+                       open-weight release); mixtures of experts by TOTAL weights
+       hollow ≈        GPT-4 ≈ 1.8 T total, a mixture of experts: a leak
+                       (SemiAnalysis, July 2023), widely repeated, never confirmed
+       dotted bracket  the 2025–26 frontier (GPT-5, Gemini 3, Claude Opus 5 and
+                       Fable 5.1, Grok 4 and 5, GPT-6 Astra): a ROUGH GUESS of
+                       1–10 trillion total weights. Consistent with the leak, with
+                       xAI's own statements (Grok 3 & 4 ≈ 3 T, Grok 5 ≈ 6 T in
+                       training; November 2025, as reported) and with these labs'
+                       known compute. No source publishes any of it; a competitor's
+                       "5 T" for Claude Opus is hearsay and sits inside the range.
+                       (Third-party estimates for the 2024 chat models, GPT-4o /
+                       Claude 3.5 Sonnet ≈ 200 B in Abacha et al. 2024, were in an
+                       earlier draft and cut for simplicity.)
+     Dates are release months. Names compiled 2026-09-13 — CHECK BEFORE CLASS,
+     as with explainers/landscape. No text on the figure: the narration is in
+     the slide's speaker notes (Philipp, 2026-09-14). Click / Enter / space; #N
+     opens at step N.
+     ========================================================================== */
+  :root{
+    --ink:#1a1a17; --ink-2:#3a3a34; --ink-3:#5a5a52; --muted:#7a7a70; --faint:#9a9a90;
+    --hair:#e7e3d9; --border:#e0dcd0; --surface:#ffffff; --strip:#f2f0ea; --paper:#faf8f4;
+    --accent:oklch(0.55 0.15 38); --accent-tint:oklch(0.95 0.03 38);
+    --font:"Space Grotesk", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0; height:100%}
+  body{font-family:var(--font); background:transparent; color:var(--ink);
+       display:flex; align-items:center; justify-content:center;
+       overflow:hidden; cursor:pointer; -webkit-tap-highlight-color:transparent}
+  svg{width:100%; height:100%; display:block}
+  text{font-family:var(--font); fill:var(--ink)}
+  .kicker{font-size:9.5px; font-weight:700; letter-spacing:.09em; fill:var(--accent)}
+  .line{font-size:11px; fill:var(--ink-2)}
+  .line tspan.k{font-weight:700; fill:var(--ink)}
+  .panel{font-size:10px; font-weight:700; letter-spacing:.1em; fill:var(--ink-3)}
+  .panel.dim{fill:var(--faint)}
+  .panel.open{fill:var(--accent)}
+  .axis{stroke:var(--border); stroke-width:1}
+  .grid{stroke:var(--hair); stroke-width:1; stroke-dasharray:2 3}
+  .tick{font-size:9.5px; fill:var(--muted)}
+  .lab{font-size:8.5px; font-weight:700; letter-spacing:.08em; fill:var(--muted)}
+  .pt{stroke:var(--surface); stroke-width:1.3}
+  .pt.closed{fill:var(--ink-3)}
+  .pt.open{fill:var(--accent)}
+  .pt.est{fill:var(--surface); stroke:var(--ink-3); stroke-width:1.7}
+  .name{font-size:10.5px; font-weight:700; fill:var(--ink-2)}
+  .name.open{fill:var(--accent)}
+  .name.est{fill:var(--ink-3); font-weight:500; font-style:italic}
+  .size{font-size:9px; fill:var(--muted); font-weight:400; font-style:normal}
+  .path{fill:none; stroke:var(--faint); stroke-width:1.3}
+  .band{fill:var(--accent-tint); stroke:none}
+  .bandlab{font-size:9px; font-weight:700; fill:var(--accent)}
+  .bracket{stroke:var(--muted); stroke-width:1.6; stroke-dasharray:2.5 2.5; fill:none}
+  .guess{font-size:10px; font-weight:700; fill:var(--ink-2)}
+  .guess.sub{font-weight:400; fill:var(--ink-3); font-size:9.5px}
+  .legend{font-size:9px; fill:var(--ink-3)}
+  .floor{font-size:10px; fill:var(--ink-3); font-style:italic}
+  .step{font-size:10.5px; fill:#b6b2a8; text-anchor:end}
+  .fade{transition:opacity .45s ease}
+  .hid{opacity:0}
+  .pop{transition:opacity .5s ease}
+</style>
+</head>
+<body>
+<svg id="chart" viewBox="0 0 1000 440" preserveAspectRatio="xMidYMid meet" role="img"
+     aria-label="Language model size from 2018 to 2026 in two panels sharing a log axis: closed models on the left, from BERT and GPT-3 to the leaked GPT-4 figure, xAI's claims for Grok and a bracket of rough guesses for GPT-5, Gemini 3, Claude and GPT-6 Astra; open-weight models on the right, from LLaMA to Kimi K2 at a trillion, with the band of three to twelve billion that runs on a laptop. On the last click the axis turns linear and everything before 2023 flattens to the floor.">
+  <g id="frame"></g>
+  <g id="layers"></g>
+  <g id="hud"></g>
+</svg>
+<noscript><p style="max-width:34em;margin:2em;font-family:sans-serif">Needs JavaScript: language model
+size over time, closed models beside open weights.</p></noscript>
+
+<script>
+(function () {
+  "use strict";
+  var NS = "http://www.w3.org/2000/svg";
+  function el(t, a) { var e = document.createElementNS(NS, t); for (var k in a) if (a[k] != null) e.setAttribute(k, a[k]); return e; }
+  function txt(p, s, a) { var t = el("text", a || {}); t.textContent = s; p.appendChild(t); return t; }
+  function tsp(t, s, a) { var x = el("tspan", a || {}); x.textContent = s; t.appendChild(x); return x; }
+  function g(p, a) { var e = el("g", a || {}); p.appendChild(e); return e; }
+  function clear(n) { while (n.firstChild) n.removeChild(n.firstChild); }
+  function $(id) { return document.getElementById(id); }
+  function wrap(parent, parts, o) {
+    var words = []; parts.forEach(function (p) { p[0].split(/\s+/).forEach(function (w) { if (w) words.push([w, p[1]]); }); });
+    var probe = txt(parent, "", { x: -9999, y: -9999, "class": o.cls });
+    function width(str) { probe.textContent = str; return typeof probe.getComputedTextLength === "function" ? probe.getComputedTextLength() : str.length * 5.6; }
+    var lines = [[]], cur = "";
+    words.forEach(function (w) { var t = cur ? cur + " " + w[0] : w[0]; if (cur && width(t) > o.width) { lines.push([]); cur = w[0]; } else cur = t; lines[lines.length - 1].push(w); });
+    parent.removeChild(probe);
+    lines.forEach(function (ln, i) { var t = txt(parent, "", { x: o.x, y: o.y + i * o.lh, "class": o.cls }); ln.forEach(function (w, k) { tsp(t, (k ? " " : "") + w[0], w[1] ? { "class": w[1] } : {}); }); });
+  }
+  var reduced = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  /* ---- two panels, one y axis; log → linear morph ------------------------------------ */
+  var L = { x0: 92, x1: 500 }, R = { x0: 556, x1: 958 };
+  var Y0 = 386, Y1 = 64, T0 = 2017.8, T1 = 2027.1, LOG0 = 8, LOG1 = 13.1, LIN1 = 10.8e12;
+  function XP(P) { return function (t) { return P.x0 + (P.x1 - P.x0) * (t - T0) / (T1 - T0); }; }
+  var XL = XP(L), XR = XP(R);
+  function Ylog(n) { return Y0 - (Y0 - Y1) * (Math.log10(n) - LOG0) / (LOG1 - LOG0); }
+  function Ylin(n) { return Y0 - (Y0 - Y1) * n / LIN1; }
+  var morph = 0;
+  function Y(n) { return (1 - morph) * Ylog(n) + morph * Ylin(n); }
+  function date(y, m) { return y + (m - .5) / 12; }
+  var updaters = [];
+
+  /* ---- data: [name, year, month, weights, kind, side, dy, sizeText] ------------------------ */
+  var CLOSED = [
+    ["BERT", 2018, 10, 340e6, "closed", "r", 0],
+    ["GPT-2", 2019, 2, 1.5e9, "closed", "r", 0],
+    ["GPT-3", 2020, 5, 175e9, "closed", "l", -8]];
+  var LEAK = [
+    ["GPT-4", 2023, 3, 1.8e12, "est", "l", -9, "≈ 1.8 T · a leak, never confirmed"]];
+  var GUESS = { lo: 1e12, hi: 10e12, year: 2026, month: 2, names: ["GPT-5", "Gemini 3", "Claude Opus 5 · Fable 5.1", "Grok 4 & 5", "GPT-6 Astra"] };
+  var TREND_END = ["", GUESS.year, GUESS.month, 3.2e12];   /* where the dashed line ends: the middle of the bracket, no marker */
+  var OPEN = [
+    ["LLaMA", 2023, 2, 65e9, "open", "l", -8, "65 B · Meta"],
+    ["Mistral 7B", 2023, 9, 7e9, "open", "r", 0, "7 B · Paris"],
+    ["Llama 3.1", 2024, 7, 405e9, "open", "l", 12, "405 B"],
+    ["DeepSeek-V3", 2024, 12, 671e9, "open", "l", -9, "671 B · MoE"],
+    ["Kimi K2", 2025, 7, 1e12, "open", "r", -8, "1 T · MoE"]];
+  var LAPTOP = [["llama3.2:3b", 2024, 9, 3e9], ["llama3.1:8b", 2024, 7, 8e9], ["gemma3:12b", 2025, 3, 12e9]];
+  var SMALL = 800e9;   /* below this a label fades on the linear axis: the point sits on the floor */
+
+  function sizeLabel(n) { return n >= 1e12 ? (n / 1e12).toFixed(1).replace(/\.0$/, "") + " T" : n >= 1e9 ? Math.round(n / 1e9) + " B" : Math.round(n / 1e6) + " M"; }
+
+  /* ---- frame --------------------------------------------------------------------------- */
+  var F = $("frame");
+  [1e9, 1e10, 1e11, 1e12, 1e13].forEach(function (n) {
+    var a = F.appendChild(el("line", { "class": "grid", x1: L.x0, y1: Ylog(n), x2: L.x1, y2: Ylog(n) }));
+    var b = F.appendChild(el("line", { "class": "grid", x1: R.x0, y1: Ylog(n), x2: R.x1, y2: Ylog(n) }));
+    var tk = txt(F, sizeLabel(n).replace(" ", ""), { x: L.x0 - 7, y: Ylog(n) + 3.5, "class": "tick", "text-anchor": "end" });
+    updaters.push(function () { var y = Y(n); [a, b].forEach(function (q) { q.setAttribute("y1", y); q.setAttribute("y2", y); q.setAttribute("opacity", 1 - morph); }); tk.setAttribute("y", y + 3.5); tk.setAttribute("opacity", 1 - morph); });
+  });
+  [2e12, 4e12, 6e12, 8e12, 10e12].forEach(function (n) {
+    var a = F.appendChild(el("line", { "class": "grid", x1: L.x0, y1: Ylin(n), x2: L.x1, y2: Ylin(n), opacity: 0 }));
+    var b = F.appendChild(el("line", { "class": "grid", x1: R.x0, y1: Ylin(n), x2: R.x1, y2: Ylin(n), opacity: 0 }));
+    var tk = txt(F, (n / 1e12) + "T", { x: L.x0 - 7, y: Ylin(n) + 3.5, "class": "tick", "text-anchor": "end", opacity: 0 });
+    updaters.push(function () { [a, b, tk].forEach(function (q) { q.setAttribute("opacity", morph); }); });
+  });
+  var zero = txt(F, "0", { x: L.x0 - 7, y: Y0 + 3.5, "class": "tick", "text-anchor": "end", opacity: 0 });
+  updaters.push(function () { zero.setAttribute("opacity", morph); });
+  [L, R].forEach(function (P) {
+    F.appendChild(el("line", { "class": "axis", x1: P.x0, y1: Y0, x2: P.x1, y2: Y0 }));
+    [2018, 2020, 2022, 2024, 2026].forEach(function (yr) { txt(F, yr, { x: XP(P)(yr + .5), y: Y0 + 14, "class": "tick", "text-anchor": "middle" }); });
+  });
+  F.appendChild(el("line", { "class": "axis", x1: L.x0, y1: Y1 - 10, x2: L.x0, y2: Y0 }));
+  var axisLab = txt(F, "WEIGHTS · LOG", { x: L.x0 - 7, y: Y1 - 16, "class": "lab", "text-anchor": "end" });
+  updaters.push(function () { axisLab.textContent = morph > .5 ? "WEIGHTS · LINEAR" : "WEIGHTS · LOG"; });
+  txt(F, "CLOSED · THE NAMES YOU KNOW", { x: L.x0, y: Y1 - 16, "class": "panel" });
+  var rightHead = txt(F, "OPEN WEIGHTS · THE MOVEMENT", { x: R.x0, y: Y1 - 16, "class": "panel dim" });
+
+  /* ---- layers --------------------------------------------------------------------------- */
+  var LY = $("layers"), layers = [], popGroups = [];
+  function layer() { var l = g(LY, { "class": "fade hid" }); layers.push(l); return l; }
+  function point(p, X, d, opt) {
+    opt = opt || {};
+    var x = X(date(d[1], d[2])), n = d[3], kind = d[4], side = d[5] || "r", dy = d[6] || 0, r = opt.small ? 3.8 : 5.2;
+    var grp = g(p, opt.delay != null ? { "class": "pop hid", style: "transition-delay:" + opt.delay + "ms" } : {});
+    var c = grp.appendChild(el("circle", { "class": "pt " + kind, cx: x, cy: Y(n), r: r }));
+    var ax = side === "l" ? x - 9 : x + 9, anchor = side === "l" ? "end" : "start";
+    var t = txt(grp, d[0], { x: ax, y: Y(n) + 3.5 + dy, "class": "name " + kind, "text-anchor": anchor, "font-size": opt.small ? "9" : null });
+    tsp(t, "  " + (d[7] || sizeLabel(n)), { "class": "size" });
+    updaters.push(function () { var y = Y(n); c.setAttribute("cy", y); t.setAttribute("y", y + 3.5 + dy); t.setAttribute("opacity", n < SMALL ? 1 - morph : 1); });
+    return grp;
+  }
+  function pathThrough(p, X, ds, dashed) {
+    var path = p.appendChild(el("path", { "class": "path", "stroke-dasharray": dashed ? "5 4" : null }));
+    function draw() { path.setAttribute("d", ds.map(function (d, i) { return (i ? "L" : "M") + X(date(d[1], d[2])).toFixed(1) + "," + Y(d[3]).toFixed(1); }).join(" ")); }
+    draw(); updaters.push(draw);
+  }
+
+  (function () {
+    /* 1 · the start */
+    var l0 = layer(); pathThrough(l0, XL, CLOSED); CLOSED.forEach(function (d) { point(l0, XL, d); });
+    /* 2 · the frontier goes dark: a leak, then claims, dashed */
+    var l1 = layer(); pathThrough(l1, XL, [CLOSED[2], LEAK[0], TREND_END], true); LEAK.forEach(function (d) { point(l1, XL, d); });
+    var leg1 = txt(l1, "hollow: not published — a leak; dotted: a guess", { x: L.x1, y: Y0 - 10, "class": "legend", "text-anchor": "end" });
+    updaters.push(function () { leg1.setAttribute("opacity", 1 - morph); });
+    /* 3 · the current frontier as one bracket of rough guesses */
+    var l2 = layer(), gx = XL(date(GUESS.year, GUESS.month));
+    var br = l2.appendChild(el("path", { "class": "bracket" }));
+    var gl = [txt(l2, "the 2025–26 frontier", { x: gx - 10, y: 0, "class": "guess", "text-anchor": "end" }),
+              txt(l2, "≈ 1 to 10 T — a rough guess, no source", { x: gx - 10, y: 0, "class": "guess sub", "text-anchor": "end" })];
+    var gn = GUESS.names.map(function (nm) { return txt(l2, nm, { x: gx - 10, y: 0, "class": "guess sub", "text-anchor": "end", "font-size": "9" }); });
+    function drawBracket() {
+      var ylo = Y(GUESS.lo), yhi = Y(GUESS.hi);
+      br.setAttribute("d", "M" + (gx - 6) + "," + yhi + " h12 M" + gx + "," + yhi + " V" + ylo + " M" + (gx - 6) + "," + ylo + " h12");
+      var top = (1 - morph) * (ylo + 18) + morph * (yhi + 8);   /* below the bracket on the log axis, beside it once linear */
+      gl[0].setAttribute("y", top); gl[1].setAttribute("y", top + 12);
+      gn.forEach(function (t, i) { t.setAttribute("y", top + 26 + i * 11); });
+    }
+    drawBracket(); updaters.push(drawBracket);
+    /* 4 · the open movement, popping in by date */
+    var l3 = layer(); OPEN.forEach(function (d, i) { popGroups.push(point(l3, XR, d, { delay: i * 160 })); });
+    var leg3 = txt(l3, "orange: open weights, counted exactly · MoE = mixture of experts", { x: R.x1, y: Y0 - 10, "class": "legend", "text-anchor": "end" });
+    updaters.push(function () { leg3.setAttribute("opacity", 1 - morph); });
+    /* 5 · the laptop band */
+    var l4 = layer();
+    var band = l4.appendChild(el("rect", { "class": "band", x: R.x0, y: Y(15e9), width: R.x1 - R.x0, height: Y(2.5e9) - Y(15e9) }));
+    var bandLab = txt(l4, "RUNS ON THIS LAPTOP · 3 TO 12 BILLION", { x: R.x0 + 8, y: Y(15e9) + 12, "class": "bandlab" });
+    updaters.push(function () { band.setAttribute("y", Y(15e9)); band.setAttribute("height", Math.max(1, Y(2.5e9) - Y(15e9))); bandLab.setAttribute("y", Y(15e9) + 12); bandLab.setAttribute("opacity", 1 - morph); });
+    LAPTOP.forEach(function (d) { point(l4, XR, [d[0], d[1], d[2], d[3], "open", "r", 0, sizeLabel(d[3])], { small: true }); });
+    /* 6 · linear: the floor note */
+    var l5 = layer();
+    var f1 = txt(l5, "", { x: L.x0 + 8, y: Y0 - 112, "class": "floor" });
+    tsp(f1, "Same points, linear axis. "); tsp(f1, "Everything below half a trillion is on the floor", { "font-weight": "700", "font-style": "normal", fill: "#1a1a17" });
+    var f2 = txt(l5, "— GPT-3 included. What stands is a leak and a guess.", { x: L.x0 + 8, y: Y0 - 98, "class": "floor" });
+    updaters.push(function () { f1.setAttribute("opacity", morph); f2.setAttribute("opacity", morph); });
+  })();
+  function applyMorph() { updaters.forEach(function (f) { f(); }); }
+
+
+  /* ---- the morph: one eased tween, everything interpolated per frame ------------------------ */
+  var anim = null;
+  function ease(t) { return t < .5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2; }
+  function animateTo(target, dur) {
+    if (reduced || dur <= 0) { morph = target; applyMorph(); anim = null; return; }
+    var from = morph, t0 = performance.now(); anim = true;
+    (function frame(now) {
+      if (!anim) return;
+      var k = Math.min(1, (now - t0) / dur); morph = from + (target - from) * ease(k); applyMorph();
+      if (k < 1) requestAnimationFrame(frame); else anim = null;
+    })(t0);
+  }
+
+  var counter = txt($("hud"), "", { x: 980, y: 432, "class": "step" });
+  var MAX = layers.length - 1, LIN = 5, prev = -1;
+  var state = Math.max(0, Math.min(MAX, parseInt((location.hash || "").slice(1), 10) || 0));
+  function render() {
+    layers.forEach(function (l, i) { l.setAttribute("class", "fade" + (i <= state ? "" : " hid")); });
+    rightHead.setAttribute("class", "panel" + (state >= 3 ? " open" : " dim"));
+    popGroups.forEach(function (q) { q.setAttribute("class", "pop" + (state >= 3 ? "" : " hid")); });
+    if (state >= LIN) animateTo(1, prev === LIN - 1 ? 2200 : 0); else animateTo(0, prev >= LIN ? 900 : 0);
+    applyMorph();
+    counter.textContent = (state + 1) + " / " + (MAX + 1); prev = state;
+  }
+  function advance() { if (state >= MAX) return; state += 1; render(); }
+  render();
+  window.addEventListener("hashchange", function () { state = Math.max(0, Math.min(MAX, parseInt((location.hash || "").slice(1), 10) || 0)); render(); });
+  document.body.addEventListener("click", advance);
+  document.body.addEventListener("keydown", function (e) { if (e.key === "Enter" || e.key === " ") advance(); });
+})();
+</script>
+</body>
+</html>

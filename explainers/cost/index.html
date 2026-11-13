@@ -1,0 +1,895 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>What the study costs — CADC</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&display=swap">
+<style>
+  /* --- tokens ---------------------------------------------------------------
+     Week 4, so the chrome accent is the era-5 orange-red. Two encodings carry
+     meaning and are never reused for anything else:
+
+       machine = orange-red (the accent)      human = VU blue
+       local models = a hueless INK grey, so "runs on your laptop" reads as a
+       property of the mark, not as a third category of cost.
+
+     Blue against orange-red is the validated pair used in the other six tools,
+     so "human vs machine" is legible to eyes that have read the confusion
+     matrices in week 2. */
+  :root{
+    --paper:#faf8f4; --surface:#fff; --panel:#fdfcf9; --strip:#f2f0ea;
+    --hairline:#e7e3d9; --border:#e0dcd0;
+    --ink:#1a1a17; --ink-2:#3a3a34; --ink-3:#5a5a52; --muted:#7a7a70; --faint:#9a9a90;
+    --accent:#b84a27; --accent-tint:#fbeee8;
+    --human:#2678b0; --human-tint:#e8f1f8;
+    --local:#6f6f66;
+    --warn:#8a6d1f; --warn-tint:#fbf4e0;
+    --font:"Space Grotesk", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --paper:#10243a; --surface:#16304a; --panel:#142c44; --strip:#1b3550;
+      --hairline:#2c4560; --border:#2c4560;
+      --ink:#e8eaec; --ink-2:#cfd6de; --ink-3:#a8c0d4; --muted:#7d9bb5; --faint:#6d8ba6;
+      --accent:#d26a49; --accent-tint:#3a2118;
+      --human:#3291d1; --human-tint:#14304a;
+      --local:#9aa8b4;
+      --warn:#d9b45c; --warn-tint:#332d16;
+    }
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{font-family:var(--font); background:var(--paper); color:var(--ink);
+       font-size:14px; line-height:1.5; padding:0 20px 22px; overflow-x:hidden}
+
+  .band{height:3px; background:var(--accent); margin:0 -20px 13px; opacity:.9}
+  .eyebrow{font-size:10px; font-weight:700; letter-spacing:.1em; text-transform:uppercase;
+           color:var(--accent); margin-bottom:5px}
+  h1{font-size:15px; font-weight:700; margin:0}
+  .sub{font-size:12px; color:var(--ink-3); margin:4px 0 15px; max-width:78ch}
+  .sub b{color:var(--ink-2); font-weight:500}
+
+  .bnd{border-top:1px solid var(--hairline); padding-top:12px; margin-bottom:18px}
+  .qn{display:flex; align-items:baseline; gap:9px; margin-bottom:12px}
+  .qn .num{flex:0 0 20px; height:20px; border-radius:50%; background:var(--accent);
+    color:#fff; font-size:11px; font-weight:700; display:flex; align-items:center;
+    justify-content:center; align-self:center}
+  .qn h2{font-size:14px; font-weight:700; margin:0; color:var(--ink)}
+  .qn .sd{font-size:11.5px; color:var(--faint)}
+
+  /* --- controls, grouped by kind: sliders, then choices, then switches ----- */
+  .row{display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:11px 18px}
+  .row + .row{margin-top:14px}
+  .ctl{min-width:0}
+  .lb{font-size:10.5px; color:var(--muted); margin-bottom:5px; display:flex;
+      justify-content:space-between; gap:6px; align-items:center}
+  .lb .t{display:flex; align-items:center; gap:5px; min-width:0}
+  .lb .v{color:var(--ink); font-weight:500; font-variant-numeric:tabular-nums; flex:0 0 auto}
+  input[type=range]{width:100%; accent-color:var(--accent); margin:0; cursor:pointer}
+  .hum input[type=range]{accent-color:var(--human)}
+  .seg{display:flex; flex-wrap:wrap; gap:4px}
+  .seg button{font:inherit; font-size:11px; padding:4px 9px; cursor:pointer;
+    border:1px solid var(--border); border-radius:6px; background:var(--surface); color:var(--ink-2)}
+  .seg button:hover{border-color:var(--accent)}
+  .seg button[aria-pressed=true]{background:var(--accent); border-color:var(--accent); color:#fff;
+    font-weight:500}
+  .checks{display:flex; flex-wrap:wrap; gap:16px; margin-top:14px; align-items:center}
+  .chk{display:flex; align-items:center; gap:7px; font-size:12px; color:var(--ink-2); cursor:pointer}
+  .chk input{width:15px; height:15px; accent-color:var(--accent); cursor:pointer; margin:0}
+
+  /* --- the ⓘ tooltip: every control explains itself on hover -------------- */
+  .i{flex:0 0 auto; width:13px; height:13px; border-radius:50%; border:1px solid var(--border);
+     color:var(--faint); font-size:9px; font-weight:700; line-height:1; display:inline-flex;
+     align-items:center; justify-content:center; cursor:help; position:relative}
+  .i:hover{border-color:var(--accent); color:var(--accent)}
+  .i::after{content:attr(data-tip); position:absolute; bottom:calc(100% + 7px); left:-6px;
+    width:230px; max-width:44vw; background:var(--ink); color:var(--paper); font-size:10.5px;
+    font-weight:400; line-height:1.45; padding:7px 9px; border-radius:6px; text-align:left;
+    opacity:0; pointer-events:none; transition:opacity .12s; z-index:30}
+  .i.flip::after{left:auto; right:-6px}
+  .i:hover::after{opacity:1}
+
+  .readout{display:flex; flex-wrap:wrap; margin-top:15px; border:1px solid var(--border);
+    border-radius:9px; background:var(--surface); overflow:hidden}
+  .ro{flex:1 1 120px; padding:8px 12px; border-right:1px solid var(--hairline); min-width:0}
+  .ro:last-child{border-right:0}
+  .ro .k{font-size:10px; color:var(--muted); letter-spacing:.05em; text-transform:uppercase}
+  .ro .v{font-size:17px; font-weight:700; font-variant-numeric:tabular-nums; margin-top:1px;
+         letter-spacing:-.02em}
+  .ro .n{font-size:10.5px; color:var(--faint); margin-top:1px}
+
+  /* --- the plot -----------------------------------------------------------
+     Two real quantities on the two axes — what it costs and how long you wait
+     — with energy as the area of the mark. The human alternative has genuine
+     coordinates on both, so it belongs on the same chart rather than beside it. */
+  .plot{position:relative; height:360px; margin:2px 0 0}
+  .area{position:absolute; left:52px; right:10px; top:12px; bottom:30px}
+  .gl{position:absolute; background:var(--hairline)}
+  .gl.x{width:1px; top:0; bottom:0}
+  .gl.y{height:1px; left:0; right:0}
+  .axlab{position:absolute; font-size:9.5px; color:var(--faint); white-space:nowrap;
+         font-variant-numeric:tabular-nums}
+  .axlab.x{bottom:-20px; transform:translateX(-50%)}
+  .axlab.y{right:calc(100% + 7px); transform:translateY(-50%); text-align:right}
+  .axname{position:absolute; font-size:9.5px; letter-spacing:.07em; text-transform:uppercase;
+          color:var(--muted)}
+  .axname.x{bottom:-30px; right:0}
+  .axname.y{top:-12px; left:0}
+  .mk{position:absolute; border-radius:50%; background:var(--accent); cursor:pointer;
+      transform:translate(-50%,50%); border:1.5px solid var(--paper)}
+  .mk.loc{background:var(--local)}
+  .mk.warn{background:var(--paper); box-shadow:inset 0 0 0 2px var(--local)}
+  /* selection is an outline, so it composes with the filled, grey and hollow
+     variants instead of replacing their box-shadow */
+  .mk.on{outline:2px solid var(--ink); outline-offset:2px; z-index:7}
+  .mk:hover{z-index:8}
+  /* the human is a different kind of thing, so it gets a different shape */
+  .mk.hum{background:var(--human); border-radius:2px; width:15px; height:15px;
+          transform:translate(-50%,50%) rotate(45deg); border:2px solid var(--paper)}
+  .tip{position:absolute; bottom:calc(100% + 7px); left:50%; transform:translateX(-50%);
+    background:var(--ink); color:var(--paper); font-size:10.5px; padding:3px 7px; border-radius:5px;
+    white-space:nowrap; opacity:0; pointer-events:none; transition:opacity .1s; font-weight:500;
+    z-index:9}
+  .mk:hover .tip{opacity:1}
+  .mk.hum .tip{transform:translateX(-50%) rotate(-45deg); bottom:calc(100% + 2px)}
+  /* a mark near either edge would push its tooltip past the frame and give the
+     page a horizontal scrollbar, so anchor those tooltips to the mark instead */
+  .mk.tipL .tip{left:auto; right:-4px; transform:none}
+  .mk.tipR .tip{left:-4px; right:auto; transform:none}
+  .mk.hum.tipL .tip{transform:rotate(-45deg); transform-origin:100% 100%}
+  .mk.hum.tipR .tip{transform:rotate(-45deg); transform-origin:0 100%}
+  .pin{position:absolute; font-size:10px; font-weight:700; color:var(--ink);
+       transform:translateX(-50%); white-space:nowrap; pointer-events:none; z-index:6}
+  .pin.h{color:var(--human)}
+  .legend{display:flex; gap:14px; flex-wrap:wrap; font-size:10px; color:var(--faint);
+          margin-top:6px; align-items:center}
+  .legend span{display:flex; align-items:center; gap:5px}
+  .legend i{width:9px; height:9px; border-radius:50%; background:var(--accent); display:block}
+  .legend i.l{background:var(--local)}
+  .legend i.o{background:var(--paper); box-shadow:inset 0 0 0 2px var(--local)}
+  .legend i.h{background:var(--human); border-radius:1px; transform:rotate(45deg)}
+
+  /* --- the detail card ----------------------------------------------------- */
+  .card{border:1px solid var(--border); border-radius:10px; background:var(--surface);
+        margin-top:12px; overflow:hidden}
+  .card__hd{display:flex; align-items:center; gap:10px; flex-wrap:wrap;
+    padding:9px 13px; border-bottom:1px solid var(--hairline); background:var(--panel)}
+  .card__hd .who{font-size:13px; font-weight:700}
+  .card__hd .meta{font-size:11px; color:var(--faint)}
+  .card__hd select{margin-left:auto; font:inherit; font-size:11.5px; padding:3px 7px;
+    border:1px solid var(--border); border-radius:6px; background:var(--surface); color:var(--ink-2);
+    cursor:pointer; max-width:100%}
+  .quad{display:grid; grid-template-columns:repeat(4,minmax(0,1fr))}
+  @media (max-width:720px){ .quad{grid-template-columns:repeat(2,minmax(0,1fr))} }
+  .q{padding:11px 13px; border-right:1px solid var(--hairline)}
+  .q:last-child{border-right:0}
+  @media (max-width:720px){
+    .q:nth-child(2){border-right:0}
+    .q:nth-child(-n+2){border-bottom:1px solid var(--hairline)}
+  }
+  .q .k{font-size:9.5px; color:var(--muted); letter-spacing:.06em; text-transform:uppercase;
+        display:flex; align-items:center; gap:5px}
+  .q .k svg{width:12px; height:12px; flex:0 0 auto; opacity:.8}
+  .q .big{font-size:20px; font-weight:700; letter-spacing:-.02em; margin-top:3px; line-height:1.2;
+          font-variant-numeric:tabular-nums; color:var(--accent)}
+  .q .raw{font-size:11px; color:var(--faint); margin-top:2px; font-variant-numeric:tabular-nums}
+
+  .note{border-left:3px solid var(--accent); background:var(--accent-tint); border-radius:0 7px 7px 0;
+    padding:9px 12px; font-size:12px; color:var(--ink-2); margin-top:12px; line-height:1.55}
+  .note b{color:var(--ink); font-weight:700}
+  .note.warn{border-left-color:var(--warn); background:var(--warn-tint)}
+  .note.hum{border-left-color:var(--human); background:var(--human-tint)}
+  .assume{font-size:11px; color:var(--faint); margin:9px 0 0; line-height:1.55; max-width:84ch}
+  .assume b{color:var(--muted); font-weight:500}
+  .subhd{font-size:10px; font-weight:700; letter-spacing:.09em; text-transform:uppercase;
+    color:var(--muted); margin:16px 0 8px; display:flex; align-items:center; gap:8px}
+  .subhd::after{content:""; flex:1; height:1px; background:var(--hairline)}
+  .subhd.h{color:var(--human)}
+
+  /* --- sources, folded away until asked for -------------------------------- */
+  .src{border-top:1px solid var(--hairline); margin-top:20px; padding-top:11px}
+  .src summary{font-size:10px; font-weight:700; letter-spacing:.09em; text-transform:uppercase;
+    color:var(--muted); cursor:pointer; list-style:none; display:flex; align-items:center; gap:7px}
+  .src summary::-webkit-details-marker{display:none}
+  .src summary::before{content:"▸"; font-size:10px; transition:transform .15s; display:inline-block}
+  .src[open] summary::before{transform:rotate(90deg)}
+  .src summary:hover{color:var(--accent)}
+  .src ul{margin:11px 0 0; padding:0; list-style:none; columns:3; column-gap:24px}
+  @media (max-width:980px){ .src ul{columns:2} }
+  @media (max-width:660px){ .src ul{columns:1} }
+  .src li{font-size:11px; color:var(--ink-3); line-height:1.55; margin-bottom:6px;
+          break-inside:avoid}
+  .src li b{color:var(--ink-2); font-weight:500}
+  .src a{color:var(--accent); text-decoration:none}
+  .src a:hover{text-decoration:underline}
+  .src .asof{font-size:10.5px; color:var(--faint); margin-top:9px}
+</style>
+</head>
+<body>
+
+<div class="band"></div>
+<div class="eyebrow">Week 4 · LLMs as instruments</div>
+<h1>What the study costs</h1>
+<p class="sub">Every annotation study is paid for twice: in money and electricity, and in
+someone's afternoon. Design it below, then find it on the chart. <b>The interesting number is
+never the one you expected.</b></p>
+
+<!-- ===================== PART 1 — the design ===================== -->
+<section class="bnd">
+  <div class="qn">
+    <span class="num">1</span>
+    <div>
+      <h2>What are you actually asking for?</h2>
+      <div class="sd">A cost is a property of a design, not of a model. Hover any ⓘ.</div>
+    </div>
+  </div>
+
+  <!-- sliders -->
+  <div class="row">
+    <div class="ctl">
+      <div class="lb"><span class="t">Items to classify
+        <span class="i" data-tip="How many texts you need a label for. A pilot is a few hundred; a full study runs to hundreds of thousands.">i</span></span>
+        <span class="v" id="v-items">2,000</span></div>
+      <input type="range" id="items" min="0" max="25" value="9" step="1">
+    </div>
+    <div class="ctl">
+      <div class="lb"><span class="t">Prompt versions
+        <span class="i" data-tip="Different wordings of the same instruction. Two prompts that mean the same thing to you can label the data differently, so you compare a few and report how much the answer depended on your wording. Each version means classifying everything again.">i</span></span>
+        <span class="v" id="v-var">2</span></div>
+      <input type="range" id="variants" min="1" max="6" value="2" step="1">
+    </div>
+    <div class="ctl">
+      <div class="lb"><span class="t">Runs per version
+        <span class="i" data-tip="The same prompt, sent again. A model can answer differently each time, so one run cannot tell you whether a label is stable. Repeating gives you that — and multiplies the bill.">i</span></span>
+        <span class="v" id="v-runs">3</span></div>
+      <input type="range" id="runs" min="1" max="10" value="3" step="1">
+    </div>
+  </div>
+
+  <!-- choices -->
+  <div class="row">
+    <div class="ctl">
+      <div class="lb"><span class="t">Length of each text
+        <span class="i" data-tip="Longer texts mean more tokens sent per item, and tokens are what you are billed for.">i</span></span></div>
+      <div class="seg" role="group" id="seg-text">
+        <button data-v="120" aria-pressed="false">a tweet</button>
+        <button data-v="400" aria-pressed="true">a paragraph</button>
+        <button data-v="1200" aria-pressed="false">an article</button>
+      </div>
+    </div>
+    <div class="ctl">
+      <div class="lb"><span class="t">Codebook in the prompt
+        <span class="i" data-tip="Your coding instructions travel with every single request. A one-line rule is cheap; a real codebook with category definitions and edge cases is sent again for every item.">i</span></span></div>
+      <div class="seg" role="group" id="seg-book">
+        <button data-v="120" aria-pressed="false">one line</button>
+        <button data-v="450" aria-pressed="true">short</button>
+        <button data-v="1400" aria-pressed="false">the real one</button>
+      </div>
+    </div>
+    <div class="ctl">
+      <div class="lb"><span class="t">Few-shot examples
+        <span class="i" data-tip="Worked examples of correctly coded texts, added to the prompt to show the model what you mean. They usually help, and they enlarge every request.">i</span></span></div>
+      <div class="seg" role="group" id="seg-shot">
+        <button data-v="0" aria-pressed="true">none</button>
+        <button data-v="4" aria-pressed="false">4</button>
+        <button data-v="16" aria-pressed="false">16</button>
+      </div>
+    </div>
+    <div class="ctl">
+      <div class="lb"><span class="t">What comes back
+        <span class="i" data-tip="Just the category, or the category plus a sentence saying why. The justification is useful when you audit disagreements — but generated tokens cost about five times what sent tokens cost.">i</span></span></div>
+      <div class="seg" role="group" id="seg-out">
+        <button data-v="6" aria-pressed="true">just the label</button>
+        <button data-v="70" aria-pressed="false">label + a reason</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- switches -->
+  <div class="checks">
+    <label class="chk"><input type="checkbox" id="batch"> send it as a batch job
+      <span class="i" data-tip="Hand the whole job over and collect the results later. Half price at every vendor, in exchange for waiting up to 24 hours. Research annotation is never interactive, so this is usually free money.">i</span></label>
+    <label class="chk"><input type="checkbox" id="cache" checked> cache the codebook and examples
+      <span class="i" data-tip="The codebook is identical in every request. Vendors will keep that repeated part and charge about 90% less for it — but caches expire in 5–30 minutes, so a long job keeps re-writing them.">i</span></label>
+  </div>
+
+  <div class="readout">
+    <div class="ro"><div class="k">Calls</div><div class="v" id="ro-calls">—</div>
+      <div class="n" id="ro-callsn"></div></div>
+    <div class="ro"><div class="k">Tokens in</div><div class="v" id="ro-in">—</div>
+      <div class="n" id="ro-inn"></div></div>
+    <div class="ro"><div class="k">Tokens out</div><div class="v" id="ro-out">—</div>
+      <div class="n" id="ro-outn"></div></div>
+  </div>
+  <div class="note" id="designnote"></div>
+</section>
+
+<!-- ===================== PART 2 — the bill ===================== -->
+<section class="bnd">
+  <div class="qn">
+    <span class="num">2</span>
+    <div>
+      <h2>What would your study cost? In euros, hours and energy</h2>
+      <div class="sd">Fifteen models and paid human coders, for the study you set up above.
+        Across: how long you wait. Up: what you pay. Dot size: the energy used. Click any mark.</div>
+    </div>
+  </div>
+
+  <div class="plot" id="plot"></div>
+  <div class="legend">
+    <span><i></i> hosted model</span>
+    <span><i class="l"></i> on your machine</span>
+    <span><i class="o"></i> too big for your machine</span>
+    <span><i class="h"></i> human coders</span>
+    <span style="margin-left:auto">area of each dot = energy used</span>
+  </div>
+
+  <div class="card">
+    <div class="card__hd">
+      <span class="who" id="c-who">—</span>
+      <span class="meta" id="c-meta"></span>
+      <select id="picker" aria-label="Choose a model"></select>
+    </div>
+    <div class="quad" id="c-quad"></div>
+  </div>
+
+  <div class="note" id="verdict"></div>
+
+  <div class="subhd">The machine, in detail</div>
+  <div class="row">
+    <div class="ctl">
+      <div class="lb"><span class="t">Your machine, for the local models
+        <span class="i" data-tip="What you would actually run Ollama on. 16 GB = a MacBook Air or mid-range Windows laptop; 32 GB = a MacBook Pro or gaming laptop; the RTX 4090 is a high-end gaming desktop; the Mac Studio is a lab machine. Memory decides more than speed: a model whose weights do not fit spills to system memory and crawls.">i</span></span></div>
+      <div class="seg" role="group" id="seg-hw">
+        <button data-v="lap16" aria-pressed="true">16 GB laptop</button>
+        <button data-v="lap32" aria-pressed="false">32 GB laptop</button>
+        <button data-v="gpu" aria-pressed="false">RTX 4090 (24 GB)</button>
+        <button data-v="studio" aria-pressed="false">Mac Studio M5 (96 GB)</button>
+      </div>
+    </div>
+  </div>
+  <p class="assume" id="assume"></p>
+  <div class="note warn" id="localnote"></div>
+
+  <div class="subhd h">The human alternative, in detail</div>
+  <div class="row hum">
+    <div class="ctl">
+      <div class="lb"><span class="t">Minutes per item
+        <span class="i" data-tip="How long a trained coder needs to read one text and assign a category. A tweet with a simple codebook takes under a minute; a news article with a nuanced one takes several.">i</span></span>
+        <span class="v" id="v-min">1.5</span></div>
+      <input type="range" id="minutes" min="1" max="40" value="6" step="1">
+    </div>
+    <div class="ctl">
+      <div class="lb"><span class="t">Gross hourly wage
+        <span class="i" data-tip="What the coder is paid before employer costs. The default is a master's-level student assistant on the Dutch university scale.">i</span></span>
+        <span class="v" id="v-wage">€16.50</span></div>
+      <input type="range" id="wage" min="1000" max="4000" value="1650" step="50">
+    </div>
+    <div class="ctl">
+      <div class="lb"><span class="t">Codebook &amp; training
+        <span class="i" data-tip="Hours spent writing the coding instructions and training coders on them before any data is coded. A fixed cost that does not shrink with the sample — and the part an LLM does not remove.">i</span></span>
+        <span class="v" id="v-fix">16 h</span></div>
+      <input type="range" id="fixed" min="0" max="80" value="16" step="2">
+    </div>
+    <div class="ctl">
+      <div class="lb"><span class="t">Share double-coded
+        <span class="i" data-tip="The fraction coded independently by two people, so you can compute how much they agree. Without it you have labels but no evidence they are reliable.">i</span></span>
+        <span class="v" id="v-dbl">20%</span></div>
+      <input type="range" id="dbl" min="0" max="100" value="20" step="5">
+    </div>
+  </div>
+  <div class="checks">
+    <label class="chk"><input type="checkbox" id="overhead" checked>
+      add 30% employer costs
+      <span class="i" data-tip="Holiday pay, the 8.3% year-end bonus and social charges. What the coder costs the project, rather than what lands in their account.">i</span></label>
+  </div>
+  <div class="note hum" id="reframe"></div>
+</section>
+
+<!-- ===================== SOURCES ===================== -->
+<details class="src">
+  <summary>Where these numbers come from</summary>
+  <ul>
+    <li><b>Claude prices</b> — Fable 5.1 $10/$50, Opus 5 $5/$25, Sonnet 5 $2/$10, Haiku 4.5 $1/$5 per
+      million tokens in/out.
+      <a href="https://claude.com/pricing" target="_blank" rel="noopener">claude.com/pricing</a>,
+      checked 8 Sep 2026.</li>
+    <li><b>OpenAI prices</b> — GPT‑6 Astra $10/$50 (released 3 Sep 2026), GPT‑5.6 Sol $5/$30,
+      Terra $2/$12, Luna $0.20/$1.20.
+      <a href="https://benchlm.ai/openai/api-pricing" target="_blank" rel="noopener">BenchLM</a>,
+      <a href="https://www.aipricing.guru/openai-pricing/" target="_blank" rel="noopener">aipricing.guru</a>,
+      Sep 2026.</li>
+    <li><b>Gemini prices</b> — 3.1 Pro $2/$12; 3.8 Flash $0.75/$3.75 introductory, rising to
+      $1.50/$7.50 on 1 Jan 2027; 3.5 Flash‑Lite $0.30/$2.50.
+      <a href="https://benchlm.ai/google/api-pricing" target="_blank" rel="noopener">BenchLM</a>,
+      <a href="https://www.cloudzero.com/blog/gemini-pricing/" target="_blank" rel="noopener">CloudZero</a>,
+      Sep 2026.</li>
+    <li><b>Batch discount</b> — 50% off input and output, asynchronous, up to 24 h. All three
+      vendors.</li>
+    <li><b>Cached input</b> — a repeated prefix is discounted ~90% by all three: Claude reads
+      $0.50 / $0.20 / $0.10 (Fable 5.1 $0.25)
+      (<a href="https://claude.com/pricing" target="_blank" rel="noopener">Anthropic</a>);
+      GPT‑5.6 Sol $0.50, Terra $0.20, Luna $0.02
+      (<a href="https://www.elser.ai/blog/gpt-5-6-pricing-explained-sol-terra-luna-and-prompt-caching" target="_blank" rel="noopener">Elser</a>);
+      Gemini implicit caching at ~10% of input, e.g. 3.1 Pro $0.20
+      (<a href="https://docs.cloud.google.com/gemini-enterprise-agent-platform/models/context-cache/context-cache-overview" target="_blank" rel="noopener">Google</a>).
+      Assumes 90% of the repeated prefix hits.</li>
+    <li><b>Local model sizes and speed</b> — Qwen 3.5 (the 4B, 9B, 27B and 35B‑A3B variants fit a
+      student machine) at Q4 quantisation.
+      <a href="https://unsloth.ai/docs/models/qwen3.5" target="_blank" rel="noopener">Unsloth</a>,
+      <a href="https://insiderllm.com/guides/qwen-models-guide/" target="_blank" rel="noopener">InsiderLLM</a>,
+      <a href="https://llmhardware.io/guides/qwen3-hardware-requirements" target="_blank" rel="noopener">llmhardware.io</a>,
+      2026. Order‑of‑magnitude; throughput varies with quantisation and context length.</li>
+    <li><b>Time, hosted</b> — eight requests in parallel at roughly 40 generated tokens/second for
+      the frontier tier, 85 for the workhorse tier, 150 for the cheap tier.</li>
+    <li><b>Time, local</b> — one request at a time, at the reference GPU's throughput scaled to the
+      machine (0.30 for a 16 GB laptop, 0.40 for 32 GB, 1.0 for the RTX 4090, 0.75 for a Mac Studio
+      M5), prompt read ten times faster than the answer is written. Usable memory 11 / 24 / 22 /
+      72 GB — less than the sticker figure, because the OS keeps some, and on Apple silicon the
+      GPU may address only part of unified memory. <b>A model whose weights exceed that runs roughly
+      ten times slower</b>, spilling to system memory. Power draw 38 / 50 / 350 / 120 W sustained.
+      The Mac Studio figures are an estimate for a machine of that class, not a benchmark.</li>
+    <li><b>Energy per token, hosted models</b> — anchored on a median ≈0.3 Wh for a ~500‑token
+      GPT‑4o query
+      (<a href="https://arxiv.org/pdf/2505.09598" target="_blank" rel="noopener">Jegham et al., “How Hungry is AI?”</a>, 2025),
+      with optimised serving 4–20× below widely cited estimates
+      (<a href="https://www.cell.com/joule/fulltext/S2542-4351(26)00114-5" target="_blank" rel="noopener">Joule</a>, 2026).
+      Reading a token is charged at a tenth of writing one, so the workhorse tier calibrates to
+      ≈1.6 Wh per 1,000 generated tokens, the frontier tier ≈3.2, the cheap tier ≈0.5.
+      <b>The weakest numbers here</b> — an order of magnitude, not a measurement. No vendor
+      publishes per‑request energy, which is itself the point.</li>
+    <li><b>Energy on your own machine</b> — not looked up but computed: power draw × generation
+      time. 45 W sustained for an Apple‑silicon laptop, 350 W for an RTX 4090 under load.</li>
+    <li><b>Electricity</b> — €0.154/kWh, Dutch non‑household consumers, Dec 2025.
+      <a href="https://www.globalpetrolprices.com/Netherlands/electricity_prices/" target="_blank" rel="noopener">GlobalPetrolPrices</a>
+      / Eurostat.</li>
+    <li><b>Carbon intensity</b> — 279 gCO<sub>2</sub>eq/kWh, Dutch grid, May 2025–Apr 2026.
+      <a href="https://www.electricitymaps.com/grid-in-review-2025/the-netherlands" target="_blank" rel="noopener">Electricity Maps</a>.
+      Applied to hosted models too, because vendors do not disclose which grid served your
+      request — which is itself the finding.</li>
+    <li><b>The comparisons</b> — a kettle boil is 0.20 kWh (1.7 L raised 85 K at ~85% efficiency,
+      computed, not looked up); a phone charge ≈0.012 kWh; a Dutch household uses ≈2,500 kWh a
+      year, so ≈6.8 kWh a day
+      (<a href="https://www.keuze.nl/en/energy/average-power-consumption" target="_blank" rel="noopener">Keuze</a>);
+      a new car in the EU emits 96.7 gCO<sub>2</sub>/km
+      (<a href="https://www.eea.europa.eu/en/newsroom/news/average-co2-emissions-from-new-cars-and-vans-significantly-decreased-in-2025" target="_blank" rel="noopener">EEA</a>, 2025).</li>
+    <li><b>Coder wage</b> — scale SA, CAO Nederlandse Universiteiten 2026–27 (hourly = monthly ÷ 38 ×
+      12/52; +3.1% from 1 Jul 2026; 8.3% year‑end bonus).
+      <a href="https://www.universiteitenvannederland.nl/en/collective-labour-agreement-of-dutch-universities" target="_blank" rel="noopener">UNL</a>.</li>
+    <li><b>Currency</b> — converted at $1 = €0.86 (EUR/USD 1.163, 8 Sep 2026).
+      <a href="https://tradingeconomics.com/euro-area/currency" target="_blank" rel="noopener">Trading Economics</a>.</li>
+  </ul>
+  <div class="asof">Prices checked 8 September 2026. Model prices move; if a figure here disagrees
+    with the vendor's page, the vendor is right and this tool is stale — which is the
+    reproducibility problem in miniature.</div>
+</details>
+
+<script>
+(function () {
+  "use strict";
+
+  /* --- constants; every one is cited in the sources block above ----------- */
+  var USD_EUR = 0.86, ELEC = 0.154, CO2 = 279, CLASS = 120;
+  var KETTLE  = 0.20, PHONE = 0.012, HOUSE_D = 2500 / 365, CAR_KM = 96.7;
+  var PREFILL = 0.1;
+
+  var MODELS = [
+    {id:"fable",  name:"Claude Fable 5.1", vd:"Anthropic", grp:"frontier", in:10,   out:50,   cin:0.25,  tps:40,  wh:3.2},
+    {id:"astra",  name:"GPT-6 Astra",      vd:"OpenAI",    grp:"frontier", in:10,   out:50,   cin:1.00,  tps:40,  wh:3.2},
+    {id:"opus",   name:"Claude Opus 5",    vd:"Anthropic", grp:"frontier", in:5,    out:25,   cin:0.50,  tps:55,  wh:2.6},
+    {id:"sol",    name:"GPT-5.6 Sol",      vd:"OpenAI",    grp:"frontier", in:5,    out:30,   cin:0.50,  tps:55,  wh:2.6},
+    {id:"sonnet", name:"Claude Sonnet 5",  vd:"Anthropic", grp:"mid",      in:2,    out:10,   cin:0.20,  tps:85,  wh:1.6},
+    {id:"terra",  name:"GPT-5.6 Terra",    vd:"OpenAI",    grp:"mid",      in:2,    out:12,   cin:0.20,  tps:85,  wh:1.6},
+    {id:"gpro",   name:"Gemini 3.1 Pro",   vd:"Google",    grp:"mid",      in:2,    out:12,   cin:0.20,  tps:85,  wh:1.6},
+    {id:"haiku",  name:"Claude Haiku 4.5", vd:"Anthropic", grp:"cheap",    in:1,    out:5,    cin:0.10,  tps:150, wh:0.6},
+    {id:"gflash", name:"Gemini 3.8 Flash", vd:"Google",    grp:"cheap",    in:0.75, out:3.75, cin:0.075, tps:150, wh:0.5,
+                  note:"Introductory rate — doubles on 1 Jan 2027."},
+    {id:"luna",   name:"GPT-5.6 Luna",     vd:"OpenAI",    grp:"cheap",    in:0.20, out:1.20, cin:0.02,  tps:150, wh:0.4},
+    {id:"glite",  name:"Gemini 3.5 Flash-Lite", vd:"Google", grp:"cheap",  in:0.30, out:2.50, cin:0.03,  tps:150, wh:0.4}
+  ];
+
+  var LOCAL = [
+    {id:"q4",  name:"Qwen 3.5 4B",      vd:"~2.5 GB at Q4",     grp:"local", tps:110, gb:2.5},
+    {id:"q9",  name:"Qwen 3.5 9B",      vd:"~5 GB at Q4",       grp:"local", tps:75,  gb:5},
+    {id:"q27", name:"Qwen 3.5 27B",     vd:"~17 GB at Q4",      grp:"local", tps:35,  gb:17},
+    {id:"q35", name:"Qwen 3.5 35B-A3B", vd:"~22 GB at Q4, MoE", grp:"local", tps:55,  gb:22}
+  ];
+
+  // The Mac Studio is the interesting one: unified memory means everything fits,
+  // and it does the work at a third of the discrete GPU's power draw.
+  var HW = {
+    lap16:{name:"16 GB laptop",  watts:38,  factor:0.30, mem:11,
+           eg:"a MacBook Air, or a mid-range Windows laptop — the machine most of you have"},
+    lap32:{name:"32 GB laptop",  watts:50,  factor:0.40, mem:24,
+           eg:"a MacBook Pro, or a gaming laptop with an 8 GB graphics card"},
+    gpu:  {name:"RTX 4090",      watts:350, factor:1.0,  mem:22,
+           eg:"a desktop with a high-end gaming graphics card"},
+    studio:{name:"Mac Studio M5", watts:120, factor:0.75, mem:72,
+           eg:"a shared lab machine: everything fits, at a third of the desktop GPU's power draw"}
+  };
+  var SPILL = 0.1;
+
+  var GRPNAME = {frontier:"frontier tier", mid:"workhorse tier", cheap:"cheap tier",
+                 local:"on your own machine"};
+
+  var ITEMS = [50, 100, 150, 200, 300, 500, 750, 1000, 1500, 2000, 3000, 5000, 7500,
+               10000, 15000, 20000, 30000, 50000, 75000, 100000, 150000, 200000,
+               300000, 500000, 750000, 1000000];
+
+  var ICON = {
+    bill:'<circle cx="12" cy="12" r="9"/><path d="M15.5 9.2a3.8 3.8 0 1 0 0 5.6M9 11h5M9 13h5"/>',
+    time:'<circle cx="12" cy="12" r="9"/><path d="M12 6.8V12l3.4 2"/>',
+    energy:'<path d="M13 3 5.5 13.5H11l-1 7.5L18.5 10H13z"/>',
+    carbon:'<path d="M7 18h10a3.6 3.6 0 0 0 0-7.2 5.6 5.6 0 0 0-10.9 1.4A3.3 3.3 0 0 0 7 18z"/>'
+  };
+  function icon(k) {
+    return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" ' +
+           'stroke-linecap="round" stroke-linejoin="round">' + ICON[k] + "</svg>";
+  }
+
+  var S = {
+    items:2000, text:400, book:450, shot:0, out:6, variants:2, runs:3,
+    batch:false, cache:true, hw:"lap16", sel:"sonnet",
+    minutes:1.5, wage:16.5, fixed:16, dbl:20, overhead:true
+  };
+
+  var el = function (id) { return document.getElementById(id); };
+  var ALL = MODELS.concat(LOCAL);
+
+  /* --- formatting -------------------------------------------------------- */
+  function nfmt(n) {
+    if (n >= 1e9) return (n / 1e9).toFixed(1).replace(/\.0$/, "") + "bn";
+    if (n >= 1e6) return (n / 1e6).toFixed(n < 1e7 ? 1 : 0).replace(/\.0$/, "") + "M";
+    if (n >= 1e4) return Math.round(n / 1e3) + "k";
+    return Math.round(n).toLocaleString("en-US");
+  }
+  function eur(v) {
+    if (v < 0.01)  return "under €0.01";
+    if (v < 100)   return "€" + v.toFixed(2);
+    if (v < 10000) return "€" + Math.round(v).toLocaleString("en-US");
+    return "€" + nfmt(v);
+  }
+  function hours(h) {
+    if (h < 1 / 60) return "under a minute";
+    if (h < 1) return Math.round(h * 60) + " min";
+    if (h < 48) return h.toFixed(1).replace(/\.0$/, "") + " h";
+    if (h < 24 * 90) return Math.round(h / 24) + " days";
+    return Math.round(h / 24 / 30) + " months";
+  }
+  function workHours(h) {
+    if (h < 1) return Math.round(h * 60) + " min";
+    if (h < 8) return h.toFixed(1).replace(/\.0$/, "") + " h";
+    var d = h / 8;
+    return Math.round(h) + " h (" + (d < 10 ? d.toFixed(1).replace(/\.0$/, "") : Math.round(d)) +
+           " working days)";
+  }
+  function rawWh(x) {
+    if (x < 1000) return Math.round(x) + " Wh";
+    if (x < 1e6)  return (x / 1e3).toFixed(x < 1e4 ? 1 : 0) + " kWh";
+    if (x < 1e9)  return (x / 1e6).toFixed(x < 1e7 ? 1 : 0) + " MWh";
+    return (x / 1e9).toFixed(1) + " GWh";
+  }
+  function rawCo2(g) {
+    if (g < 1000) return Math.round(g) + " g";
+    if (g < 1e6)  return (g / 1e3).toFixed(g < 1e4 ? 1 : 0) + " kg";
+    return (g / 1e6).toFixed(1) + " t";
+  }
+  function num(n) {
+    if (n < 10)  return n.toFixed(1).replace(/\.0$/, "");
+    if (n < 1e4) return Math.round(n).toLocaleString("en-US");
+    if (n < 1e6) return Math.round(n / 1e3) + ",000";
+    return (n / 1e6).toFixed(1).replace(/\.0$/, "") + " million";
+  }
+  function energyAnchor(w) {
+    var k = w / 1000;
+    if (k < 0.5 * PHONE)   return { big: "less than a phone charge", u: "" };
+    if (k < 0.35 * KETTLE) return { big: num(k / PHONE) + " phone charges", u: "" };
+    if (k < 25 * KETTLE)   return { big: num(k / KETTLE) + " kettle boils", u: "" };
+    if (k < 400 * HOUSE_D) return { big: num(k / HOUSE_D) + " days", u: "of a household's electricity" };
+    return { big: num(k / 2500) + " households", u: "powered for a year" };
+  }
+  function co2Anchor(g) {
+    var km = g / CAR_KM;
+    if (km < 1) return { big: Math.max(1, Math.round(km * 1000)) + " m", u: "driven in an average new car" };
+    return { big: num(km) + " km", u: "driven in an average new car" };
+  }
+  function anchor(a) { return a.big + (a.u ? " " + a.u : ""); }
+
+  /* --- the model --------------------------------------------------------- */
+  function study() {
+    var calls   = S.items * S.variants * S.runs;
+    var fixedIn = S.book + S.shot * (S.text * 0.6 + 12) + 60;
+    return { calls: calls, fixedIn: fixedIn, inTok: calls * (fixedIn + S.text),
+             outTok: calls * S.out, cacheableTok: calls * fixedIn };
+  }
+  function apiCost(m, st) {
+    var freshIn = st.inTok, cachedIn = 0;
+    if (S.cache) { cachedIn = st.cacheableTok * 0.9; freshIn = st.inTok - cachedIn; }
+    var usd = (freshIn / 1e6) * m.in + (cachedIn / 1e6) * m.cin + (st.outTok / 1e6) * m.out;
+    if (S.batch) usd *= 0.5;
+    var energy = (st.inTok * PREFILL + st.outTok) / 1000 * m.wh;
+    var secs = S.batch ? 24 * 3600 : st.outTok / (m.tps * 8);
+    return { eur: usd * USD_EUR, wh: energy, co2: energy / 1000 * CO2, hrs: secs / 3600 };
+  }
+  function localCost(m, st) {
+    var hw = HW[S.hw], fits = m.gb <= hw.mem;
+    var tps = m.tps * hw.factor * (fits ? 1 : SPILL);
+    var secs = st.outTok / tps + st.inTok / (tps * 10);
+    var kwh  = hw.watts * secs / 3600 / 1000;
+    return { eur: kwh * ELEC, wh: kwh * 1000, co2: kwh * CO2, hrs: secs / 3600, fits: fits };
+  }
+  function humanCost() {
+    var hrs = S.items * (1 + S.dbl / 100) * S.minutes / 60 + S.fixed;
+    return { eur: hrs * S.wage * (S.overhead ? 1.3 : 1), hrs: hrs };
+  }
+
+  /* --- the plot ------------------------------------------------------------
+     x = hours you wait, y = euros, area = energy. Both axes logarithmic,
+     because everything here spans several orders of magnitude. */
+  var TIMETICKS = [
+    {h:1/60, l:"1 min"}, {h:1/6, l:"10 min"}, {h:1, l:"1 h"}, {h:8, l:"8 h"},
+    {h:24, l:"1 day"}, {h:168, l:"1 week"}, {h:730, l:"1 month"}, {h:8760, l:"1 year"}
+  ];
+
+  function drawPlot(costs, h) {
+    var box = el("plot");
+    box.innerHTML = '<div class="area" id="area"></div>';
+    var area = el("area");
+
+    var marks = ALL.map(function (m) {
+      var c = costs[m.id];
+      return { id:m.id, name:m.name, eur:c.eur, hrs:c.hrs, wh:c.wh,
+               loc:m.grp === "local", warn:m.grp === "local" && !c.fits };
+    });
+    marks.push({ id:"__human", name:"Human coders", eur:h.eur, hrs:h.hrs, wh:0, hum:true });
+
+    var ex = function (f, d) {
+      var v = marks.map(f).filter(function (x) { return x > 0 && isFinite(x); });
+      return v.length ? v : [d];
+    };
+    var xs = ex(function (m) { return m.hrs; }, 1),
+        ys = ex(function (m) { return m.eur; }, 1);
+    var x0 = Math.min.apply(null, xs) / 2.2, x1 = Math.max.apply(null, xs) * 2.2;
+    var y0 = Math.min.apply(null, ys) / 2.6, y1 = Math.max.apply(null, ys) * 2.6;
+    var lg = function (v) { return Math.log(v) / Math.LN10; };
+    var px = function (v) { return (lg(Math.max(v, x0)) - lg(x0)) / (lg(x1) - lg(x0)) * 100; };
+    var py = function (v) { return (lg(Math.max(v, y0)) - lg(y0)) / (lg(y1) - lg(y0)) * 100; };
+
+    // gridlines + labels
+    TIMETICKS.forEach(function (t) {
+      if (t.h < x0 || t.h > x1) return;
+      var g = document.createElement("div");
+      g.className = "gl x"; g.style.left = px(t.h) + "%"; area.appendChild(g);
+      var l = document.createElement("div");
+      l.className = "axlab x"; l.style.left = px(t.h) + "%"; l.textContent = t.l;
+      area.appendChild(l);
+    });
+    for (var d = Math.ceil(lg(y0)); d <= Math.floor(lg(y1)); d++) {
+      var v = Math.pow(10, d);
+      var g2 = document.createElement("div");
+      g2.className = "gl y"; g2.style.bottom = py(v) + "%"; area.appendChild(g2);
+      var l2 = document.createElement("div");
+      l2.className = "axlab y"; l2.style.bottom = py(v) + "%";
+      l2.textContent = v < 1 ? "€" + v.toFixed(2) : "€" + nfmt(v);
+      area.appendChild(l2);
+    }
+    var nx = document.createElement("div");
+    nx.className = "axname x"; nx.textContent = "how long you wait →"; area.appendChild(nx);
+    var ny = document.createElement("div");
+    ny.className = "axname y"; ny.textContent = "↑ what it costs"; area.appendChild(ny);
+
+    // dot area encodes energy; sqrt so area, not radius, is proportional
+    var maxWh = Math.max.apply(null, marks.map(function (m) { return m.wh; }).concat([1]));
+
+    var placed = [];
+    marks.forEach(function (mk) {
+      var x = px(mk.hrs), y = py(mk.eur);
+      // exact ties (identically priced models) would hide each other
+      var n = placed.filter(function (p) {
+        return Math.abs(p.x - x) < 0.5 && Math.abs(p.y - y) < 1.2;
+      }).length;
+      if (n) { x += Math.cos(n * 2.1) * 0.9; y += Math.sin(n * 2.1) * 2.2; }
+      placed.push({ x: x, y: y });
+
+      var r = mk.hum ? 7.5 : 4 + 8 * Math.sqrt(mk.wh / maxWh);
+      var d = document.createElement("div");
+      d.className = "mk" + (mk.loc ? " loc" : "") + (mk.warn ? " warn" : "") +
+                    (mk.hum ? " hum" : "") + (mk.id === S.sel ? " on" : "") +
+                    (x > 68 ? " tipL" : x < 16 ? " tipR" : "");
+      d.style.left = x + "%"; d.style.bottom = y + "%";
+      if (!mk.hum) { d.style.width = (r * 2) + "px"; d.style.height = (r * 2) + "px"; }
+      d.innerHTML = '<span class="tip">' + mk.name + " · " + eur(mk.eur) + " · " +
+                    hours(mk.hrs) + (mk.warn ? " · ⚠ does not fit" : "") + "</span>";
+      if (!mk.hum) d.onclick = function () { S.sel = mk.id; render(); };
+      area.appendChild(d);
+
+      // name the two marks that carry the argument: the humans, and whichever
+      // model the reader has selected
+      if (mk.hum || mk.id === S.sel) {
+        var p = document.createElement("div");
+        p.className = "pin" + (mk.hum ? " h" : "");
+        p.style.left = x + "%";
+        p.style.bottom = "calc(" + y + "% + " + (r + 9) + "px)";
+        p.textContent = mk.hum ? "humans" : mk.name;
+        area.appendChild(p);
+      }
+    });
+  }
+
+  /* --- render -------------------------------------------------------------- */
+  function render() {
+    var st = study();
+
+    el("v-items").textContent = S.items.toLocaleString("en-US");
+    el("v-var").textContent   = S.variants;
+    el("v-runs").textContent  = S.runs;
+    el("ro-calls").textContent  = nfmt(st.calls);
+    el("ro-callsn").textContent = nfmt(S.items) + " × " + S.variants + " × " + S.runs;
+    el("ro-in").textContent  = nfmt(st.inTok);
+    el("ro-inn").textContent = nfmt(st.fixedIn) + " of it identical every time";
+    el("ro-out").textContent = nfmt(st.outTok);
+    el("ro-outn").textContent = "billed ~5× input";
+
+    var pct = Math.round(st.cacheableTok / st.inTok * 100);
+    el("designnote").innerHTML = st.calls === S.items
+      ? "One prompt, one run — so <b>no way to tell whether the labels are stable</b>. A second run is the cheapest check you can buy."
+      : "<b>" + nfmt(st.calls) + " calls</b> for " + nfmt(S.items) + " items: every text paid for " +
+        (S.variants * S.runs) + "×. <b>" + pct + "%</b> of what you send is the same codebook, again and again.";
+
+    var costs = {}, h = humanCost();
+    MODELS.forEach(function (m) { costs[m.id] = apiCost(m, st); });
+    LOCAL.forEach(function (m)  { costs[m.id] = localCost(m, st); });
+
+    drawPlot(costs, h);
+
+    var pk = el("picker");
+    if (pk.options.length !== ALL.length) {
+      pk.innerHTML = ALL.map(function (m) {
+        return '<option value="' + m.id + '">' + m.name + "</option>";
+      }).join("");
+    }
+    pk.value = S.sel;
+
+    var sel = ALL.filter(function (m) { return m.id === S.sel; })[0];
+    var c = costs[S.sel];
+    el("c-who").textContent = sel.name;
+    el("c-meta").textContent = GRPNAME[sel.grp] + " · " + sel.vd;
+
+    var ea = energyAnchor(c.wh), ca = co2Anchor(c.co2);
+    el("c-quad").innerHTML =
+      '<div class="q"><div class="k">' + icon("bill") + "The bill</div>" +
+        '<div class="big">' + eur(c.eur) + "</div>" +
+        '<div class="raw">' + (sel.grp === "local" ? "electricity only — no API fee" : "API charges") + "</div></div>" +
+      '<div class="q"><div class="k">' + icon("time") + "Waiting</div>" +
+        '<div class="big">' + hours(c.hrs) + "</div>" +
+        '<div class="raw">' + (sel.grp === "local"
+          ? (c.fits ? "one request at a time" : "⚠ too big for this machine")
+          : (S.batch ? "batch job, worst case" : "8 requests in parallel")) + "</div></div>" +
+      '<div class="q"><div class="k">' + icon("energy") + "Energy</div>" +
+        '<div class="big">' + ea.big + "</div>" +
+        '<div class="raw">' + (ea.u ? ea.u + " · " : "") + rawWh(c.wh) + "</div></div>" +
+      '<div class="q"><div class="k">' + icon("carbon") + "Carbon</div>" +
+        '<div class="big">' + ca.big + "</div>" +
+        '<div class="raw">' + ca.u + " · " + rawCo2(c.co2) + "</div></div>";
+
+    var paid = MODELS.map(function (m) { return costs[m.id].eur; });
+    var lo = Math.min.apply(null, paid), hi = Math.max.apply(null, paid);
+    var loM = MODELS[paid.indexOf(lo)], hiM = MODELS[paid.indexOf(hi)];
+    el("verdict").innerHTML =
+      "<b>" + eur(lo) + "</b> (" + loM.name + ") to <b>" + eur(hi) + "</b> (" + hiM.name + ") — a " +
+      (hi / lo).toFixed(hi / lo < 10 ? 1 : 0) + "× spread that <b>says nothing about which model " +
+      "is right</b>. All " + CLASS + " students once on " + sel.name + ": " + eur(c.eur * CLASS) +
+      ", " + anchor(energyAnchor(c.wh * CLASS)) + "." +
+      (sel.note ? " <b>Note:</b> " + sel.note : "");
+
+    var hw = HW[S.hw];
+    var tooBig = LOCAL.filter(function (m) { return m.gb > hw.mem; });
+    el("assume").innerHTML =
+      "<b>" + hw.name + "</b> — " + hw.eg + ". " +
+      "<b>Assumes</b> Q4, one request at a time, " + Math.round(LOCAL[1].tps * hw.factor) +
+      " tok/s for the 9B here, prompt read 10× faster than the answer, " + hw.watts +
+      " W sustained, " + hw.mem + " GB usable (an OS keeps the rest). " +
+      (tooBig.length
+        ? "<b>" + tooBig.map(function (m) { return m.name.replace("Qwen 3.5 ", ""); }).join(" and ") +
+          " don't fit</b> — they spill to system memory and run ~10× slower. That cliff, not the " +
+          "GPU, decides what you can run."
+        : "Everything on the list fits.");
+
+    var q9 = costs.q9, hk = costs.haiku;
+    el("localnote").innerHTML =
+      "<b>Free is not clean, and not fast.</b> Qwen 3.5 9B on a " + hw.name + ": " +
+      hours(q9.hrs) + ", " + anchor(energyAnchor(q9.wh)) + " — " +
+      (q9.wh > hk.wh
+        ? "<b>more than Claude Haiku 4.5 burns for the same work</b> (" + anchor(energyAnchor(hk.wh)) +
+          "). A data centre batches thousands of requests; your machine takes them one at a time."
+        : "less than the hosted models at this size. Try the GPU, or a bigger model, and it reverses.") +
+      " The real case for local is that the text never leaves your machine.";
+
+    el("v-min").textContent  = S.minutes.toFixed(1).replace(/\.0$/, "");
+    el("v-wage").textContent = "€" + S.wage.toFixed(2);
+    el("v-fix").textContent  = S.fixed + " h";
+    el("v-dbl").textContent  = S.dbl + "%";
+
+    var ratio = c.eur > 0 ? h.eur / c.eur : Infinity, phrase;
+    if (ratio >= 2)       phrase = Math.round(ratio).toLocaleString("en-US") + "× less";
+    else if (ratio > 1.1) phrase = ratio.toFixed(1) + "× less";
+    else if (ratio > 0.9) phrase = "about the same";
+    else                  phrase = (1 / ratio).toFixed(1) + "× <b>more</b>";
+
+    el("reframe").innerHTML =
+      "Hand-coding: <b>" + eur(h.eur) + "</b>, " + workHours(h.hrs) + ". " + sel.name + ": <b>" +
+      eur(c.eur) + "</b> — " + phrase + ". " + (ratio > 5
+        ? "<b>So cost is not your constraint, and not your argument.</b> "
+        : "<b>At this size the machine is no longer the cheap option.</b> ") +
+      "The humans made a gold standard; the model made labels of unknown validity — and the " +
+      eur(h.eur) + " buys the thing you validate against.";
+  }
+
+  /* --- wiring -------------------------------------------------------------- */
+  function seg(id, key, cast) {
+    var box = el(id);
+    Array.prototype.forEach.call(box.querySelectorAll("button"), function (b) {
+      b.onclick = function () {
+        Array.prototype.forEach.call(box.querySelectorAll("button"), function (o) {
+          o.setAttribute("aria-pressed", o === b);
+        });
+        S[key] = cast ? cast(b.dataset.v) : b.dataset.v;
+        render();
+      };
+    });
+  }
+  seg("seg-text", "text", Number);
+  seg("seg-book", "book", Number);
+  seg("seg-shot", "shot", Number);
+  seg("seg-out",  "out",  Number);
+  seg("seg-hw",   "hw",   null);
+
+  el("items").oninput    = function () { S.items = ITEMS[+this.value]; render(); };
+  el("variants").oninput = function () { S.variants = +this.value; render(); };
+  el("runs").oninput     = function () { S.runs = +this.value; render(); };
+  el("minutes").oninput  = function () { S.minutes = +this.value / 4; render(); };
+  el("wage").oninput     = function () { S.wage = +this.value / 100; render(); };
+  el("fixed").oninput    = function () { S.fixed = +this.value; render(); };
+  el("dbl").oninput      = function () { S.dbl = +this.value; render(); };
+  el("batch").onchange    = function () { S.batch = this.checked; render(); };
+  el("cache").onchange    = function () { S.cache = this.checked; render(); };
+  el("overhead").onchange = function () { S.overhead = this.checked; render(); };
+  el("picker").onchange   = function () { S.sel = this.value; render(); };
+
+  // the ⓘ inside a checkbox label must not toggle the box
+  Array.prototype.forEach.call(document.querySelectorAll(".chk .i"), function (b) {
+    b.onclick = function (e) { e.preventDefault(); e.stopPropagation(); };
+  });
+
+  // A tooltip on a control in the last column would hang past the right edge and
+  // widen the page — and it does so even while transparent, so this has to run
+  // at rest and on resize, not only on hover.
+  function placeTips() {
+    Array.prototype.forEach.call(document.querySelectorAll(".i"), function (b) {
+      var r = b.getBoundingClientRect();
+      b.classList.toggle("flip", r.left + 236 > document.documentElement.clientWidth);
+    });
+  }
+  window.addEventListener("resize", placeTips);
+  placeTips();
+
+  // The page is embedded in a fixed-height iframe, and opening the sources makes
+  // it taller than whatever height the shortcode guessed. Same origin, so the
+  // frame can size itself; the shortcode's height stays as the no-JS fallback.
+  function fit() {
+    try {
+      var f = window.frameElement;
+      if (f) f.style.height = (document.body.scrollHeight + 4) + "px";
+    } catch (e) { /* cross-origin: leave the declared height alone */ }
+  }
+  var det = document.querySelector(".src");
+  if (det) det.addEventListener("toggle", fit);
+  window.addEventListener("resize", fit);
+  fit();
+
+  render();
+})();
+</script>
+</body>
+</html>

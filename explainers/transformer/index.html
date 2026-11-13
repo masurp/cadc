@@ -1,0 +1,320 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Inside a transformer</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&display=swap">
+<style>
+  /* ==========================================================================
+     Week 4 lecture explainer. A redraw of the 2024 deck's transformer3
+     build (Slide1–13, after Alammar 2018 and 3Blue1Brown 2024) as one drawing
+     that grows in eight clicks: tokens → embeddings → position → attention →
+     update → feed-forward → many layers → the next token.
+
+     What is measured and what is drawn:
+       - the attention weights on step 4 are REAL: bert-base-uncased, layer 4,
+         head 0, the row for "harry" in "harry potter cast a spell in the
+         castle ." (from explainers/attention/data.js, built by
+         _scripts/build_attention.py). 96.2% on "potter", 2.7% parked on the
+         [SEP] bookkeeping token, the rest under 1% each.
+       - the similarity curve on step 5 is REAL: cosine similarity of the
+         vector for "harry" in that sentence and in "harry kane scored a goal
+         in the stadium .", at the input and after each of BERT's 12 layers;
+         the dashed control is the word "the", which means the same in both.
+       - the next-token bars on step 8 are REAL: Llama 3.1 8B through Ollama
+         (/api/generate, raw prompt, logprobs, temperature 0, seed 42; run on
+         the Studio 2026-11-11), top five after the drawn sentence, full stop
+         included: "Harry Potter cast a spell in the castle." The sixth token,
+         "However", has 2.8%, hence "each under 3%". (The first version used the
+         prefix "… in the", which did not match the tokens on screen.)
+       - the vector CELL VALUES are illustrative. A 768-dimensional vector
+         cannot be drawn; six cells stand for it, and the "update" mixes
+         Harry's cells with Potter's so the idea is visible.
+       - step 6's zoom and step 7's three bands are ILLUSTRATIVE, a simplified
+         reading of the research: feed-forward units act as stored patterns
+         that add what goes with them (Geva et al. 2021; facts in mid-layer
+         MLPs: Meng et al. 2022); lower layers resolve which pieces belong
+         together, higher ones meaning (Tenney et al. 2019). The unit counts
+         are the models' configs: BERT-base 3,072, Llama 3.1 8B 14,336.
+     Two models on one drawing, on purpose: BERT because its attention is
+     readable in both directions, Llama because it predicts the next token.
+     The narration says so. Click / Enter / space; #N opens at step N.
+     ========================================================================== */
+  :root{
+    --ink:#1a1a17; --ink-2:#3a3a34; --ink-3:#5a5a52; --muted:#7a7a70; --faint:#9a9a90;
+    --hair:#e7e3d9; --border:#e0dcd0; --surface:#ffffff; --strip:#f2f0ea; --paper:#faf8f4;
+    --accent:oklch(0.55 0.15 38); --accent-tint:oklch(0.95 0.03 38);
+    --a:#2678b0; --b:#b84a27;
+    --font:"Space Grotesk", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+    --mono:ui-monospace, SFMono-Regular, Menlo, monospace;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0; height:100%}
+  body{font-family:var(--font); background:transparent; color:var(--ink);
+       display:flex; align-items:center; justify-content:center;
+       overflow:hidden; cursor:pointer; -webkit-tap-highlight-color:transparent}
+  svg{width:100%; height:100%; display:block}
+  text{font-family:var(--font); fill:var(--ink)}
+  .kicker{font-size:9.5px; font-weight:700; letter-spacing:.09em; fill:var(--accent)}
+  .line{font-size:11px; fill:var(--ink-2)}
+  .line tspan.k{font-weight:700; fill:var(--ink)}
+  .lab{font-size:8.5px; font-weight:700; letter-spacing:.08em; fill:var(--muted)}
+  .sm{font-size:9.5px; fill:var(--ink-3)}
+  .sm tspan.k{font-weight:700; fill:var(--ink-2)}
+  .sm tspan.a,.tag.a{font-weight:700; fill:var(--accent)}
+  .tag{font-size:9.5px; fill:var(--ink-2)}
+  .chip rect{fill:var(--surface); stroke:var(--border); stroke-width:1; rx:4; ry:4}
+  .chip text{font-size:10px; font-weight:700; fill:var(--ink); text-anchor:middle}
+  .chip.hi rect{stroke:var(--accent); stroke-width:1.4}
+  .cell{stroke:var(--surface); stroke-width:.6}
+  .pos{fill:var(--surface); stroke:var(--accent); stroke-width:1}
+  .postext{font-size:7px; font-weight:700; fill:var(--accent); text-anchor:middle}
+  .arc{fill:none; stroke:var(--accent); stroke-linecap:round}
+  .arrow{fill:none; stroke:var(--ink-3); stroke-width:1; stroke-linecap:round; stroke-linejoin:round}
+  .arrow.hi{stroke:var(--accent); stroke-width:1.4}
+  .box{fill:var(--paper); stroke:var(--border); stroke-width:1; rx:6; ry:6}
+  .box.hi{stroke:var(--accent)}
+  .node{fill:var(--surface); stroke:var(--ink-2); stroke-width:.8}
+  .node.hi{fill:var(--accent); stroke:var(--accent)}
+  .edge{stroke:var(--ink-3); stroke-width:.5; stroke-opacity:.45}
+  .edge.faint{stroke-opacity:.18}
+  .edge.hi{stroke:var(--accent); stroke-width:.9; stroke-opacity:.85}
+  .smx{font-size:10px; font-weight:700; fill:var(--accent); text-anchor:middle}
+  .card{fill:var(--surface); stroke:var(--border); stroke-width:1; rx:3; ry:3}
+  .card.hi{stroke:var(--accent); fill:var(--accent-tint)}
+  .cardtext{font-size:7.5px; fill:var(--ink-3); text-anchor:middle}
+  .axis{stroke:var(--border); stroke-width:1}
+  .tick{font-size:8.5px; fill:var(--muted)}
+  .curve{fill:none; stroke:var(--accent); stroke-width:1.8}
+  .ctrl{fill:none; stroke:var(--muted); stroke-width:1.2; stroke-dasharray:3 3}
+  .dot{fill:var(--accent)}
+  .bar{fill:var(--accent)} .bar.rest{fill:var(--faint)}
+  .bartext{font-family:var(--mono); font-size:9px; fill:var(--ink-2)}
+  .barval{font-size:8.5px; fill:var(--muted)}
+  .bracket{fill:none; stroke:var(--faint); stroke-width:1}
+  .step{font-size:10.5px; fill:#b6b2a8; text-anchor:end}
+  .fade{transition:opacity .45s ease}
+  .hid{opacity:0}
+</style>
+</head>
+<body>
+<svg id="chart" viewBox="0 0 1000 440" preserveAspectRatio="xMidYMid meet" role="img"
+     aria-label="Inside a transformer, built in eight steps on the sentence Harry Potter cast a spell in the castle: tokens, embeddings, position, attention (real weights from BERT: Harry looks at Potter), the updated vector, the feed-forward network, the stack of layers, and the probability over the next token.">
+  <g id="head"></g>
+  <g id="left"></g>
+  <g id="right"></g>
+  <g id="hud"></g>
+</svg>
+<noscript><p style="max-width:34em;margin:2em;font-family:sans-serif">Needs JavaScript: the inside of a
+transformer, built in eight steps.</p></noscript>
+
+<script>
+(function () {
+  "use strict";
+  var NS = "http://www.w3.org/2000/svg";
+  function el(t, a) { var e = document.createElementNS(NS, t); for (var k in a) if (a[k] != null) e.setAttribute(k, a[k]); return e; }
+  function txt(p, s, a) { var t = el("text", a || {}); t.textContent = s; p.appendChild(t); return t; }
+  function tsp(t, s, a) { var x = el("tspan", a || {}); x.textContent = s; t.appendChild(x); return x; }
+  function g(p, a) { var e = el("g", a || {}); p.appendChild(e); return e; }
+  function clear(n) { while (n.firstChild) n.removeChild(n.firstChild); }
+  function $(id) { return document.getElementById(id); }
+  function wrap(parent, parts, o) {
+    /* a part that starts without a space, after one that ends without a space, is glued to the
+       word before it, so punctuation after a bold word does not get a space of its own */
+    var words = [], prevSpace = true;
+    parts.forEach(function (p) { var glue = !prevSpace && !/^\s/.test(p[0]); p[0].split(/\s+/).forEach(function (w) { if (w) { words.push([w, p[1], glue]); glue = false; } }); prevSpace = /\s$/.test(p[0]); });
+    var probe = txt(parent, "", { x: -9999, y: -9999, "class": o.cls });
+    function width(str) { probe.textContent = str; return typeof probe.getComputedTextLength === "function" ? probe.getComputedTextLength() : str.length * 5.6; }
+    var lines = [[]], cur = "";
+    words.forEach(function (w) { var t = cur ? cur + (w[2] ? "" : " ") + w[0] : w[0]; if (cur && !w[2] && width(t) > o.width) { lines.push([]); cur = w[0]; } else cur = t; lines[lines.length - 1].push(w); });
+    parent.removeChild(probe);
+    lines.forEach(function (ln, i) { var t = txt(parent, "", { x: o.x, y: o.y + i * o.lh, "class": o.cls }); ln.forEach(function (w, k) { tsp(t, (k && !w[2] ? " " : "") + w[0], w[1] ? { "class": w[1] } : {}); }); });
+    return lines.length;
+  }
+
+  /* ---- data ------------------------------------------------------------------- */
+  var TOK = ["Harry", "Potter", "cast", "a", "spell", "in", "the", "castle", "."];
+  /* bert-base-uncased, layer 4 head 0, attention FROM "harry" TO each token (per mille), [CLS]/[SEP] omitted */
+  var HEAD = [5, 962, 0, 0, 3, 1, 0, 1, 0], HEAD_SEP = 27;
+  /* cosine similarity of "harry" across the two sentences, input + 12 layers; control = "the" */
+  var SIM = [1.0, 0.819, 0.83, 0.774, 0.7377, 0.6555, 0.6574, 0.6603, 0.6222, 0.5627, 0.4662, 0.4867, 0.6215];
+  var CTRL = [1.0, 0.9556, 0.9425, 0.897, 0.8753, 0.8339, 0.8491, 0.8171, 0.8161, 0.7942, 0.6671, 0.609, 0.6628];
+  /* llama3.1:8b, top five next tokens after "Harry Potter cast a spell in the castle." */
+  var NEXT = [["The", .101], ["But", .081], ["He", .070], ["Now", .042], ["What", .030]], VOCAB = 128256;
+
+  /* illustrative cell values: a seeded generator, six per token */
+  function rng(seed) { var s = seed >>> 0; return function () { s = (s * 1664525 + 1013904223) >>> 0; return s / 4294967296; }; }
+  var VEC = TOK.map(function (_, i) { var r = rng(17 + i * 101); var v = []; for (var k = 0; k < 6; k++) v.push(Math.round((r() * 2 - 1) * 10) / 10); return v; });
+  var UPD = VEC.map(function (v, i) {
+    if (i === 0) return v.map(function (x, k) { return Math.round((.25 * x + .75 * VEC[1][k]) * 10) / 10; });
+    var nb = VEC[i - 1]; return v.map(function (x, k) { return Math.round((.8 * x + .2 * nb[k]) * 10) / 10; });
+  });
+  var OUT = UPD.map(function (v) { return v.map(function (x) { return Math.round(Math.tanh(1.4 * x) * 10) / 10; }); });
+
+  /* ---- geometry ----------------------------------------------------------------- */
+  var CX = TOK.map(function (_, i) { return 62 + i * 62; });
+  var Y_CHIP = 392, Y_VEC = 318, Y_UPD = 222, Y_FFN = [150, 200], Y_OUT = 70, CELL = 9, CW = 13;
+
+  function color(v) { var a = Math.min(1, Math.abs(v)); return v >= 0 ? "rgba(38,120,176," + (.12 + .8 * a) + ")" : "rgba(184,74,39," + (.12 + .8 * a) + ")"; }
+  function vec(p, cx, ytop, vals, hi) {
+    var k = g(p, {});
+    vals.forEach(function (v, i) { k.appendChild(el("rect", { "class": "cell", x: cx - CW / 2, y: ytop + i * (CELL + 1), width: CW, height: CELL, fill: color(v) })); });
+    if (hi) k.appendChild(el("rect", { x: cx - CW / 2 - 2, y: ytop - 2, width: CW + 4, height: 6 * (CELL + 1) + 3, rx: 2, fill: "none", stroke: "oklch(0.55 0.15 38)", "stroke-width": 1.2 }));
+    return k;
+  }
+  function arrowUp(p, x, y1, y2, hi) { p.appendChild(el("path", { "class": "arrow" + (hi ? " hi" : ""), d: "M" + x + "," + y1 + " L" + x + "," + y2 + " m-3,4 l3,-4 3,4" })); }
+  function net(p, x, y) {
+    var L = [[x, [-12, -4, 4, 12]], [x + 18, [-16, -8, 0, 8, 16]], [x + 36, [-8, 0, 8]]];
+    for (var l = 0; l < 2; l++) L[l][1].forEach(function (a) { L[l + 1][1].forEach(function (b) { p.appendChild(el("line", { "class": "edge", x1: L[l][0], y1: y + a, x2: L[l + 1][0], y2: y + b })); }); });
+    L.forEach(function (layer) { layer[1].forEach(function (yy) { p.appendChild(el("circle", { "class": "node", cx: layer[0], cy: y + yy, r: 2.4 })); }); });
+  }
+
+  /* ---- head: the step label ---------------------------------------------------------- */
+  var HEADS = [
+    ["01 · TOKENS", [["The sentence is cut into pieces the model has a number for. Nine here; a rare word can be several."]]],
+    ["02 · EMBEDDINGS", [["Each token becomes a vector, looked up in a table learned in pre-training. "], ["Harry's is the same vector whoever Harry is.", "k"]]],
+    ["03 · POSITION", [["A second vector says where the token stands and is added in. Without it the model would see a bag of words."]]],
+    ["04 · ATTENTION", [["Harry asks every token how relevant it is: a "], ["query", "k"], [" matched against every "], ["key", "k"], [". BERT, layer 4, head 0, measured: Potter, 96%."]]],
+    ["05 · UPDATE", [["Harry takes a weighted share of what the others carry (their "], ["value", "k"], [") and its vector changes. "], ["It now contains Potter.", "k"], [" Right: the two Harrys drift apart, layer by layer."]]],
+    ["06 · FEED-FORWARD", [["Each vector then goes through a network like week 3's, "], ["on its own", "k"], [". Its hidden units respond to patterns and add what the model learned in pre-training: Harry with Potter picks up wizard."]]],
+    ["07 · MANY LAYERS", [["Attention and feed-forward make one block. "], ["Each block works on what the blocks below added", "k"], [": once Harry carries wizard, the castle can look at Harry and become Hogwarts."]]],
+    ["08 · THE NEXT TOKEN", [["After the top block, the last token's vector gets a score for every token in the vocabulary, and a "], ["softmax", "k"], [" turns the scores into probabilities. After the full stop, Llama expects a new sentence."]]]
+  ];
+  function head(i) { var H = $("head"); clear(H); txt(H, HEADS[i][0], { x: 30, y: 28, "class": "kicker" }); wrap(H, HEADS[i][1], { x: 30, y: 45, width: 560, lh: 13.5, cls: "line" }); }
+
+  /* ---- left: the block ----------------------------------------------------------------- */
+  var L = $("left"), layers = {};
+  function layer(name) { return layers[name] = g(L, { "class": "fade hid" }); }
+  (function () {
+    var t = layer("tokens");
+    TOK.forEach(function (w, i) { var c = g(t, { "class": "chip" }); c.appendChild(el("rect", { x: CX[i] - 27, y: Y_CHIP, width: 54, height: 20 })); txt(c, w, { x: CX[i], y: Y_CHIP + 14 }); });
+    var v = layer("vec");
+    TOK.forEach(function (_, i) { vec(v, CX[i], Y_VEC, VEC[i]); arrowUp(v, CX[i], Y_CHIP - 3, Y_VEC + 62); });
+    txt(v, "EMBEDDING", { x: 30, y: Y_VEC + 34, "class": "lab", transform: "rotate(-90 30 " + (Y_VEC + 34) + ")", "text-anchor": "middle" });
+    var p = layer("pos");
+    TOK.forEach(function (_, i) { p.appendChild(el("circle", { "class": "pos", cx: CX[i] + 14, cy: Y_VEC + 6, r: 6 })); txt(p, i + 1, { x: CX[i] + 14, y: Y_VEC + 8.5, "class": "postext" }); });
+    var a = layer("attn"), tops = Y_VEC - 3;
+    HEAD.forEach(function (w, j) {
+      if (j === 0) return;
+      var wt = w / 1000, x0 = CX[0], x1 = CX[j], mid = (x0 + x1) / 2, lift = 14 + (x1 - x0) * .07;
+      a.appendChild(el("path", { "class": "arc", d: "M" + x0 + "," + tops + " Q" + mid + "," + (tops - lift) + " " + x1 + "," + tops, "stroke-width": (.8 + 5 * wt).toFixed(1), "stroke-opacity": (.14 + .86 * wt).toFixed(2) }));
+    });
+    txt(a, "96%", { x: (CX[0] + CX[1]) / 2, y: tops - 12, "class": "sm", "text-anchor": "middle", "font-weight": "700", fill: "oklch(0.55 0.15 38)" });
+    txt(a, "the rest under 1% each · " + (HEAD_SEP / 10).toFixed(1) + "% parked on a bookkeeping token", { x: CX[8] + 27, y: Y_CHIP + 36, "class": "sm", "text-anchor": "end" });
+    var u = layer("upd");
+    TOK.forEach(function (_, i) { vec(u, CX[i], Y_UPD, UPD[i], i === 0); arrowUp(u, CX[i], Y_VEC - 30, Y_UPD + 62, i === 0); });
+    txt(u, "AFTER ATTENTION", { x: 30, y: Y_UPD + 30, "class": "lab", transform: "rotate(-90 30 " + (Y_UPD + 30) + ")", "text-anchor": "middle" });
+    var f = layer("ffn");
+    f.appendChild(el("rect", { "class": "box hi", x: 44, y: Y_FFN[0], width: 546, height: Y_FFN[1] - Y_FFN[0] }));
+    net(f, 60, (Y_FFN[0] + Y_FFN[1]) / 2);
+    txt(f, "FEED-FORWARD NETWORK", { x: 112, y: (Y_FFN[0] + Y_FFN[1]) / 2 - 3, "class": "lab", fill: "oklch(0.55 0.15 38)" });
+    txt(f, "the same network for every token; each vector goes through it on its own", { x: 112, y: (Y_FFN[0] + Y_FFN[1]) / 2 + 10, "class": "sm" });
+    TOK.forEach(function (_, i) { arrowUp(f, CX[i], Y_UPD - 3, Y_FFN[1] + 3); arrowUp(f, CX[i], Y_FFN[0] - 2, Y_OUT + 62); vec(f, CX[i], Y_OUT, OUT[i], i === 0); });
+    txt(f, "BLOCK OUTPUT", { x: 30, y: Y_OUT + 30, "class": "lab", transform: "rotate(-90 30 " + (Y_OUT + 30) + ")", "text-anchor": "middle" });
+    var b = layer("bracket");
+    b.appendChild(el("path", { "class": "bracket", d: "M600," + (Y_OUT - 4) + " h8 V" + (Y_VEC + 64) + " h-8" }));
+    txt(b, "ONE BLOCK", { x: 624, y: (Y_OUT + Y_VEC + 60) / 2, "class": "lab", transform: "rotate(-90 624 " + ((Y_OUT + Y_VEC + 60) / 2) + ")", "text-anchor": "middle" });
+  })();
+
+  /* ---- right: the similarity chart, then the stack ---------------------------------------- */
+  var R = $("right"), rlayers = {};
+  function rlayer(name) { return rlayers[name] = g(R, { "class": "fade hid" }); }
+  (function () {
+    var c = rlayer("sim"), x0 = 668, x1 = 962, y0 = 96, y1 = 290;
+    txt(c, "THE TWO HARRYS, LAYER BY LAYER · MEASURED IN BERT", { x: x0 - 18, y: 78, "class": "lab" });
+    c.appendChild(el("line", { "class": "axis", x1: x0, y1: y1, x2: x1, y2: y1 })); c.appendChild(el("line", { "class": "axis", x1: x0, y1: y0, x2: x0, y2: y1 }));
+    function X(i) { return x0 + (x1 - x0) * i / 12; } function Y(v) { return y1 - (y1 - y0) * (v - .4) / .6; }
+    [0, 4, 8, 12].forEach(function (i) { txt(c, i === 0 ? "input" : "layer " + i, { x: X(i), y: y1 + 12, "class": "tick", "text-anchor": "middle" }); });
+    [.4, .6, .8, 1].forEach(function (v) { txt(c, v.toFixed(1), { x: x0 - 5, y: Y(v) + 3, "class": "tick", "text-anchor": "end" }); c.appendChild(el("line", { "class": "axis", x1: x0, y1: Y(v), x2: x1, y2: Y(v), "stroke-dasharray": "2 3" })); });
+    c.appendChild(el("path", { "class": "ctrl", d: CTRL.map(function (v, i) { return (i ? "L" : "M") + X(i).toFixed(1) + "," + Y(v).toFixed(1); }).join(" ") }));
+    c.appendChild(el("path", { "class": "curve", d: SIM.map(function (v, i) { return (i ? "L" : "M") + X(i).toFixed(1) + "," + Y(v).toFixed(1); }).join(" ") }));
+    SIM.forEach(function (v, i) { c.appendChild(el("circle", { "class": "dot", cx: X(i), cy: Y(v), r: 2.4 })); });
+    txt(c, "Harry (Potter) vs Harry (Kane)", { x: X(6), y: Y(SIM[6]) + 16, "class": "sm", "font-weight": "700", fill: "oklch(0.55 0.15 38)" });
+    txt(c, "control: “the”, same in both", { x: X(5), y: Y(CTRL[5]) - 8, "class": "sm" });
+    txt(c, "similarity of the same word's vector in the two sentences", { x: x0 - 18, y: y1 + 30, "class": "sm" });
+    wrap(c, [["1.00 at the input: one table, one vector. .47 after layer 11: two different Harrys. The vector was rewritten by what stood next to it."]], { x: x0 - 18, y: y1 + 46, width: 310, lh: 12.5, cls: "sm" });
+
+    /* step 6: Harry's vector alone through the network; one unit fires and its output is added */
+    var z = rlayer("zoom"), zx0 = 678, zx1 = 906, zy = 150, hx = 792, HID = 9;
+    function cy(k) { return zy + k * (CELL + 1) + CELL / 2; }
+    function hy(k) { return zy + 30 + (k - (HID - 1) / 2) * 14; }
+    txt(z, "HARRY'S VECTOR, ON ITS OWN · ILLUSTRATIVE", { x: 650, y: 96, "class": "lab" });
+    for (var k = 0; k < HID; k++) for (var c = 0; c < 6; c++) {
+      z.appendChild(el("line", { "class": "edge " + (k ? "faint" : "hi"), x1: zx0 + CW / 2 + 2, y1: cy(c), x2: hx - 3, y2: hy(k) }));
+      z.appendChild(el("line", { "class": "edge " + (k ? "faint" : "hi"), x1: hx + 3, y1: hy(k), x2: zx1 - CW / 2 - 2, y2: cy(c) }));
+    }
+    for (k = 0; k < HID; k++) z.appendChild(el("circle", { "class": "node" + (k ? "" : " hi"), cx: hx, cy: hy(k), r: 3 }));
+    txt(z, "fires for Harry with Potter", { x: hx, y: hy(0) - 9, "class": "sm", "text-anchor": "middle", "font-weight": "700", fill: "oklch(0.55 0.15 38)" });
+    vec(z, zx0, zy, UPD[0], true); vec(z, zx1, zy, OUT[0], true);
+    txt(z, "IN", { x: zx0, y: zy - 9, "class": "lab", "text-anchor": "middle" });
+    txt(z, "OUT", { x: zx1, y: zy - 9, "class": "lab", "text-anchor": "middle" });
+    [["Harry"], ["+ Potter"]].forEach(function (t, i) { txt(z, t[0], { x: zx0 - 10, y: zy + 78 + i * 12, "class": "tag" }); });
+    [["Harry"], ["+ Potter"], ["+ wizard", "a"], ["+ Hogwarts", "a"]].forEach(function (t, i) { txt(z, t[0], { x: zx1 - 10, y: zy + 78 + i * 12, "class": "tag" + (t[1] ? " a" : "") }); });
+    var zl = wrap(z, [["The lit unit responds to Harry together with Potter. The network's output is "], ["added", "k"], [" to the vector: Harry and Potter stay, wizard and Hogwarts join them."]], { x: 650, y: 296, width: 330, lh: 12.5, cls: "sm" });
+    txt(z, "BERT-base has 3,072 such units in every block, Llama 3.1 8B has 14,336.", { x: 650, y: 296 + zl * 12.5 + 6, "class": "sm" });
+
+    /* step 7: the stack, in three rough bands */
+    var s = rlayer("stack"), sx = 668, sw = 128, sh = 13, gap = 18, n = 10, sy0 = 400;
+    function cardTop(i) { return sy0 - i * gap - sh; }
+    for (var i = 0; i < n; i++) {
+      s.appendChild(el("rect", { "class": "card" + (i === 0 ? " hi" : ""), x: sx, y: cardTop(i), width: sw, height: sh }));
+      txt(s, "attention + feed-forward", { x: sx + sw / 2, y: cardTop(i) + 9, "class": "cardtext" });
+    }
+    [[0, 2, "Lower blocks: ", "which pieces belong together. Harry goes with Potter."],
+     [3, 6, "Middle blocks: ", "what the model knows. Harry Potter is a wizard, so the castle is Hogwarts."],
+     [7, 9, "Upper blocks: ", "what the sentence says, and what may come next."]].forEach(function (b) {
+      var y0 = cardTop(b[1]) + 1, y1 = sy0 - b[0] * gap - 1, bx0 = sx + sw + 6;
+      s.appendChild(el("path", { "class": "bracket", d: "M" + bx0 + "," + y0 + " h4 V" + y1 + " h-4" }));
+      wrap(s, [[b[2], "k"], [b[3]]], { x: bx0 + 12, y: y0 + 8, width: 166, lh: 11.5, cls: "sm" });
+    });
+    txt(s, "WHAT THE BLOCKS DO, ROUGHLY", { x: sx + sw + 18, y: cardTop(9) - 7, "class": "lab" });
+    s.appendChild(el("path", { "class": "arrow hi", d: "M614," + (Y_OUT + 30) + " H650 V" + (sy0 - sh / 2) + " H" + (sx - 4) + " m-4,-3 l4,3 -4,3" }));
+    txt(s, "×12 in BERT-base · ×32 in Llama 3.1 8B · ×96 in GPT-3", { x: sx, y: sy0 + 16, "class": "sm" });
+    txt(s, "THE STACK", { x: sx, y: cardTop(9) - 7, "class": "lab" });
+
+    /* step 8: the last vector, scored, through a softmax, into probabilities */
+    var nx = rlayer("next"), ax = sx + sw / 2, bx = 744, by0 = 40, bw = 150, sy = 152, shh = 22;
+    txt(nx, "NEXT TOKEN · LLAMA 3.1 8B · AFTER “… CASTLE.”", { x: sx, y: 28, "class": "lab" });
+    NEXT.forEach(function (d, i) {
+      var y = by0 + i * 14;
+      txt(nx, d[0], { x: bx - 8, y: y + 8, "class": "bartext", "text-anchor": "end" });
+      nx.appendChild(el("rect", { "class": "bar" + (i ? " rest" : ""), x: bx, y: y, width: Math.max(2, d[1] * bw * 4), height: 10, rx: 1.5 }));
+      txt(nx, Math.round(d[1] * 100) + "%", { x: bx + d[1] * bw * 4 + 5, y: y + 8, "class": "barval" });
+    });
+    txt(nx, (VOCAB - NEXT.length).toLocaleString("en-US") + " more tokens,", { x: 850, y: by0 + 32, "class": "sm" });
+    txt(nx, "each under 3%", { x: 850, y: by0 + 44, "class": "sm" });
+    nx.appendChild(el("path", { "class": "arrow hi", d: "M" + ax + "," + (sy - 2) + " V" + (by0 + 5 * 14 + 6) + " m-3,4 l3,-4 3,4" }));
+    nx.appendChild(el("rect", { "class": "box hi", x: sx, y: sy, width: sw, height: shh }));
+    txt(nx, "softmax", { x: ax, y: sy + 15, "class": "smx" });
+    txt(nx, VOCAB.toLocaleString("en-US") + " scores, one per token,", { x: sx + sw + 10, y: sy + 9, "class": "sm" });
+    txt(nx, "become probabilities that sum to 1", { x: sx + sw + 10, y: sy + 21, "class": "sm" });
+    nx.appendChild(el("path", { "class": "arrow hi", d: "M" + ax + "," + (cardTop(9) - 3) + " V" + (sy + shh + 2) + " m-3,4 l3,-4 3,4" }));
+    txt(nx, "the vector of the last token, “.”", { x: ax + 8, y: sy + shh + 26, "class": "sm" });
+  })();
+
+  /* ---- states --------------------------------------------------------------------------- */
+  var counter = txt($("hud"), "", { x: 980, y: 432, "class": "step" });
+  var MAX = 7, ORDER = ["tokens", "vec", "pos", "attn", "upd", "ffn"];
+  function show(l, on) { l.setAttribute("class", "fade" + (on ? "" : " hid")); }
+  function render() {
+    head(state);
+    ORDER.forEach(function (n, i) { show(layers[n], state >= i); });
+    show(layers.bracket, state >= 6);
+    show(rlayers.sim, state === 4);
+    show(rlayers.zoom, state === 5);
+    show(rlayers.stack, state >= 6);
+    show(rlayers.next, state >= 7);
+    counter.textContent = (state + 1) + " / " + (MAX + 1);
+  }
+  var state = Math.max(0, Math.min(MAX, parseInt((location.hash || "").slice(1), 10) || 0));
+  function advance() { if (state >= MAX) return; state += 1; render(); }
+  render();
+  window.addEventListener("hashchange", function () { state = Math.max(0, Math.min(MAX, parseInt((location.hash || "").slice(1), 10) || 0)); render(); });
+  document.body.addEventListener("click", advance);
+  document.body.addEventListener("keydown", function (e) { if (e.key === "Enter" || e.key === " ") advance(); });
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(render);
+})();
+</script>
+</body>
+</html>
