@@ -811,14 +811,15 @@ distribution....</code></pre>
 <section id="a-language-model-small-enough-to-see" class="slide level2 dark" data-background-color="#10243a">
 <h2>A language model, small enough to see</h2>
 <div class="cadc-figfill">
-  <iframe data-src="../explainers/gpt3d/index.html" title="A tiny language model in three dimensions, one tile per number, in seven steps: the whole model; four tokens copied out of an embedding table; attention with queries, keys, values and a four by four table of weights whose upper half is empty; a feed-forward layer four times as wide; the stack of three blocks; the last token's vector turned into one score per vocabulary entry and a softmax; and the tower grown to the 32 blocks of Llama 3.1 8B" style="background:transparent"></iframe>
+  <iframe data-src="../explainers/gpt3d/index.html" title="A tiny language model in three dimensions, seen from the side, one tile per number, in seven steps: the whole model with its parts named; the embeddings, four rows copied out of an embedding table; attention, with arrows from not to the earlier words and a four by four table of weights, giving the contextual embeddings; the feed-forward network, its connections drawn for one token; the stack of three blocks; the scores for every token of the vocabulary and the softmax that turns them into probabilities; and the tower grown to the 32 blocks of Llama 3.1 8B" style="background:transparent"></iframe>
 </div>
 <div class="cadc-ref">
 <p>After Bycroft, B. (2023). <em>LLM visualization</em>. https://bbycroft.net/llm · the numbers in the tiles are invented; the shapes are a real decoder’s.</p>
 </div>
 <aside class="notes">
-<p>Seven clicks; let the model turn while you talk. Every tile is one number, and nothing here is a metaphor: this is how many numbers a tiny GPT holds and where they sit. Click 1: the four tokens of “the film was not” are rows copied out of the embedding table, one row per token of the vocabulary, with the position added. Click 2: each vector makes a query, a key and a value; queries against keys give the 4 × 4 table of attention weights, and its upper half is empty because a decoder may not look ahead. “not” looks back at the three words before it. Click 3: the feed-forward network, four times as wide, one token at a time. Both results are added to the stream that rises through the model. Click 4: the stack, three blocks here, the same two operations each time. Click 5: only the last token’s vector is read, one score per token of the vocabulary, a softmax, and the tallest bar is the prediction.</p>
-<p>Click 6 is the size. Llama 3.1 8B, the model of the cold open, is this machine with 32 blocks, 4,096 numbers per token instead of 12, and 128,256 tokens in its vocabulary: about eight billion weights against this toy’s few thousand. Bycroft’s visualization, which this drawing follows, runs a real small GPT in the browser and is worth an evening.</p>
+<p>Seven clicks; let the model turn while you talk. Every tile is one number, and nothing here is a metaphor: this is how many numbers a tiny GPT holds and where they sit. The point is where the pieces of the last slides and of week 3 sit in one machine; no detail needs explaining. The first view names them: embeddings at the bottom, attention and the feed-forward network in each block, the softmax at the top.</p>
+<p>Click 1, the embeddings: the four tokens of “the film was not” are rows copied out of the embedding table, as in week 3, with the position added. So far “film” has the same vector in every sentence. Click 2, attention: the arrows are “not” looking back at the words before it, most at “film”; the weights are one row of the 4 × 4 table, which comes from queries against keys, and its empty half is the decoder’s rule that no token looks ahead. Added to the stream, the vectors are contextual embeddings, the Harry of a few slides ago. Click 3: the three layers move apart and the feed-forward network shows, the kind from week 3, drawn for “not” alone: the vector at the bottom, a see-through hidden layer four times as wide, the output at the top, one hidden unit lit. Every vector goes through it on its own, and the output is added to the vector. Click 4: the stack, three blocks here, the same two operations each time. Why several: each block works with what the blocks below have added, so lower blocks link the words that belong together and higher blocks use that for what the sentence says and what could come next. Click 5: only the last token’s vector is read. It is multiplied with a table that has one row per token of the vocabulary (in some models the embedding table itself), which gives one score per token, the fan of lines. The softmax turns each score into a probability, straight above it: all positive, together 100 per cent, the largest score with by far the largest share. The tallest bar is the prediction.</p>
+<p>Click 6 is the size. Llama 3.1 8B, the model of the cold open, is this machine with 32 blocks, 4,096 numbers per token instead of 12, and 128,256 tokens in its vocabulary: about eight billion weights against this toy’s few thousand. GPT-3 had 96 blocks (Brown et al., 2020), the largest Llama 3.1 has 126 (Llama Team, 2024); for GPT-4 and later, OpenAI publishes no architecture at all (OpenAI, 2023). Bycroft’s visualization, which this drawing follows, runs a real small GPT in the browser and is worth an evening.</p>
 <style type="text/css">
         span.MJX_Assistive_MathML {
           position:absolute!important;
@@ -2342,6 +2343,48 @@ Five models, three reply formats, every single one. Claude Opus, asked to give i
           display:block!important;
       }</style></aside>
 </section>
+<section id="what-a-study-costs-in-euros-and-in-energy-data-the-playgrounds-cost-model-2000-texts" class="slide level2" data-background-color="#faf8f4">
+<h2>What a study costs, in euros and in energy <span class="cadc-data">DATA · THE PLAYGROUND’S COST MODEL · 2,000 TEXTS</span></h2>
+<div class="columns">
+<div class="column" style="width:60%;">
+<div class="cell">
+<div class="cell-output-display">
+<div>
+<figure>
+<p><img data-src="04_llms_files/figure-revealjs/plot-cost-1.png" width="604"></p>
+</figure>
+</div>
+</div>
+</div>
+</div><div class="column" style="width:40%;">
+<ul>
+<li>The Playground’s starting study: 2,000 texts, two prompts, three runs of each; 12,000 calls</li>
+<li>A human coder costs about €1,600, a frontier model about €50, a model on a laptop a few cents</li>
+<li>Energy: from about two kettles of boiled water, with a cheap model or on a laptop, to nineteen with a frontier model</li>
+<li>Not counted: training. Llama 3.1 8B took 1.46 million GPU hours, about 1,000 MWh at full power: some 400 Dutch households’ electricity for a year</li>
+</ul>
+<div class="cadc-take">
+<p>For one study the bill depends on the model. Most of the energy a model uses goes into its training and into serving millions of users.</p>
+</div>
+</div></div>
+<a class="cadc-playtab" href="../playground/cost.html" target="_blank" rel="noopener" title="Playground: What the study costs"><span class="cadc-playtab__icon"><svg viewbox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M5 2.5v19l2-1 2 1 2-1 2 1 2-1 2 1 2-1v-19l-2 1-2-1-2 1-2-1-2 1-2-1z"></path><path d="M15 8h-4.5a1.75 1.75 0 0 0 0 3.5h3a1.75 1.75 0 0 1 0 3.5H9"></path><path d="M12 6.5v10"></path></svg></span><span class="cadc-playtab__text"><span class="cadc-playtab__k">PLAYGROUND</span><span class="cadc-playtab__t">What the study costs</span></span></a>
+<aside class="notes">
+<p>The figure is the Playground tool <em>What the study costs</em>, with its own formulas and constants, for the study it opens with: 2,000 texts of about 400 tokens, a 450-token codebook in every call, a one-word answer, two prompt variants and three runs of each, so 12,000 calls. Students who open the tool see the same numbers and can put in their own study.</p>
+<p>Read the left panel first. Coding by hand is the expensive option, about €1,600 for a coder on a Dutch university wage. A frontier model costs about €50, a workhorse model about €11, a cheap one about a euro, and a local model costs only the electricity, a few cents, but it takes half a day on a laptop.</p>
+<p>Then the right panel, in kettles: boiling 1.7 litres takes about 0.2 kWh, the tool’s own comparison. The whole study takes between half a kilowatt-hour and four, two to nineteen kettles. The hosted numbers are the weakest in the tool: no vendor publishes the energy of a request, so they are estimates from the literature, and the tool says so. The human coder’s laptop is not counted.</p>
+<p>What the figure leaves out is training. Meta’s model card for Llama 3.1 8B, the model of the cold open, gives 1.46 million GPU hours at 700 W, about a million kilowatt-hours at full power, or 420 tonnes of CO2 by location, spent once before anyone codes a text (Meta, 2024). Spread over millions of users that is little per request, and it is still a cost of every study that uses the model. Choosing a smaller model, caching the codebook and not running a grid of prompts nobody needs lower the bill and the energy together.</p>
+<style type="text/css">
+        span.MJX_Assistive_MathML {
+          position:absolute!important;
+          clip: rect(1px, 1px, 1px, 1px);
+          padding: 1px 0 0 0!important;
+          border: 0!important;
+          height: 1px!important;
+          width: 1px!important;
+          overflow: hidden!important;
+          display:block!important;
+      }</style></aside>
+</section>
 <section id="what-you-can-now-do" class="slide level2" data-background-color="#faf8f4">
 <h2>What you can now do</h2>
 <ul>
@@ -2368,6 +2411,50 @@ Five models, three reply formats, every single one. Claude Opus, asked to give i
 <p>Everything in the last homework was on a slide today. Install Ollama and pull <code>llama3.2:3b</code> before Tuesday.</p>
 </div>
 </section>
+<section id="the-exam" class="slide level2" data-background-color="#faf8f4">
+<h2>The exam</h2>
+<div class="columns">
+<div class="column" style="width:42%;">
+<div class="cadc-label">
+<p>What it is</p>
+</div>
+<ul>
+<li>Week 5, in the room, on TestVision, without AI and without notes</li>
+<li>Mostly multiple-choice questions, plus a few open ones</li>
+<li>Everything from weeks 1 to 4: the slides and what we discussed about them, the labs, the required readings</li>
+<li>You read output and code and judge whether a measurement can be believed; you never write code from scratch</li>
+</ul>
+</div><div class="column" style="width:58%;">
+<div class="cadc-label">
+<p>How to prepare</p>
+</div>
+<ol type="1">
+<li>Go through all four decks again and explain each slide in your own words</li>
+<li>If a concept stays unclear, read more about it in the suggested readings</li>
+<li>Link the slides to the labs: find the lab code that runs each method and say what its output means</li>
+<li>Work through all lab and check-in solutions on Canvas</li>
+<li>Write summaries and learning cards by hand and test yourself with them; reading the slides again is not enough</li>
+<li>Only at the end, practise with real example questions. A chatbot can draft more questions for you, which helps at this last step</li>
+</ol>
+</div></div>
+<div class="cadc-take">
+<p>By the end of this week, Canvas will have the check-in answers with short explanations, more multiple-choice and open example questions, and further readings and videos.</p>
+</div>
+<aside class="notes">
+<p>The date, time and room are on the course website’s schedule and in the manual. Most of the exam is multiple choice, with a few open questions; the open answers may be written in English or Dutch.</p>
+<p>The order of the list matters. Going back through the slides and explaining each one, writing summaries by hand and testing yourself with cards is what makes the material stick; rereading feels productive but leaves little behind. The readings give a concept that stayed unclear a second explanation. The lab solutions matter because many questions are built on the labs’ data, code and traps. Asking a chatbot to draft questions from the slides is a good last step once the rest is done. Its questions test what it happened to pick out, and its answers can be wrong.</p>
+<style type="text/css">
+        span.MJX_Assistive_MathML {
+          position:absolute!important;
+          clip: rect(1px, 1px, 1px, 1px);
+          padding: 1px 0 0 0!important;
+          border: 0!important;
+          height: 1px!important;
+          width: 1px!important;
+          overflow: hidden!important;
+          display:block!important;
+      }</style></aside>
+</section>
 <section id="questions" class="slide level2 center dark" data-background-color="#10243a">
 <h2>Questions?</h2>
 <div class="cadc-take">
@@ -2379,6 +2466,7 @@ Five models, three reply formats, every single one. Claude Opus, asked to give i
 <div class="cadc-refs">
 <p>Alizadeh, M., Kubli, M., Samei, Z., Dehghani, S., Zahedivafa, M., Bermeo, J. D., Korobeynikova, M., &amp; Gilardi, F. (2025). Open-source LLMs for text annotation: A practical guide for model setting and fine-tuning. <em>Journal of Computational Social Science, 8</em>(1), 17. <a href="https://doi.org/10.1007/s42001-024-00345-9" class="uri">https://doi.org/10.1007/s42001-024-00345-9</a></p>
 <p>Ben Abacha, A., Yim, W., Fu, Y., Sun, Z., Yetisgen, M., Xia, F., &amp; Lin, T. (2024). <em>MEDEC: A benchmark for medical error detection and correction in clinical notes</em> (arXiv:2412.19260). arXiv. <a href="https://doi.org/10.48550/arXiv.2412.19260" class="uri">https://doi.org/10.48550/arXiv.2412.19260</a></p>
+<p>Brown, T. B., Mann, B., Ryder, N., Subbiah, M., Kaplan, J., Dhariwal, P., Neelakantan, A., Shyam, P., Sastry, G., Askell, A., Agarwal, S., Herbert-Voss, A., Krueger, G., Henighan, T., Child, R., Ramesh, A., Ziegler, D. M., Wu, J., Winter, C., … Amodei, D. (2020). Language models are few-shot learners. <em>Advances in Neural Information Processing Systems, 33</em>, 1877–1901.</p>
 <p>Bucher, M. J. J., &amp; Martini, M. (2024). <em>Fine-tuned “small” LLMs (still) significantly outperform zero-shot generative AI models in text classification</em> (arXiv:2406.08660). arXiv. <a href="https://doi.org/10.48550/arXiv.2406.08660" class="uri">https://doi.org/10.48550/arXiv.2406.08660</a></p>
 <p>Bycroft, B. (2023). <em>LLM visualization</em> [Interactive visualization]. <a href="https://bbycroft.net/llm" class="uri">https://bbycroft.net/llm</a></p>
 <p>Chen, L., Zaharia, M., &amp; Zou, J. (2024). How is ChatGPT’s behavior changing over time? <em>Harvard Data Science Review, 6</em>(2). <a href="https://doi.org/10.1162/99608f92.5317da47" class="uri">https://doi.org/10.1162/99608f92.5317da47</a></p>
@@ -2395,15 +2483,18 @@ Five models, three reply formats, every single one. Claude Opus, asked to give i
 <p>Kaplan, J., McCandlish, S., Henighan, T., Brown, T. B., Chess, B., Child, R., Gray, S., Radford, A., Wu, J., &amp; Amodei, D. (2020). <em>Scaling laws for neural language models</em> (arXiv:2001.08361). arXiv. <a href="https://doi.org/10.48550/arXiv.2001.08361" class="uri">https://doi.org/10.48550/arXiv.2001.08361</a></p>
 <p>Kotzias, D., Denil, M., de Freitas, N., &amp; Smyth, P. (2015). From group to individual labels using deep features. <em>Proceedings of the 21st ACM SIGKDD International Conference on Knowledge Discovery and Data Mining</em>, 597–606. <a href="https://doi.org/10.1145/2783258.2783380" class="uri">https://doi.org/10.1145/2783258.2783380</a></p>
 <p>Kroon, A., Welbers, K., Trilling, D., &amp; van Atteveldt, W. (2024). Advancing automated content analysis for a new era of media effects research: The key role of transfer learning. <em>Communication Methods and Measures, 18</em>(2), 142–162. <a href="https://doi.org/10.1080/19312458.2023.2261372" class="uri">https://doi.org/10.1080/19312458.2023.2261372</a></p>
+<p>Llama Team, AI @ Meta. (2024). <em>The Llama 3 herd of models</em> (arXiv:2407.21783). arXiv. <a href="https://doi.org/10.48550/arXiv.2407.21783" class="uri">https://doi.org/10.48550/arXiv.2407.21783</a></p>
 <p>Masur, P. K., &amp; van Atteveldt, W. (in prep.). <em>Sentiment coding with large language models: Extending the validity comparison of van Atteveldt, van der Velden and Boukes (2021)</em>.</p>
 <p>Meng, K., Bau, D., Andonian, A., &amp; Belinkov, Y. (2022). Locating and editing factual associations in GPT. <em>Advances in Neural Information Processing Systems, 35</em>, 17359–17372.</p>
-<p>Ollion, É., Shen, R., Macanovic, A., &amp; Chatelain, A. (2024). The dangers of using proprietary LLMs for research. <em>Nature Machine Intelligence, 6</em>(1), 4–5. <a href="https://doi.org/10.1038/s42256-023-00783-6" class="uri">https://doi.org/10.1038/s42256-023-00783-6</a></p>
-<p>Ouyang, L., Wu, J., Jiang, X., Almeida, D., Wainwright, C., Mishkin, P., Zhang, C., Agarwal, S., Slama, K., Ray, A., Schulman, J., Hilton, J., Kelton, F., Miller, L., Simens, M., Askell, A., Welinder, P., Christiano, P., Leike, J., &amp; Lowe, R. (2022). Training language models to follow instructions with human feedback. <em>Advances in Neural Information Processing Systems, 35</em>, 27730–27744.</p>
+<p>Meta. (2024). <em>Llama 3.1 model card</em>. GitHub. <a href="https://github.com/meta-llama/llama-models/blob/main/models/llama3_1/MODEL_CARD.md" class="uri">https://github.com/meta-llama/llama-models/blob/main/models/llama3_1/MODEL_CARD.md</a></p>
 </div>
 </section>
 <section id="references-continued-1" class="slide level2" data-background-color="#faf8f4">
 <h2>References (continued)</h2>
 <div class="cadc-refs">
+<p>Ollion, É., Shen, R., Macanovic, A., &amp; Chatelain, A. (2024). The dangers of using proprietary LLMs for research. <em>Nature Machine Intelligence, 6</em>(1), 4–5. <a href="https://doi.org/10.1038/s42256-023-00783-6" class="uri">https://doi.org/10.1038/s42256-023-00783-6</a></p>
+<p>OpenAI. (2023). <em>GPT-4 technical report</em> (arXiv:2303.08774). arXiv. <a href="https://doi.org/10.48550/arXiv.2303.08774" class="uri">https://doi.org/10.48550/arXiv.2303.08774</a></p>
+<p>Ouyang, L., Wu, J., Jiang, X., Almeida, D., Wainwright, C., Mishkin, P., Zhang, C., Agarwal, S., Slama, K., Ray, A., Schulman, J., Hilton, J., Kelton, F., Miller, L., Simens, M., Askell, A., Welinder, P., Christiano, P., Leike, J., &amp; Lowe, R. (2022). Training language models to follow instructions with human feedback. <em>Advances in Neural Information Processing Systems, 35</em>, 27730–27744.</p>
 <p>Pangakis, N., Wolken, S., &amp; Fasching, N. (2023). <em>Automated annotation with generative AI requires validation</em> (arXiv:2306.00176). arXiv. <a href="https://doi.org/10.48550/arXiv.2306.00176" class="uri">https://doi.org/10.48550/arXiv.2306.00176</a></p>
 <p>Reiss, M. V. (2023). <em>Testing the reliability of ChatGPT for text annotation and classification: A cautionary remark</em> (arXiv:2304.11085). arXiv. <a href="https://doi.org/10.48550/arXiv.2304.11085" class="uri">https://doi.org/10.48550/arXiv.2304.11085</a></p>
 <p>Tenney, I., Das, D., &amp; Pavlick, E. (2019). BERT rediscovers the classical NLP pipeline. <em>Proceedings of the 57th Annual Meeting of the Association for Computational Linguistics</em>, 4593–4601. <a href="https://doi.org/10.18653/v1/P19-1452" class="uri">https://doi.org/10.18653/v1/P19-1452</a></p>

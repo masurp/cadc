@@ -25,26 +25,38 @@
   twelve numbers per token, three blocks and a toy vocabulary. Every tile is one
   number. The vectors of the stream are horizontal floors (tokens across, the
   twelve numbers in depth) that rise through the blocks; attention and the
-  feed-forward network branch off to the side and are added back.
+  feed-forward network branch off to the side and are added back. The camera
+  looks from the side, so the floors read as layers, and each step zooms in on
+  one part the course has already shown: embeddings (week 3), attention and the
+  contextual embeddings it makes, the feed-forward network (week 3's kind),
+  the softmax (2026-11-16, after Philipp asked to see where these sit).
 
   What is real and what is drawn:
     - the SHAPES are a real decoder's: one vector per token, query/key/value of
       the same size, a 4 x 4 attention table with its upper half masked, a
       feed-forward layer four times as wide, one score per vocabulary entry
       for the LAST token only, a softmax.
-    - every NUMBER is invented (seeded), the next-token bars included.
+    - every NUMBER is invented (seeded), the next-token bars included; step 2's
+      arrows are one row of the table ("not" looks back: 8, 52, 10 and 30 per
+      cent), step 3 pulls block 1's feed-forward floors apart and draws the
+      network for "not" (every third hidden unit, one unit lit) under and over
+      a see-through hidden layer, step 5 fans the last vector out into one
+      score per token (both signs) and lifts each score to its probability.
+    - step 6's comparison: GPT-3 96 layers (Brown et al. 2020, Table 2.1), Llama
+      3 405B 126 (Llama 3 paper, Table 3); OpenAI published no architecture
+      for GPT-4 (technical report, section 2) or later. Checked 2026-11-16.
     - step 6's sizes are Llama 3.1 8B's configuration: 32 blocks, 4,096
       numbers per token, a vocabulary of 128,256, 8 billion weights. The
       toy's weight count is computed from its own dimensions below.
-  Steps: the whole model → tokens in → attention → feed-forward → the stack →
-  the next token → the real size. Forward and back: explainers/shared/stepnav.js;
+  Steps: the whole model → embeddings → attention → feed-forward → the stack →
+  softmax and the next token → the real size. Forward and back: explainers/shared/stepnav.js;
   #N opens at step N. The camera sways slowly unless reduced motion is set.
 =========================================================================== -->
 <body>
 <div class="stage">
   <canvas id="c"></canvas>
   <svg id="o" viewBox="0 0 1000 440" preserveAspectRatio="xMidYMid meet" role="img"
-       aria-label="A tiny language model drawn in three dimensions, one tile per number. Four tokens, the film was not, enter at the bottom as rows copied from an embedding table. In each of three blocks the vectors make queries, keys and values, a four by four table of attention weights with its upper half empty, and pass through a feed-forward layer four times as wide; both results are added to the stream that rises through the blocks. At the top, the last token's vector becomes one score per word in the vocabulary, and a softmax turns them into bars; the tallest is good. Last, the tower grows to Llama 3.1 8B's 32 blocks.">
+       aria-label="A tiny language model drawn in three dimensions and seen from the side, one tile per number. Four tokens, the film was not, enter at the bottom as embeddings, rows copied from an embedding table. In the first block, arrows show the token not looking back at the earlier words, most at film; queries against keys give a four by four table of attention weights with its upper half empty, and the result, added to the stream, is the contextual embeddings. Then a small feed-forward network, its connections drawn for the token not, works on each vector on its own. Three such blocks are stacked. At the top, the last token's vector becomes one score per word in the vocabulary, and a softmax turns the scores into probabilities that sum to 100 per cent; the tallest bar is good. Last, the tower grows to Llama 3.1 8B's 32 blocks.">
     <g id="tags"></g>
     <g id="panel"></g>
     <g id="hud"></g>
@@ -102,20 +114,28 @@ language model drawn in three dimensions.</p></noscript>
      its offset, recomputed each frame because step 6 squeezes the blocks together */
   for (var b = 0; b < BIG; b++) {
     var B = { b: b, extra: b >= L };
-    B.Q = floor({ id: "q" + b, x0: 12, off: 3, z0: 0, nx: T, nz: C, cw: 2, flow: 1 + 4 * b, grp: "attn", block: b });
-    B.K = floor({ id: "k" + b, x0: 22, off: 3, z0: 0, nx: T, nz: C, cw: 2, flow: 1 + 4 * b, grp: "attn", block: b });
-    B.V = floor({ id: "v" + b, x0: 32, off: 3, z0: 0, nx: T, nz: C, cw: 2, flow: 1 + 4 * b, grp: "attn", block: b });
-    B.A = floor({ id: "a" + b, x0: 22, off: 6.5, z0: 2, nx: T, nz: T, cw: 2, cz: 2, flow: 2 + 4 * b, grp: "attn", block: b, attn: true, v: attnVals(53 + b) });
+    B.Q = floor({ id: "q" + b, x0: 11, off: 3, z0: 0, nx: T, nz: C, cw: 2, flow: 1 + 4 * b, grp: "attn", block: b });
+    B.K = floor({ id: "k" + b, x0: 20, off: 3, z0: 0, nx: T, nz: C, cw: 2, flow: 1 + 4 * b, grp: "attn", block: b });
+    B.V = floor({ id: "v" + b, x0: 29, off: 3, z0: 0, nx: T, nz: C, cw: 2, flow: 1 + 4 * b, grp: "attn", block: b });
+    B.A = floor({ id: "a" + b, x0: 11, off: 6.5, z0: 2, nx: T, nz: T, cw: 2, cz: 2, flow: 2 + 4 * b, grp: "attn", block: b, attn: true, v: attnVals(53 + b) });
     B.M = floor({ id: "m" + b, x0: 0, off: 8, z0: 0, nx: T, nz: C, cw: 2, flow: 2.5 + 4 * b, grp: "stream", stream: true, block: b });
-    B.H = floor({ id: "h" + b, x0: 12, off: 11, z0: C / 2 - HID / 2, nx: T, nz: HID, cw: 2, flow: 3 + 4 * b, grp: "mlp", block: b });
+    B.H = floor({ id: "h" + b, x0: 12, off: 11, z0: C / 2 - HID / 4, nx: T, nz: HID, cw: 2, cz: .5, flow: 3 + 4 * b, grp: "mlp", block: b });
     B.S = floor({ id: "s" + b, x0: 0, off: 14, z0: 0, nx: T, nz: C, cw: 2, flow: 4 + 4 * b, grp: "stream", stream: true, block: b });
     blocks.push(B);
   }
+  /* the row step 2 draws as arrows: "not" looks back mostly at "film" (invented, like the rest) */
+  var NOT_LOOKS = [.08, .52, .10, .30];
+  blocks[0].A.v[3] = NOT_LOOKS.slice();
+  var HOT = 27;                                   /* the hidden unit step 3 lights */
   var NV = 24, bh = BH;                           /* bh: the block height in use, 16 → 3 in step 6 */
   function yb(b) { return Y0 + b * bh; }
   function OUTY() { return yb(L) + 3 * bh / BH; }
   var LOG = floor({ id: "logits", x0: 6, z0: -6, nx: 1, nz: NV, cw: 2, flow: 4 * L + 1, grp: "out", top: true });
-  function placeFloors() { floors.forEach(function (F) { if (F.block != null) F.y = yb(F.block) + F.off * bh / BH; else if (F.top) F.y = OUTY(); }); }
+  var PRB = floor({ id: "probs", x0: 6, z0: -6, nx: 1, nz: NV, cw: 2, flow: 4 * L + 2, grp: "out", top: true, topOff: 3.5,
+    v: [new Array(NV).fill(0)] });
+  /* step 3 pulls block 1's feed-forward floors apart (cam.sp, 1 → 2) so the network between them shows */
+  function placeFloors() { var sp = (cam && cam.sp) || 1;
+    floors.forEach(function (F) { if (F.block != null) F.y = yb(F.block) + (F.block === 0 && (F.grp === "mlp" || F.id === "s0") ? 8 + (F.off - 8) * sp : F.off) * bh / BH; else if (F.top) F.y = OUTY() + (F.topOff || 0) * bh / BH; }); }
   placeFloors();
   /* the next-token distribution over the 24 drawn entries: invented, the top four named */
   var WORDS = { 13: "good", 5: "bad", 19: "great", 9: "funny" };
@@ -123,21 +143,24 @@ language model drawn in three dimensions.</p></noscript>
     for (var i = 0; i < NV; i++) p.push(.006 + .02 * r());
     p[13] = .34; p[5] = .14; p[19] = .08; p[9] = .05;
     var s = p.reduce(function (a, x) { return a + x; }, 0); return p.map(function (x) { return x / s; }); })();
-  LOG.v = [PROB.map(function (p) { return Math.min(1, Math.log(p * 60) / 3.2); })];
+  /* the scores before the softmax: both signs, centred on their mean */
+  LOG.v = (function () { var lp = PROB.map(Math.log), m = lp.reduce(function (a, x) { return a + x; }, 0) / NV;
+    return [lp.map(function (x) { return Math.max(-1, Math.min(1, (x - m) / 1.7)); })]; })();
 
   /* ---- camera -------------------------------------------------------------------------- */
   var cv = $("c"), ctx = cv.getContext("2d"), W = 1000, H = 440;
   function resize() { var dpr = window.devicePixelRatio || 1, r = cv.getBoundingClientRect(); cv.width = Math.round(r.width * dpr); cv.height = Math.round(r.height * dpr); ctx.setTransform(cv.width / W, 0, 0, cv.height / H, 0, 0); }
   window.addEventListener("resize", resize); resize();
   /* per step: look-at point, yaw, pitch, pixels per unit, screen centre */
+  /* low pitches: the model is seen from the side, so its floors read as layers */
   var CAMS = [
-    { t: [11, 28, 6], yaw: -.55, pitch: .5, S: 5.9, cx: 312, cy: 222 },     /* 0 the whole model */
-    { t: [-4, 0, 6], yaw: -.3, pitch: .72, S: 16, cx: 318, cy: 210 },       /* 1 tokens in */
-    { t: [21, 8, 6], yaw: -.28, pitch: .66, S: 10, cx: 336, cy: 232 },     /* 2 attention */
-    { t: [12, 13, 6], yaw: -.95, pitch: .52, S: 7.2, cx: 316, cy: 222 },    /* 3 feed-forward */
-    { t: [11, 28, 6], yaw: -.55, pitch: .5, S: 5.9, cx: 312, cy: 222 },     /* 4 the stack */
-    { t: [7, OUTY() + 4, 6], yaw: -.95, pitch: .34, S: 12, cx: 300, cy: 236 }, /* 5 the next token */
-    { t: [11, Y0 + BIG * 3 / 2, 6], yaw: -.55, pitch: .42, S: 3.2, cx: 312, cy: 214 } /* 6 the real size */
+    { t: [11, 29, 6], yaw: -.42, pitch: .26, S: 7.1, cx: 300, cy: 228, sp: 1 }, /* 0 the whole model */
+    { t: [-3.5, 1, 6], yaw: -.32, pitch: .42, S: 18, cx: 300, cy: 236, sp: 1 }, /* 1 embeddings */
+    { t: [10, 6, 6], yaw: -.3, pitch: .3, S: 17, cx: 290, cy: 250, sp: 1 },  /* 2 attention */
+    { t: [10, 18, 6], yaw: -.2, pitch: .2, S: 16, cx: 300, cy: 240, sp: 2 }, /* 3 feed-forward */
+    { t: [11, 29, 6], yaw: -.42, pitch: .26, S: 7.1, cx: 300, cy: 228, sp: 1 }, /* 4 the stack */
+    { t: [7, OUTY() + 4, 6], yaw: -1.3, pitch: .3, S: 13, cx: 280, cy: 236, sp: 1 }, /* 5 softmax, the next token */
+    { t: [11, Y0 + BIG * 3 / 2, 6], yaw: -.42, pitch: .3, S: 3.2, cx: 300, cy: 214, sp: 1 } /* 6 the real size */
   ];
   var cam = JSON.parse(JSON.stringify(CAMS[0])), camFrom = null, camTo = CAMS[0], camT0 = 0, CAMDUR = 1400;
   var sway = 0, D = 160;
@@ -154,7 +177,7 @@ language model drawn in three dimensions.</p></noscript>
   function tweenCam(now) {
     if (!camFrom) return;
     var t = reduced ? 1 : ease((now - camT0) / CAMDUR);
-    ["yaw", "pitch", "cx", "cy"].forEach(function (k) { cam[k] = lerp(camFrom[k], camTo[k], t); });
+    ["yaw", "pitch", "cx", "cy", "sp"].forEach(function (k) { cam[k] = lerp(camFrom[k], camTo[k], t); });
     cam.S = Math.exp(lerp(Math.log(camFrom.S), Math.log(camTo.S), t));        /* zoom evenly */
     for (var i = 0; i < 3; i++) cam.t[i] = lerp(camFrom.t[i], camTo.t[i], t);
     if (t >= 1) camFrom = null;
@@ -186,6 +209,8 @@ language model drawn in three dimensions.</p></noscript>
         quad(p1, p2, p3, p4, rgba(mix(mix(COL.cell, COL.acc, .2 + .8 * Math.sqrt(v)), COL.amber, on * .55), a));
         continue;
       }
+      if (state === 3 && F === blocks[0].H && i === 3 && j === HOT) { quad(p1, p2, p3, p4, rgba(COL.amber, Math.max(a, .95))); continue; }
+      if (state === 5 && F === blocks[L - 1].S && i !== T - 1) { quad(p1, p2, p3, p4, rgba(cellCol(v, 0), a * .22)); continue; }
       var rowLit = F === EMB && LIT.indexOf(i) >= 0 && hiRow === 1 ? 1 : 0;
       quad(p1, p2, p3, p4, rgba(cellCol(v, Math.max(lit, rowLit)), a * fade * (F === EMB && hiRow === 1 && LIT.indexOf(i) < 0 ? .55 : 1)));
     }
@@ -206,9 +231,9 @@ language model drawn in three dimensions.</p></noscript>
     if (a <= .01) return;
     var grow = reduced ? 1 : ease((now - barsT0) / 900), x0 = LOG.x0, items = [];
     for (var j = 0; j < NV; j++) {
-      var h = PROB[j] * 30 * grow, z = LOG.z0 + j + .15, w = .7, xa = x0 + .5, xb = x0 + 1.5;
-      var b0 = proj([xa, LOG.y, z]), b1 = proj([xb, LOG.y, z]), b2 = proj([xb, LOG.y, z + w]), b3 = proj([xa, LOG.y, z + w]);
-      var t0 = proj([xa, LOG.y + h, z]), t1 = proj([xb, LOG.y + h, z]), t2 = proj([xb, LOG.y + h, z + w]), t3 = proj([xa, LOG.y + h, z + w]);
+      var h = PROB[j] * 30 * grow, z = PRB.z0 + j + .15, w = .7, xa = x0 + .5, xb = x0 + 1.5, y = PRB.y;
+      var b0 = proj([xa, y, z]), b1 = proj([xb, y, z]), b2 = proj([xb, y, z + w]), b3 = proj([xa, y, z + w]);
+      var t0 = proj([xa, y + h, z]), t1 = proj([xb, y + h, z]), t2 = proj([xb, y + h, z + w]), t3 = proj([xa, y + h, z + w]);
       items.push({ z: b0.z, j: j, b: [b0, b1, b2, b3], t: [t0, t1, t2, t3] });
     }
     items.sort(function (p, q) { return q.z - p.z; });
@@ -220,6 +245,42 @@ language model drawn in three dimensions.</p></noscript>
     });
   }
 
+  /* step 2: "not" looks back at the words before it, each arrow as thick as its weight */
+  function arrows() {
+    var y = E.y + .3, z = -.7, from = [7, y, z];
+    for (var j = 0; j < T - 1; j++) {
+      var to = [2 * j + 1, y, z], top = [(from[0] + to[0]) / 2, y + 1.6 + 1.1 * (T - 1 - j), z],
+          P = proj(from), Q = proj(to), M = proj(top), cx = 2 * M.x - (P.x + Q.x) / 2, cy = 2 * M.y - (P.y + Q.y) / 2,
+          w = NOT_LOOKS[j], lw = 1.2 + 9 * w, col = rgba(COL.amber, .45 + .5 * w / .52);
+      ctx.strokeStyle = col; ctx.lineWidth = lw; ctx.lineCap = "round";
+      var ang = Math.atan2(Q.y - cy, Q.x - cx), hl = 7 + 9 * w, ex = Q.x - Math.cos(ang) * hl * .8, ey = Q.y - Math.sin(ang) * hl * .8;
+      ctx.beginPath(); ctx.moveTo(P.x, P.y); ctx.quadraticCurveTo(cx, cy, ex, ey); ctx.stroke();
+      ctx.fillStyle = col; ctx.beginPath(); ctx.moveTo(Q.x, Q.y);
+      ctx.lineTo(Q.x - Math.cos(ang - .45) * hl, Q.y - Math.sin(ang - .45) * hl);
+      ctx.lineTo(Q.x - Math.cos(ang + .45) * hl, Q.y - Math.sin(ang + .45) * hl); ctx.closePath(); ctx.fill();
+    }
+    ctx.lineCap = "butt";
+  }
+  /* step 3: the network for one token ("not"), every third hidden unit drawn, one unit lit;
+     drawn in two halves so the see-through hidden layer sits between them (frame) */
+  function network(half) {
+    var B0 = blocks[0], xs = 2 * (T - 1) + 1, xh = B0.H.x0 + 2 * (T - 1) + 1, zh = B0.H.z0 + (HOT + .5) * B0.H.cz;
+    var lo = half === 0 ? B0.M : B0.S;
+    for (var k = 0; k < HID; k += 3) for (var i = 0; i < C; i++)
+      line([xs, lo.y, i + .5], [xh, B0.H.y, B0.H.z0 + (k + .5) * B0.H.cz], COL.pos, .16, .6);
+    for (var o = 0; o < C; o++) line([xs, lo.y, o + .5], [xh, B0.H.y, zh], COL.amber, half === 0 ? .75 : .55, 1.1);
+  }
+  /* step 5: the last vector against every token's row gives one score each (the fan); each
+     score becomes its probability straight above it (the comb) */
+  function readout() {
+    var top = blocks[L - 1].S, from = [7, top.y + .1, C / 2];
+    for (var j = 0; j < NV; j++) {
+      var z = LOG.z0 + j + .5, hot = j === 13;
+      line(from, [7, LOG.y - .3, z], hot ? COL.acc : COL.pos, hot ? .9 : .22, hot ? 1.6 : .8);
+      line([7, LOG.y + .1, z], [7, PRB.y - .3, z], hot ? COL.acc : COL.ink, hot ? .9 : .28, hot ? 1.6 : .8);
+    }
+  }
+
   /* ---- what each step shows ------------------------------------------------------------------ */
   var state = 0, stepT0 = 0, barsT0 = 0, growT0 = 0;
   function focusOf(F) {
@@ -227,7 +288,7 @@ language model drawn in three dimensions.</p></noscript>
       case 1: return F.grp === "emb" || F.grp === "in" ? 1 : .12;
       case 2: return (F.block === 0 && F.grp === "attn") || F === E || F === blocks[0].M ? 1 : .12;
       case 3: return (F.block === 0 && (F.grp === "mlp" || F === blocks[0].M || F === blocks[0].S)) ? 1 : .12;
-      case 5: return F === LOG || F === blocks[L - 1].S ? 1 : .14;
+      case 5: return F === LOG || F === PRB || F === blocks[L - 1].S ? 1 : .14;
       default: return 1;
     }
   }
@@ -260,24 +321,30 @@ language model drawn in three dimensions.</p></noscript>
       curve(ctr(B.H), ctr(B.S, -.4), COL.slate, .35 * fM, 1.1);
     });
     var outA = state === 6 ? 0 : 1;
-    if (outA) curve([7, blocks[L - 1].S.y, C / 2], ctr(LOG, -.4), COL.acc, .55 * focusOf(LOG), 1.4);
+    if (outA && state !== 5) { curve([7, blocks[L - 1].S.y, C / 2], ctr(LOG, -.4), COL.acc, .55 * focusOf(LOG), 1.4);
+      line(ctr(LOG), ctr(PRB, -.4), COL.acc, .55 * focusOf(PRB), 1.4); }
     /* the four lit table rows, lifted into the stream (step 1) */
     if (state === 1) LIT.forEach(function (r, t) { curve([EMB.x0 + r + .5, 0, C + .2], [2 * t + 1, 0, C + .2], COL.acc, .8, 1.4); });
 
     /* floors, far to near */
     var vis = floors.filter(function (F) {
-      if (F === LOG) F.alpha = outA; else if (F.block != null) F.alpha = clamp01(nb - F.block); else F.alpha = 1;
+      if (F === LOG || F === PRB) F.alpha = outA; else if (F.block != null) F.alpha = clamp01(nb - F.block); else F.alpha = 1;
       return F.alpha > .01;
     });
     vis.forEach(function (F) { F._z = proj(ctr(F)).z; });
     vis.sort(function (p, q) { return q._z - p._z; });
+    var B0 = blocks[0], ffn = state === 3 ? [B0.M, B0.H, B0.S] : [];
     vis.forEach(function (F) {
+      if (ffn.indexOf(F) >= 0) return;
       var lit = flowT > -50 ? Math.max(0, 1 - Math.abs(flowT - F.flow) / 1.1) : 0;
       if (state === 6 && F.block >= L) lit = Math.max(0, 1 - Math.abs((nb - 1) - F.block) / 1.5);
       var hi = state === 2 && F.attn && F.block === 0 ? T - 1 : (state === 1 ? 1 : -1);
       drawFloor(F, F.alpha * focusOf(F), lit, hi);
-      if (F === LOG && state === 5) bars(1, now);
+      if (F === PRB && state === 5) bars(1, now);
     });
+    if (state === 2) arrows();
+    if (state === 3) { drawFloor(B0.M, 1, 0, -1); network(0); drawFloor(B0.H, .55, 0, -1); network(1); drawFloor(B0.S, 1, 0, -1); }
+    if (state === 5) readout();
     /* the drawing fades out before the panel, so no tile ever sits under its text */
     ctx.save(); ctx.globalCompositeOperation = "destination-out";
     var gf = ctx.createLinearGradient(570, 0, 630, 0); gf.addColorStop(0, "rgba(0,0,0,0)"); gf.addColorStop(1, "rgba(0,0,0,1)");
@@ -295,34 +362,42 @@ language model drawn in three dimensions.</p></noscript>
     clear($("tags")); tagSet = [];
     var B0 = blocks[0], top = blocks[L - 1].S;
     if (s === 0 || s === 4) {
-      tag("TOKENS IN · the film was not", [0, 0, -1.5], "tag", "end", -6, 10);
-      blocks.slice(0, L).forEach(function (B, b) { tag("BLOCK " + (b + 1), [41, yb(b) + 5, C / 2], "tag", "start", 6, 4); });
-      tag("NEXT TOKEN", [6, OUTY() + 1, -7], "tag a", "end", -8, 0);
+      tag("EMBEDDINGS · the film was not", [0, 0, -1.5], "tag a", "end", -6, 10);
+      tag("ATTENTION", [B0.A.x0 + 8, B0.A.y, B0.A.z0 + T], "tag a", "start", 8, 4);
+      tag("FEED-FORWARD", [B0.H.x0 + 8, B0.H.y, C / 2], "tag a", "start", 8, 4);
+      blocks.slice(0, L).forEach(function (B, b) { tag("BLOCK " + (b + 1), [-1, yb(b) + 8, 0], "tag", "end", -8, 4); });
+      tag("SOFTMAX · NEXT TOKEN", [6, OUTY() + 1, -7], "tag a", "end", -8, 0);
     }
     if (s === 1) {
-      TOKS.forEach(function (w, t) { tag(w, [2 * t + 1, 0, t % 2 ? -3.4 : -1.4], "tok q", "middle", 0, 10); });
+      TOKS.forEach(function (w, t) { tag(w, [2 * t + 1, 0, -1.4], "tok q", "middle", 0, 12); });
       tag("EMBEDDING TABLE · ONE ROW PER TOKEN OF THE VOCABULARY", [EMB.x0, 0, -1.4], "tag", "start", 0, 16);
-      tag("THE FOUR VECTORS", [8.6, 0, C], "tag a", "start", 8, 0);
+      tag("EMBEDDINGS · ONE VECTOR PER TOKEN", [4, 0, C], "tag a", "middle", 0, -10);
     }
     if (s === 2) {
+      TOKS.forEach(function (w, t) { tag(w, [2 * t + 1, 0, -1.4], "tok" + (t === T - 1 ? " q" : ""), "middle", 0, 14); });
+      NOT_LOOKS.forEach(function (w, t) { tag(Math.round(100 * w) + "%", [2 * t + 1, 0, -1.4], "tag m", "middle", 0, 28); });
       tag("QUERY", [B0.Q.x0 + 4, B0.Q.y, -1.4], "tag", "middle", 0, 14);
       tag("KEY", [B0.K.x0 + 4, B0.K.y, -1.4], "tag", "middle", 0, 14);
       tag("VALUE", [B0.V.x0 + 4, B0.V.y, -1.4], "tag", "middle", 0, 14);
-      tag("ATTENTION WEIGHTS · 4 × 4", [B0.A.x0 + 8, B0.A.y, B0.A.z0 + 8], "tag a", "start", 10, -4);
-      tag("“not” looks back", [B0.A.x0 + 8, B0.A.y, B0.A.z0 + 1], "tag m", "start", 10, 12);
-      tag("+ ADDED TO THE STREAM", [0, B0.M.y, -1], "tag", "start", -4, 18);
+      tag("ATTENTION WEIGHTS · 4 × 4", [B0.A.x0 + 4, B0.A.y, B0.A.z0 + 8], "tag a", "middle", 0, -10);
+      tag("CONTEXTUAL EMBEDDINGS", [4, B0.M.y, C], "tag a", "middle", 0, -10);
+      tag("EMBEDDINGS", [4, E.y, C], "tag", "middle", 0, -10);
     }
     if (s === 3) {
-      tag("FEED-FORWARD · FOUR TIMES AS WIDE", [B0.H.x0 + 8, B0.H.y, B0.H.z0], "tag a", "start", 10, 4);
-      tag("+ ADDED TO THE STREAM", [0, B0.S.y, -1], "tag", "end", -8, 6);
-      tag("THE STREAM", [0, B0.M.y, -1], "tag", "end", -8, 6);
+      /* positions as functions: the floors move apart while the camera flies in */
+      tag("HIDDEN LAYER", function () { return [B0.H.x0 + 8, B0.H.y, B0.H.z0 + 12]; }, "tag a", "start", 10, 0);
+      tag("48 UNITS · DRAWN FOR “not”", function () { return [B0.H.x0 + 8, B0.H.y, B0.H.z0 + 12]; }, "tag", "start", 10, 14);
+      tag("IN · THE VECTOR AFTER ATTENTION", function () { return [0, B0.M.y, 0]; }, "tag", "start", 0, 18);
+      tag("OUT · ADDED TO THE VECTOR", function () { return [0, B0.S.y, 0]; }, "tag", "start", 0, 18);
     }
     if (s === 5) {
-      tag("THE LAST TOKEN'S VECTOR", [6, top.y, -1], "tag", "end", -8, 6);
-      tag("ONE SCORE PER TOKEN", [LOG.x0 + 2, LOG.y, LOG.z0 + NV], "tag", "start", 10, 4);
-      tag("OF THE VOCABULARY, THEN A SOFTMAX", [LOG.x0 + 2, LOG.y, LOG.z0 + NV], "tag", "start", 10, 17);
-      tag("good", [LOG.x0 + 1, LOG.y + PROB[13] * 30, LOG.z0 + 13.5], "big2", "middle", 0, -8);
-      tag("bad", [LOG.x0 + 1, LOG.y + PROB[5] * 30, LOG.z0 + 5.5], "tag", "middle", 0, -7);
+      tag("THE LAST TOKEN'S VECTOR", [7, top.y, -.5], "tag", "end", -8, 6);
+      tag("× A ROW PER TOKEN", function () { return [7, (top.y + LOG.y) / 2, LOG.z0 + NV + .5]; }, "tag", "start", 8, 4);
+      tag("SCORES · ONE PER TOKEN", function () { return [LOG.x0 + 1, LOG.y, LOG.z0 + NV + .5]; }, "tag", "start", 8, 4);
+      tag("↑ SOFTMAX", function () { return [LOG.x0 + 1, (LOG.y + PRB.y) / 2, LOG.z0 + NV + .5]; }, "tag a", "start", 8, 4);
+      tag("PROBABILITIES · TOGETHER 100%", function () { return [LOG.x0 + 1, PRB.y, LOG.z0 + NV + .5]; }, "tag", "start", 8, 4);
+      tag("good " + Math.round(100 * PROB[13]) + "%", [LOG.x0 + 1, PRB.y + PROB[13] * 30, LOG.z0 + 13.5], "big2", "middle", 0, -8);
+      tag("bad " + Math.round(100 * PROB[5]) + "%", [LOG.x0 + 1, PRB.y + PROB[5] * 30, LOG.z0 + 5.5], "tag", "middle", 0, -7);
     }
     if (s === 6) {
       tag("THE TOY · 3 BLOCKS", function () { return [-1, blocks[L - 1].S.y, 0]; }, "tag", "end", -8, 4);
@@ -344,13 +419,13 @@ language model drawn in three dimensions.</p></noscript>
     return y0 + lines.length * 22;
   }
   var PANEL = [
-    ["A SMALL LANGUAGE MODEL, WHOLE", [[["Every tile is one number. Four tokens go in at the bottom, three blocks work on them, and a next token comes out at the top."]], [["The numbers are invented; the "], ["shapes", "k"], [" are a real decoder's."]]]],
-    ["01 · TOKENS IN", [[["Each token's row is copied out of the "], ["embedding table", "k"], [", and its position is added."]], [["Four tokens, four vectors of twelve numbers each."]]]],
-    ["02 · ATTENTION", [[["Each vector makes a "], ["query", "k"], [", a "], ["key", "k"], [" and a "], ["value", "k"], [". Queries against keys give a 4 × 4 table of weights."]], [["Its empty half is the decoder's rule: no token may look ahead. The weighted values are added to the stream."]]]],
-    ["03 · FEED-FORWARD", [[["Then each vector goes through a network "], ["four times as wide", "k"], [", on its own, and what comes out is added to it."]]]],
-    ["04 · THE STACK", [[["Attention and feed-forward make one "], ["block", "k"], [". The stream of vectors rises through all three, and every block adds to it."]]]],
-    ["05 · THE NEXT TOKEN", [[["At the top only the "], ["last", "k"], [" vector is read: one score for every token in the vocabulary, then a "], ["softmax", "k"], ["."]], [["The tallest bar is the prediction: "], ["good", "a"], ["."]]]],
-    ["06 · THE REAL SIZE", [[["Llama 3.1 8B is the same machine with "], ["32 blocks", "k"], [", 4,096 numbers per token instead of 12, and 128,256 tokens in its vocabulary."]], [["About 8 billion weights. This toy has about " + (Math.round(TOY_W / 1000) * 1000).toLocaleString("en-US") + "."]]]]
+    ["A SMALL LANGUAGE MODEL, WHOLE", [[["Every tile is one number. Four tokens go in at the bottom, three blocks work on them, and a next token comes out at the top."]], [["The parts are the ones you know: "], ["embeddings", "k"], [", "], ["attention", "k"], [", a "], ["feed-forward network", "k"], [" and a "], ["softmax", "k"], [". The numbers are invented; the shapes are a real decoder's."]]]],
+    ["01 · EMBEDDINGS", [[["Each token's row is copied out of the "], ["embedding table", "k"], [", as in week 3, and its position is added."]], [["So far “film” has the same vector in every sentence."]]]],
+    ["02 · ATTENTION", [[["Each token looks back at the tokens before it: “not” takes most from “film”. The weights come from "], ["queries", "k"], [" against "], ["keys", "k"], [", and no token may look ahead."]], [["Added to the stream, the vectors become "], ["contextual embeddings", "k"], ["."]]]],
+    ["03 · FEED-FORWARD", [[["Then each vector goes through a small "], ["neural network", "k"], [", the kind from week 3, on its own. Its hidden layer is four times as wide."]], [["What comes out is added to the vector."]]]],
+    ["04 · THE STACK", [[["Attention and the feed-forward network make one "], ["block", "k"], [". The vectors rise through all three blocks, and each block adds to them."]], [["Why several? Each block works with what the blocks below have already added. Lower blocks sort out which words belong together; higher blocks build on that to work out what the sentence says and what could come next."]]]],
+    ["05 · SOFTMAX", [[["At the top only the "], ["last", "k"], [" vector is read. It is multiplied with a table that has a row for every token of the vocabulary: one "], ["score", "k"], [" per token."]], [["The "], ["softmax", "k"], [" turns the scores into probabilities: all positive, together 100%, and a slightly higher score gets a much larger share. The tallest bar is the prediction: "], ["good", "a"], ["."]]]],
+    ["06 · THE REAL SIZE", [[["Llama 3.1 8B is the same machine with "], ["32 blocks", "k"], [", 4,096 numbers per token instead of 12, and 128,256 tokens in its vocabulary: about 8 billion weights. This toy has about " + (Math.round(TOY_W / 1000) * 1000).toLocaleString("en-US") + "."]], [["GPT-3 (2020) had "], ["96 blocks", "k"], [", the largest Llama 3.1 has "], ["126", "k"], [". For GPT-4 and every GPT since, OpenAI has not published the number."]]]]
   ];
   function panel(s) {
     var gP = $("panel"); clear(gP);
