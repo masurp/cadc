@@ -2,7 +2,7 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
     <loc>https://masurp.github.io/cadc/weeks/week-04.html</loc>
-    <lastmod>2026-11-13T11:07:05.316Z</lastmod>
+    <lastmod>2026-11-18T08:53:45.765Z</lastmod>
   </url>
   <url>
     <loc>https://masurp.github.io/cadc/weeks/week-02.html</loc>
@@ -29,104 +29,108 @@
     <lastmod>2026-10-21T21:58:01.739Z</lastmod>
   </url>
   <url>
-    <loc>https://masurp.github.io/cadc/playground/overfitting.html</loc>
-    <lastmod>2026-10-21T21:07:43.559Z</lastmod>
-  </url>
-  <url>
-    <loc>https://masurp.github.io/cadc/playground/embeddings.html</loc>
+    <loc>https://masurp.github.io/cadc/playground/prompts.html</loc>
     <lastmod>2026-10-21T21:07:43.555Z</lastmod>
-  </url>
-  <url>
-    <loc>https://masurp.github.io/cadc/playground/cost.html</loc>
-    <lastmod>2026-10-21T21:07:43.557Z</lastmod>
-  </url>
-  <url>
-    <loc>https://masurp.github.io/cadc/playground/bias.html</loc>
-    <lastmod>2026-10-21T21:07:43.556Z</lastmod>
-  </url>
-  <url>
-    <loc>https://masurp.github.io/cadc/playground/arithmetic.html</loc>
-    <lastmod>2026-10-21T21:07:43.559Z</lastmod>
-  </url>
-  <url>
-    <loc>https://masurp.github.io/cadc/license.html</loc>
-    <lastmod>2026-11-11T11:01:11.696Z</lastmod>
-  </url>
-  <url>
-    <loc>https://masurp.github.io/cadc/labs/week04-lab-a.html</loc>
-    <lastmod>2026-11-13T15:37:31.425Z</lastmod>
-  </url>
-  <url>
-    <loc>https://masurp.github.io/cadc/labs/week03-lab-a.html</loc>
-    <lastmod>2026-11-11T09:53:49.748Z</lastmod>
-  </url>
-  <url>
-    <loc>https://masurp.github.io/cadc/labs/week02-lab-a.html</loc>
-    <lastmod>2026-11-05T13:44:16.581Z</lastmod>
-  </url>
-  <url>
-    <loc>https://masurp.github.io/cadc/labs/week01-lab-a.html</loc>
-    <lastmod>2026-10-25T12:43:52.791Z</lastmod>
-  </url>
-  <url>
-    <loc>https://masurp.github.io/cadc/index.html</loc>
-    <lastmod>2026-10-21T21:07:43.557Z</lastmod>
-  </url>
-  <url>
-    <loc>https://masurp.github.io/cadc/assessment.html</loc>
-    <lastmod>2026-10-21T21:07:43.558Z</lastmod>
-  </url>
-  <url>
-    <loc>https://masurp.github.io/cadc/ai.html</loc>
-    <lastmod>2026-11-04T10:31:41.989Z</lastmod>
-  </url>
-  <url>
-    <loc>https://masurp.github.io/cadc/homework.html</loc>
-    <lastmod>2026-10-26T08:26:18.029Z</lastmod>
-  </url>
-  <url>
-    <loc>https://masurp.github.io/cadc/info.html</loc>
-    <lastmod>2026-10-21T21:07:43.560Z</lastmod>
-  </url>
-  <url>
-    <loc>https://masurp.github.io/cadc/labs/week01-lab-b.html</loc>
-    <lastmod>2026-10-30T19:50:13.073Z</lastmod>
-  </url>
-  <url>
-    <loc>https://masurp.github.io/cadc/labs/week02-lab-b.html</loc>
-    <lastmod>2026-11-05T13:40:36.506Z</lastmod>
-  </url>
-  <url>
-    <loc>https://masurp.github.io/cadc/labs/week03-lab-b.html</loc>
-    <lastmod>2026-11-08T20:52:20.783Z</lastmod>
-  </url>
-  <url>
-    <loc>https://masurp.github.io/cadc/labs/week04-lab-b.html</loc>
-    <lastmod>2026-11-13T11:35:18.840Z</lastmod>
-  </url>
-  <url>
-    <loc>https://masurp.github.io/cadc/playground.html</loc>
-    <lastmod>2026-10-21T21:07:43.559Z</lastmod>
-  </url>
-  <url>
-    <loc>https://masurp.github.io/cadc/playground/attention.html</loc>
-    <lastmod>2026-10-21T21:07:43.558Z</lastmod>
-  </url>
-  <url>
-    <loc>https://masurp.github.io/cadc/playground/coding.html</loc>
-    <lastmod>2026-10-21T21:07:43.555Z</lastmod>
-  </url>
-  <url>
-    <loc>https://masurp.github.io/cadc/playground/dictionary.html</loc>
-    <lastmod>2026-10-21T21:07:43.557Z</lastmod>
   </url>
   <url>
     <loc>https://masurp.github.io/cadc/playground/naive-bayes.html</loc>
     <lastmod>2026-10-21T21:07:43.558Z</lastmod>
   </url>
   <url>
-    <loc>https://masurp.github.io/cadc/playground/prompts.html</loc>
+    <loc>https://masurp.github.io/cadc/playground/dictionary.html</loc>
+    <lastmod>2026-10-21T21:07:43.557Z</lastmod>
+  </url>
+  <url>
+    <loc>https://masurp.github.io/cadc/playground/coding.html</loc>
     <lastmod>2026-10-21T21:07:43.555Z</lastmod>
+  </url>
+  <url>
+    <loc>https://masurp.github.io/cadc/playground/attention.html</loc>
+    <lastmod>2026-10-21T21:07:43.558Z</lastmod>
+  </url>
+  <url>
+    <loc>https://masurp.github.io/cadc/playground.html</loc>
+    <lastmod>2026-11-18T08:53:45.764Z</lastmod>
+  </url>
+  <url>
+    <loc>https://masurp.github.io/cadc/labs/week04-lab-b.html</loc>
+    <lastmod>2026-11-13T11:35:18.840Z</lastmod>
+  </url>
+  <url>
+    <loc>https://masurp.github.io/cadc/labs/week03-lab-b.html</loc>
+    <lastmod>2026-11-08T20:52:20.783Z</lastmod>
+  </url>
+  <url>
+    <loc>https://masurp.github.io/cadc/labs/week02-lab-b.html</loc>
+    <lastmod>2026-11-05T13:40:36.506Z</lastmod>
+  </url>
+  <url>
+    <loc>https://masurp.github.io/cadc/labs/week01-lab-b.html</loc>
+    <lastmod>2026-10-30T19:50:13.073Z</lastmod>
+  </url>
+  <url>
+    <loc>https://masurp.github.io/cadc/info.html</loc>
+    <lastmod>2026-10-21T21:07:43.560Z</lastmod>
+  </url>
+  <url>
+    <loc>https://masurp.github.io/cadc/homework.html</loc>
+    <lastmod>2026-10-26T08:26:18.029Z</lastmod>
+  </url>
+  <url>
+    <loc>https://masurp.github.io/cadc/ai.html</loc>
+    <lastmod>2026-11-04T10:31:41.989Z</lastmod>
+  </url>
+  <url>
+    <loc>https://masurp.github.io/cadc/assessment.html</loc>
+    <lastmod>2026-10-21T21:07:43.558Z</lastmod>
+  </url>
+  <url>
+    <loc>https://masurp.github.io/cadc/index.html</loc>
+    <lastmod>2026-10-21T21:07:43.557Z</lastmod>
+  </url>
+  <url>
+    <loc>https://masurp.github.io/cadc/labs/week01-lab-a.html</loc>
+    <lastmod>2026-10-25T12:43:52.791Z</lastmod>
+  </url>
+  <url>
+    <loc>https://masurp.github.io/cadc/labs/week02-lab-a.html</loc>
+    <lastmod>2026-11-05T13:44:16.581Z</lastmod>
+  </url>
+  <url>
+    <loc>https://masurp.github.io/cadc/labs/week03-lab-a.html</loc>
+    <lastmod>2026-11-11T09:53:49.748Z</lastmod>
+  </url>
+  <url>
+    <loc>https://masurp.github.io/cadc/labs/week04-lab-a.html</loc>
+    <lastmod>2026-11-13T15:37:31.425Z</lastmod>
+  </url>
+  <url>
+    <loc>https://masurp.github.io/cadc/license.html</loc>
+    <lastmod>2026-11-11T11:01:11.696Z</lastmod>
+  </url>
+  <url>
+    <loc>https://masurp.github.io/cadc/playground/arithmetic.html</loc>
+    <lastmod>2026-10-21T21:07:43.559Z</lastmod>
+  </url>
+  <url>
+    <loc>https://masurp.github.io/cadc/playground/bias.html</loc>
+    <lastmod>2026-10-21T21:07:43.556Z</lastmod>
+  </url>
+  <url>
+    <loc>https://masurp.github.io/cadc/playground/cost.html</loc>
+    <lastmod>2026-10-21T21:07:43.557Z</lastmod>
+  </url>
+  <url>
+    <loc>https://masurp.github.io/cadc/playground/embeddings.html</loc>
+    <lastmod>2026-10-21T21:07:43.555Z</lastmod>
+  </url>
+  <url>
+    <loc>https://masurp.github.io/cadc/playground/overfitting.html</loc>
+    <lastmod>2026-10-21T21:07:43.559Z</lastmod>
+  </url>
+  <url>
+    <loc>https://masurp.github.io/cadc/playground/tinygpt.html</loc>
+    <lastmod>2026-11-18T08:54:43.993Z</lastmod>
   </url>
   <url>
     <loc>https://masurp.github.io/cadc/privacy.html</loc>

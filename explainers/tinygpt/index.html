@@ -1,0 +1,1057 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Inside a small language model — CADC</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap">
+<style>
+  /* --- tokens ---------------------------------------------------------------
+     The tool is a dark stage in both colour schemes, like the lecture figure it
+     grew out of (explainers/gpt3d). Blue and orange are the sign of a number,
+     green is the course accent for week 4's "what the model made", amber marks
+     the one thing a step is about. */
+  :root{
+    --bg:#10243a; --panel:#142c44; --surface:#16304a; --strip:#1b3550; --hair:#2c4560;
+    --ink:#e8eaec; --ink-2:#cfd6de; --ink-3:#a8c0d4; --muted:#7d9bb5; --faint:#4e6a86;
+    --accent:#4fc08d; --amber:#f0b250; --pos:#4aa8dc; --neg:#e07a52;
+    --font:"Space Grotesk", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+    --mono:ui-monospace, SFMono-Regular, Menlo, monospace;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0; height:100%}
+  body{font-family:var(--font); background:var(--bg); color:var(--ink); font-size:14px; line-height:1.5; overflow:hidden}
+  button,select,input{font:inherit; color:inherit}
+  .app{display:grid; grid-template-columns:minmax(0,1fr); grid-template-rows:auto minmax(0,1fr) auto; height:100vh; min-height:480px}
+
+  /* --- top: the prompt ------------------------------------------------------ */
+  .top{display:flex; flex-wrap:wrap; gap:8px 12px; align-items:center; padding:9px 14px; border-bottom:1px solid var(--hair); background:var(--panel)}
+  .k{font-size:10px; font-weight:700; letter-spacing:.1em; text-transform:uppercase; color:var(--muted)}
+  .prompt{display:flex; flex-wrap:wrap; gap:4px; align-items:center}
+  .btn{font-size:12px; padding:4px 9px; cursor:pointer; border:1px solid var(--hair); border-radius:6px; background:var(--surface); color:var(--ink-2)}
+  .btn:hover:not(:disabled){border-color:var(--accent); color:var(--ink)}
+  .btn:disabled{opacity:.4; cursor:default}
+  .btn[aria-pressed=true]{background:var(--accent); border-color:var(--accent); color:#0c1c2c; font-weight:700}
+  .btn.tokb{font-weight:700; color:var(--ink)}
+  .btn.go{background:var(--accent); border-color:var(--accent); color:#0c1c2c; font-weight:700}
+  .btn.go:hover:not(:disabled){color:#0c1c2c; filter:brightness(1.08)}
+  .top select, .card select{font-size:12px; padding:4px 6px; border:1px solid var(--hair); border-radius:6px; background:var(--surface); color:var(--ink-2); max-width:210px}
+  .spacer{flex:1 1 0}
+  .pop{position:relative}
+  .pop__list{position:absolute; z-index:5; top:calc(100% + 6px); left:0; width:300px; padding:8px; display:none; flex-wrap:wrap; gap:4px;
+             background:var(--surface); border:1px solid var(--hair); border-radius:8px; box-shadow:0 10px 30px rgba(0,0,0,.4)}
+  .pop.open .pop__list{display:flex}
+
+  /* --- the stage and the panel ---------------------------------------------- */
+  .main{display:grid; grid-template-columns:minmax(0,1fr) 410px; min-height:0}
+  .stage{position:relative; min-height:0; overflow:hidden; touch-action:none; cursor:grab; user-select:none; -webkit-user-select:none}
+  .stage.drag{cursor:grabbing}
+  .stage.pt{cursor:pointer}
+  canvas{position:absolute; inset:0; width:100%; height:100%; display:block}
+  .tip{position:absolute; z-index:3; pointer-events:none; max-width:250px; padding:6px 9px; font-size:11.5px; line-height:1.4;
+       background:rgba(10,24,40,.94); border:1px solid var(--hair); border-radius:6px; color:var(--ink-2); display:none}
+  .tip b{color:var(--ink)} .tip .n{font-family:var(--mono); color:var(--amber); font-weight:700}
+  .view{position:absolute; right:10px; top:10px; display:flex; gap:4px; z-index:2}
+  .view .btn{background:rgba(22,48,74,.85); min-width:30px}
+  .legend{position:absolute; left:12px; bottom:9px; z-index:2; font-size:10.5px; color:var(--muted); pointer-events:none; display:flex; flex-wrap:wrap; gap:3px 12px; max-width:calc(100% - 24px)}
+  .legend i{display:inline-block; width:9px; height:9px; border-radius:2px; margin-right:4px; vertical-align:-1px}
+  .legend .hint{transition:color .3s} .legend .hint.flash{color:var(--amber)}
+
+  .panel{border-left:1px solid var(--hair); background:var(--panel); overflow-y:auto; padding:16px 18px 22px; min-height:0}
+  .panel .kick{font-size:10.5px; font-weight:700; letter-spacing:.1em; color:var(--accent); text-transform:uppercase}
+  .panel h2{font-size:19px; line-height:1.25; margin:3px 0 10px; font-weight:700}
+  .panel p{margin:0 0 9px; color:var(--ink-2); font-size:13.5px}
+  .panel p b{color:var(--ink)} .tk{color:var(--ink); font-weight:700; white-space:nowrap}
+  .panel p .a{color:var(--accent); font-weight:700}
+  .card{margin-top:14px; padding:11px 12px 12px; background:var(--surface); border:1px solid var(--hair); border-radius:8px}
+  .card .k{display:block; margin-bottom:7px}
+  .card .row{display:flex; flex-wrap:wrap; gap:4px; align-items:center; margin-bottom:9px}
+  .card .row .k{margin:0 4px 0 0}
+  .card small{display:block; color:var(--muted); font-size:11.5px; margin-top:7px; line-height:1.45}
+  .st{margin-top:6px}
+  .st-l{font-size:11px; color:var(--ink-3); margin-bottom:2px} .st-l b{color:var(--ink)} .st-l .op{display:inline-block; width:14px; font-family:var(--mono); color:var(--amber); font-weight:700}
+  .st-c{display:grid; grid-template-columns:repeat(12,1fr); gap:2px}
+  .st-c i{font:normal 9.5px/1 var(--mono); text-align:center; padding:5px 0; border-radius:2px; color:#fff; overflow:hidden}
+  .res{margin-top:8px; font-size:12.5px; color:var(--ink-2)} .res b{font-family:var(--mono); color:var(--amber)}
+  table.t{width:100%; border-collapse:collapse; font-size:12px}
+  table.t th{font-size:10px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:var(--muted); text-align:right; padding:2px 4px 4px; border-bottom:1px solid var(--hair)}
+  table.t td{padding:3px 4px; text-align:right; font-family:var(--mono); font-size:11.5px; color:var(--ink-2); border-bottom:1px solid rgba(44,69,96,.5)}
+  table.t th:first-child, table.t td:first-child{text-align:left; font-family:var(--font); font-weight:700; color:var(--ink)}
+  table.t tr.sum td{border-bottom:0; color:var(--ink); font-weight:700}
+  table.t tr.dim td{color:var(--muted); font-weight:400}
+  table.t tr.dim td:first-child{color:var(--muted); font-weight:400}
+  .bar{display:inline-block; height:8px; border-radius:2px; background:var(--accent); vertical-align:middle; margin-right:6px; min-width:1px}
+  .bar.g{background:var(--faint)} .bar.b{background:var(--pos)}
+  .formula{font-family:var(--mono); font-size:12.5px; color:var(--ink); display:flex; align-items:center; gap:8px; margin-bottom:10px}
+  .frac{display:inline-flex; flex-direction:column; text-align:center} .frac span:first-child{border-bottom:1px solid var(--ink-3); padding:0 6px 2px} .frac span:last-child{padding:2px 6px 0}
+  input[type=range]{width:100%; accent-color:var(--accent); margin:2px 0 8px; cursor:pointer}
+  .ex{font-family:var(--mono); font-size:11px; color:var(--ink-3); margin:0; padding:0; list-style:none}
+
+  /* --- bottom: the steps ----------------------------------------------------- */
+  .nav{display:flex; gap:10px; align-items:center; padding:8px 14px; border-top:1px solid var(--hair); background:var(--panel)}
+  .rail{flex:1 1 0; display:flex; gap:5px; min-width:0; overflow-x:auto; scrollbar-width:none}
+  .ch{flex:1 1 0; min-width:max-content; padding:4px 8px 5px; border-radius:6px; border:1px solid transparent; cursor:pointer; background:none; text-align:left}
+  .ch:hover{border-color:var(--hair)}
+  .ch.on{background:var(--surface); border-color:var(--hair)}
+  .ch span{display:block; font-size:10px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:var(--muted); white-space:nowrap}
+  .ch.on span{color:var(--accent)}
+  .dots{display:flex; gap:4px; margin-top:4px}
+  .dots i{width:14px; height:4px; border-radius:2px; background:var(--faint); cursor:pointer}
+  .dots i:hover{background:var(--ink-3)} .dots i.on{background:var(--accent)} .dots i.done{background:var(--muted)}
+  .count{font-size:11.5px; color:var(--muted); white-space:nowrap; min-width:48px; text-align:center}
+
+  @media (max-width: 860px){
+    .main{grid-template-columns:minmax(0,1fr); grid-template-rows:minmax(230px,46%) minmax(0,1fr)}
+    .panel{border-left:0; border-top:1px solid var(--hair)}
+    .ch span{display:none} .ch{min-width:0; padding:6px 4px} .dots{margin:0}
+    .legend .hint{display:none}
+  }
+</style>
+</head>
+<!-- ===========================================================================
+  PLAYGROUND, WEEK 4 — a whole language model, small enough to see and really
+  trained, drawn in three dimensions. Grown out of the lecture figure
+  explainers/gpt3d (which stays as it is, with invented numbers, for the room);
+  the drawing idea is Brendan Bycroft's "LLM Visualization" (bbycroft.net/llm,
+  2023), much simplified.
+
+  What is real:
+    - the model. data.js holds the weights of a decoder of the GPT kind (12
+      numbers per token, 3 blocks, a context of 8 tokens, 28 words), trained by
+      _scripts/build_tinygpt.py on 4,000 sentences of an invented film-review
+      grammar. The page runs its forward pass for the prompt on screen; every
+      tile, score, percentage and bar is that computation. Nothing is drawn by
+      hand, so what a step says about "this prompt" is computed too.
+    - the comparison in the last step: GPT-3 (Brown et al. 2020, table 2.1: 96
+      layers, 12,288 numbers per token, 96 heads, 2,048 tokens of context, 175
+      billion weights; vocabulary 50,257) and Llama 3.1 8B (32 blocks, 4,096
+      numbers, 32 heads, vocabulary 128,256, context 128,000, 8 billion).
+  What the toy leaves out (said in the last step and on the tool's page): layer
+  normalisation, several heads per block, sub-word tokens, the division of the
+  attention scores by the root of the vector size. See the builder's header.
+
+  Seventeen steps in seven chapters; #N opens step N. The camera flies to each
+  step's view and is free at any time (drag, wheel, pinch, double-click). A
+  click on a token column makes it the token the steps follow.
+=========================================================================== -->
+<body>
+<div class="app">
+  <div class="top">
+    <span class="k">Prompt</span>
+    <div class="prompt" id="prompt"></div>
+    <div class="pop" id="pop"><button class="btn" id="addBtn" aria-haspopup="true">+ word</button><div class="pop__list" id="popList"></div></div>
+    <button class="btn" id="delBtn" title="Remove the last word" aria-label="Remove the last word">⌫</button>
+    <span class="spacer"></span>
+    <select id="presets" aria-label="Example prompts"></select>
+  </div>
+  <div class="main">
+    <div class="stage" id="stage">
+      <canvas id="c" role="img" aria-label="A small language model drawn in three dimensions, one tile per number. The prompt enters at the bottom as columns of twelve numbers, rises through three blocks of attention and a feed-forward network, and ends at the top in a bar for every word of the vocabulary. The panel beside the drawing explains each step in text."></canvas>
+      <div class="view">
+        <button class="btn" id="zOut" title="Zoom out" aria-label="Zoom out">−</button>
+        <button class="btn" id="zIn" title="Zoom in" aria-label="Zoom in">+</button>
+        <button class="btn" id="zReset" title="Back to this step's view">Reset view</button>
+      </div>
+      <div class="legend"><span><i style="background:var(--pos)"></i>positive</span><span><i style="background:var(--neg)"></i>negative</span><span>brighter = further from zero</span>
+        <span class="hint" id="hint">drag to turn · scroll to zoom · shift-drag to move · hover for numbers</span></div>
+      <div class="tip" id="tip"></div>
+    </div>
+    <div class="panel" id="panel" aria-live="polite">
+      <div class="kick" id="kick"></div>
+      <h2 id="title"></h2>
+      <div id="body"></div>
+      <div id="card"></div>
+    </div>
+  </div>
+  <div class="nav">
+    <button class="btn" id="prev">‹ Back</button>
+    <div class="rail" id="rail"></div>
+    <span class="count" id="count"></span>
+    <button class="btn go" id="next">Next ›</button>
+  </div>
+</div>
+<noscript><p style="max-width:34em;margin:2em;font-family:sans-serif;color:#fff">This tool needs JavaScript: it runs a small language model in your browser and draws it.</p></noscript>
+
+<script src="data.js"></script>
+<script>
+(function () {
+  "use strict";
+  var M = window.TINYGPT;
+  function $(id) { return document.getElementById(id); }
+  var D = M.d, HID = M.hid, L = M.layers, CTX = M.ctx, VOC = M.vocab, V = VOC.length, BIG = 32;
+  var reduced = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  var framed = window.top !== window.self;
+
+  /* ---- the arithmetic: the model's forward pass, written out --------------------------- */
+  function dot(a, b) { var s = 0; for (var i = 0; i < a.length; i++) s += a[i] * b[i]; return s; }
+  function matvec(W, x, b) { return W.map(function (r, i) { return dot(r, x) + (b ? b[i] : 0); }); }
+  function add(a, b) { return a.map(function (x, i) { return x + b[i]; }); }
+  function softmax(s, temp) { var m = Math.max.apply(null, s), e = s.map(function (x) { return Math.exp((x - m) / (temp || 1)); }),
+    z = e.reduce(function (a, x) { return a + x; }, 0); return e.map(function (x) { return x / z; }); }
+  function argmax(a) { var k = 0; for (var i = 1; i < a.length; i++) if (a[i] > a[k]) k = i; return k; }
+  function order(a) { return a.map(function (x, i) { return i; }).sort(function (p, q) { return a[q] - a[p]; }); }
+  function run(ids) {
+    var T = ids.length, R = { T: T, ids: ids, B: [], lens: [] };
+    R.te = ids.map(function (id) { return M.tok[id]; });
+    R.pe = ids.map(function (_, t) { return M.pos[t]; });
+    R.x = R.te.map(function (r, t) { return add(r, R.pe[t]); });
+    var cur = R.x;
+    R.lens.push(softmax(matvec(M.U, cur[T - 1])));
+    M.blocks.forEach(function (Wt) {
+      var o = { inp: cur, sc: [], a: [], mix: [], m: [], h: [], f: [], s: [] };
+      o.q = cur.map(function (x) { return matvec(Wt.Wq, x); });
+      o.k = cur.map(function (x) { return matvec(Wt.Wk, x); });
+      o.v = cur.map(function (x) { return matvec(Wt.Wv, x); });
+      for (var i = 0; i < T; i++) {
+        var row = []; for (var j = 0; j <= i; j++) row.push(dot(o.q[i], o.k[j]));
+        var w = softmax(row), mix = new Array(D).fill(0);
+        for (j = 0; j <= i; j++) for (var n = 0; n < D; n++) mix[n] += w[j] * o.v[j][n];
+        o.sc.push(ids.map(function (_, c) { return c <= i ? row[c] : null; }));
+        o.a.push(ids.map(function (_, c) { return c <= i ? w[c] : null; }));
+        o.mix.push(mix); o.m.push(add(cur[i], mix));
+        o.h.push(matvec(Wt.W1, o.m[i], Wt.b1).map(function (x) { return Math.max(0, x); }));
+        o.f.push(matvec(Wt.W2, o.h[i], Wt.b2)); o.s.push(add(o.m[i], o.f[i]));
+      }
+      R.B.push(o); cur = o.s; R.lens.push(softmax(matvec(M.U, cur[T - 1])));
+    });
+    R.logits = matvec(M.U, cur[T - 1]);
+    return R;
+  }
+
+  /* ---- state ------------------------------------------------------------------------------ */
+  function toIds(s) { return s.split(" ").map(function (w) { return VOC.indexOf(w); }); }
+  var st = { ids: toIds(M.presets[0]), foc: 3, blk: 0, step: 0, temp: 1, trained: true, word: null, pair: null, unit: null, out: null };
+  var R = run(st.ids), stepT0 = 0, autoPair = 0;
+  function W(t) { return VOC[st.ids[t]]; }
+  function tk(w) { return '<span class="tk">“' + w + '”</span>'; }
+  function probs() { return softmax(R.logits, st.temp); }
+  function f2(v) { var a = Math.abs(v), s = a >= 10 ? a.toFixed(1) : a.toFixed(2).replace(/^0/, ""); return (v < 0 ? "−" : "") + s; }
+  function f1(v) { return (v < 0 ? "−" : "") + Math.abs(v).toFixed(2); }
+  function pct(p) { var x = 100 * p; return (x > 0 && x < 1 ? "<1" : String(Math.round(x))) + "%"; }
+  function big(v) { if (v >= 1e7) { var e = Math.floor(Math.log10(v)); return (v / Math.pow(10, e)).toFixed(1) + " × 10<sup>" + e + "</sup>"; } return v >= 1000 ? Math.round(v).toLocaleString("en-US") : v >= 10 ? v.toFixed(1) : v.toFixed(2); }
+  function barH(p, all) { var m = Math.max.apply(null, all); return m <= .45 ? 28 * p : 12.6 * p / m; }
+  function nth(n) { return ["first", "second", "third", "fourth", "fifth", "sixth", "seventh", "eighth"][n]; }
+  function list(a) { return a.length < 2 ? a.join("") : a.slice(0, -1).join(", ") + " and " + a[a.length - 1]; }
+  function curPair() { return Math.min(st.pair != null ? st.pair : autoPair, st.foc); }
+  function curUnit() { return st.unit != null ? st.unit : argmax(R.B[st.blk].h[st.foc]); }
+  function curOut() { return st.out != null ? st.out : argmax(R.logits); }
+
+  /* ---- colours ------------------------------------------------------------------------------ */
+  var COL = { pos: [74, 168, 220], neg: [224, 122, 82], acc: [79, 192, 141], amber: [240, 178, 80], ink: [232, 234, 236],
+              slate: [70, 96, 122], deep: [22, 44, 68], cell: [36, 62, 90], dead: [27, 50, 75], bg: [16, 36, 58] };
+  function rgba(c, a) { return "rgba(" + Math.round(c[0]) + "," + Math.round(c[1]) + "," + Math.round(c[2]) + "," + Math.max(0, Math.min(1, a)).toFixed(3) + ")"; }
+  function mix(a, b, t) { return [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, a[2] + (b[2] - a[2]) * t]; }
+  function ease(t) { t = Math.max(0, Math.min(1, t)); return t < .5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2; }
+  function clamp01(t) { return Math.max(0, Math.min(1, t)); }
+  function signCol(v, max) { var u = Math.pow(Math.min(1, Math.abs(v) / (max || 1)), .75); return mix(COL.cell, v >= 0 ? COL.pos : COL.neg, .14 + .86 * u); }
+  function maxAbs(m) { var x = 1e-6; m.forEach(function (r) { r.forEach(function (v) { if (v != null && Math.abs(v) > x) x = Math.abs(v); }); }); return x; }
+
+  /* ---- the scene: floors of tiles ------------------------------------------------------------
+     x runs across the tokens (a column is two units wide), z through the twelve numbers of a
+     vector, y upwards. A block's floors sit at fixed offsets above its base. */
+  var BH = 20, Y0 = 1.5, GAP = 3;
+  var OFF = { w: .6, qkv: 3.6, sc: 7, a: 10, m: 12.5, h: 15.5, s: 18.5 };
+  var floors = [], FL = {};
+  function mk(o) { o.cw = o.cw || 1; o.cz = o.cz || 1; o.kind = o.kind || "sign"; o.max = maxAbs(o.v); if (o.y == null) o.y = 0; o.av = null;
+    floors.push(o); FL[o.id] = o; return o; }
+  function below(b) { return b === 0 ? FL.x : FL["s" + (b - 1)]; }
+  function build() {
+    floors = []; FL = {};
+    var T = R.T, SW = 2 * T, QX = SW + 4, n12 = function (j) { return "number " + (j + 1) + " of " + D; };
+    function tokTip(what) { return function (i, j, v) { return what(i) + " · " + n12(j) + '<br><span class="n">' + f1(v) + "</span>"; }; }
+    mk({ id: "toktab", x0: -3 - V, y: -7, z0: 0, nx: V, nz: D, v: st.trained ? M.tok : M.tok0, vocab: true,
+      tip: tokTip(function (i) { return "Embedding table, row of <b>“" + VOC[i] + "”</b> (entry " + (i + 1) + " of " + V + ")" + (st.trained ? "" : ", before training"); }) });
+    mk({ id: "postab", x0: -3 - CTX, y: -3.5, z0: 0, nx: CTX, nz: D, v: M.pos,
+      tip: tokTip(function (i) { return "Position table, row for the <b>" + nth(i) + "</b> token"; }) });
+    mk({ id: "te", x0: 0, y: -7, z0: 0, nx: T, nz: D, cw: 2, v: R.te, tok: true, tip: tokTip(function (i) { return "The row of <b>“" + W(i) + "”</b>, copied from the embedding table"; }) });
+    mk({ id: "pe", x0: 0, y: -3.5, z0: 0, nx: T, nz: D, cw: 2, v: R.pe, tok: true, tip: tokTip(function (i) { return "The row for the <b>" + nth(i) + "</b> position"; }) });
+    mk({ id: "x", x0: 0, y: 0, z0: 0, nx: T, nz: D, cw: 2, v: R.x, tok: true,
+      tip: function (i, j, v) { return "Input vector of <b>“" + W(i) + "”</b> · " + n12(j) + '<br><span class="n">' + f1(R.te[i][j]) + " + " + f1(R.pe[i][j]) + " = " + f1(v) + "</span>"; } });
+    R.B.forEach(function (o, b) {
+      var bn = "block " + (b + 1), Wt = M.blocks[b];
+      function wt(id, name, x, mat) { mk({ id: id + b, block: b, off: OFF.w, x0: x + T - 3, z0: 3, nx: D, nz: D, cw: .5, cz: .5, v: mat, w: true,
+        tip: function (i, j, v) { return name + " weights, " + bn + " · row " + (i + 1) + ", column " + (j + 1) + '<br><span class="n">' + f1(v) + "</span> (learned)"; } }); }
+      wt("wq", "Query", QX, Wt.Wq); wt("wk", "Key", QX + SW + GAP, Wt.Wk); wt("wv", "Value", QX + 2 * (SW + GAP), Wt.Wv);
+      function vecs(id, name, x, mat, off) { mk({ id: id + b, block: b, off: off, x0: x, z0: 0, nx: T, nz: D, cw: 2, v: mat, tok: true,
+        tip: tokTip(function (i) { return name + " <b>“" + W(i) + "”</b>, " + bn; }) }); }
+      vecs("q", "Query of", QX, o.q, OFF.qkv); vecs("k", "Key of", QX + SW + GAP, o.k, OFF.qkv); vecs("v", "Value of", QX + 2 * (SW + GAP), o.v, OFF.qkv);
+      var ax = QX + (SW + GAP) / 2;
+      mk({ id: "sc" + b, block: b, off: OFF.sc, x0: ax, z0: D / 2 - T, nx: T, nz: T, cw: 2, cz: 2, v: o.sc, tok: true, pairs: true,
+        tip: function (i, j, v) { return v == null ? "<b>“" + W(i) + "”</b> may not look ahead at “" + W(j) + "”" : "Score, " + bn + ": query of <b>“" + W(i) + "”</b> × key of <b>“" + W(j) + '”</b><br><span class="n">' + f1(v) + "</span>"; } });
+      mk({ id: "a" + b, block: b, off: OFF.a, x0: ax, z0: D / 2 - T, nx: T, nz: T, cw: 2, cz: 2, v: o.a, kind: "weight", tok: true, pairs: true,
+        tip: function (i, j, v) { return v == null ? "<b>“" + W(i) + "”</b> may not look ahead at “" + W(j) + "”" : "Attention, " + bn + ": <b>“" + W(i) + "”</b> takes <span class=\"n\">" + pct(v) + "</span> from <b>“" + W(j) + "”</b>"; } });
+      mk({ id: "m" + b, block: b, off: OFF.m, x0: 0, z0: 0, nx: T, nz: D, cw: 2, v: o.m, tok: true,
+        tip: function (i, j, v) { return "<b>“" + W(i) + "”</b> after attention, " + bn + " · " + n12(j) + '<br><span class="n">' + f1(o.inp[i][j]) + " + " + f1(o.mix[i][j]) + " = " + f1(v) + "</span>"; } });
+      mk({ id: "h" + b, block: b, off: OFF.h, x0: QX, z0: D / 2 - HID / 4, nx: T, nz: HID, cw: 2, cz: .5, v: o.h, kind: "relu", tok: true, units: true,
+        tip: function (i, j, v) { return "Hidden unit " + (j + 1) + " of " + HID + " for <b>“" + W(i) + "”</b>, " + bn + '<br><span class="n">' + (v > 0 ? "fires at " + f1(v) : "silent (0)") + "</span>"; } });
+      mk({ id: "s" + b, block: b, off: OFF.s, x0: 0, z0: 0, nx: T, nz: D, cw: 2, v: o.s, tok: true,
+        tip: function (i, j, v) { return "<b>“" + W(i) + "”</b> after " + bn + " · " + n12(j) + '<br><span class="n">' + f1(o.m[i][j]) + " + " + f1(o.f[i][j]) + " = " + f1(v) + "</span>"; } });
+    });
+    var ox = T - V / 2, p = probs(), ex = R.logits.map(function (s) { return Math.exp(s / st.temp); });
+    mk({ id: "ut", top: 4.5, x0: ox, z0: 0, nx: V, nz: D, v: M.U, vocab: true, tip: tokTip(function (i) { return "Output table, row of <b>“" + VOC[i] + "”</b>"; }) });
+    mk({ id: "sco", top: 8.5, x0: ox, z0: 5.25, nx: V, nz: 1, cz: 1.5, v: R.logits.map(function (s) { return [s]; }), vocab: true,
+      tip: function (i, j, v) { return "Score of <b>“" + VOC[i] + '”</b><br><span class="n">' + f1(v) + "</span>"; } });
+    mk({ id: "exp", top: 11.5, x0: ox, z0: 5.25, nx: V, nz: 1, cz: 1.5, v: ex.map(function (s) { return [s]; }), kind: "base", vocab: true,
+      tip: function (i, j, v) { return "e to the power of the score of <b>“" + VOC[i] + '”</b><br><span class="n">' + big(v) + "</span>"; } });
+    mk({ id: "prb", top: 19, x0: ox, z0: 5.25, nx: V, nz: 1, cz: 1.5, v: p.map(function (s) { return [s]; }), kind: "base", vocab: true,
+      tip: function (i, j, v) { return "Probability that <b>“" + VOC[i] + '”</b> comes next<br><span class="n">' + (100 * v).toFixed(1) + "%</span>"; } });
+  }
+  /* heights. `sp` pulls the feed-forward floors of the inspected block apart (and lifts what is
+     above), `bh` is the block height in use: the last step squeezes the tower. */
+  function yb(b, bh) { return Y0 + b * bh; }
+  function place(sp, bh) {
+    var lift = (sp - 1) * 6, k = bh / BH;
+    floors.forEach(function (F) {
+      if (F.block == null) return;
+      var off = F.off; if (F.block === st.blk && off > OFF.m) off = OFF.m + (off - OFF.m) * sp;
+      F.y = yb(F.block, bh) + (off + (F.block > st.blk ? lift : 0)) * k;
+    });
+    var top = FL["s" + (L - 1)].y;
+    floors.forEach(function (F) { if (F.top != null) F.y = top + F.top * k; });
+  }
+
+  /* ---- camera -------------------------------------------------------------------------------- */
+  var cv = $("c"), ctx = cv.getContext("2d"), stage = $("stage"), Wd = 800, Hd = 600, DP = 260;
+  var cam = null, camFrom = null, camTo = null, camT0 = 0, CAMDUR = 1300, sway = 0, userMoved = false;
+  function prj(c, x, y, z, sw) {
+    x -= c.t[0]; y -= c.t[1]; z -= c.t[2];
+    var yw = c.yaw + (sw || 0), cy_ = Math.cos(yw), sy = Math.sin(yw), x1 = x * cy_ - z * sy, z1 = x * sy + z * cy_,
+        cp = Math.cos(c.pitch), sp = Math.sin(c.pitch), y1 = y * cp + z1 * sp, z2 = -y * sp + z1 * cp,
+        k = DP / Math.max(40, DP + z2 * Math.min(1, c.S / 5));
+    return { x: c.cx + x1 * c.S * k, y: c.cy - y1 * c.S * k, z: z2 };
+  }
+  function P(p) { return prj(cam, p[0], p[1], p[2], sway); }
+  function boxOf(F, up) { return [F.x0, F.y - .4, F.z0, F.x0 + F.nx * F.cw, F.y + (up || 0), F.z0 + F.nz * F.cz]; }
+  /* a camera that shows the given floors (and boxes) as large as the stage allows */
+  function fit(spec) {
+    var c = { yaw: spec.yaw, pitch: spec.pitch, sp: spec.sp || 1, bh: spec.bh || BH, S: 8, cx: Wd / 2, cy: Hd / 2, t: [0, 0, 0] };
+    place(c.sp, c.bh);
+    var bx = (spec.boxes || []).slice();
+    (spec.ids || []).forEach(function (id) { if (FL[id]) bx.push(boxOf(FL[id], spec.up && spec.up[id])); });
+    var lo = [1e9, 1e9, 1e9], hi = [-1e9, -1e9, -1e9];
+    bx.forEach(function (b) { for (var i = 0; i < 3; i++) { lo[i] = Math.min(lo[i], b[i]); hi[i] = Math.max(hi[i], b[i + 3]); } });
+    c.t = [(lo[0] + hi[0]) / 2, (lo[1] + hi[1]) / 2, (lo[2] + hi[2]) / 2];
+    var pad = spec.pad || [64, 46, 64, 58], small = Wd < 520;
+    if (small) pad = [28, 40, 28, 34];
+    function bbox() { var r = [1e9, 1e9, -1e9, -1e9];
+      bx.forEach(function (b) { for (var n = 0; n < 8; n++) { var p = prj(c, b[n & 1 ? 3 : 0], b[n & 2 ? 4 : 1], b[n & 4 ? 5 : 2]);
+        r[0] = Math.min(r[0], p.x); r[1] = Math.min(r[1], p.y); r[2] = Math.max(r[2], p.x); r[3] = Math.max(r[3], p.y); } }); return r; }
+    for (var it = 0; it < 5; it++) {
+      var r = bbox(); c.S *= Math.min((Wd - pad[0] - pad[2]) / (r[2] - r[0]), (Hd - pad[1] - pad[3]) / (r[3] - r[1]));
+      c.S = Math.min(c.S, spec.maxS || 46); r = bbox();
+      c.cx += pad[0] + (Wd - pad[0] - pad[2]) / 2 - (r[0] + r[2]) / 2; c.cy += pad[1] + (Hd - pad[1] - pad[3]) / 2 - (r[1] + r[3]) / 2;
+    }
+    if (cam) place(cam.sp, cam.bh);
+    return c;
+  }
+  function lerp(a, b, t) { return a + (b - a) * t; }
+  function tweenCam(now) {
+    if (!camFrom) return;
+    var t = reduced ? 1 : ease((now - camT0) / CAMDUR);
+    ["yaw", "pitch", "cx", "cy", "sp", "bh"].forEach(function (k) { cam[k] = lerp(camFrom[k], camTo[k], t); });
+    cam.S = Math.exp(lerp(Math.log(camFrom.S), Math.log(camTo.S), t));
+    for (var i = 0; i < 3; i++) cam.t[i] = lerp(camFrom.t[i], camTo.t[i], t);
+    if (t >= 1) camFrom = null;
+  }
+  function flyTo(c, snap) { camTo = c; if (snap || !cam) { cam = JSON.parse(JSON.stringify(c)); camFrom = null; } else { camFrom = JSON.parse(JSON.stringify(cam)); camT0 = performance.now(); } }
+  function stepCam(snap) { userMoved = false; flyTo(fit(STEPS[st.step].cam()), snap); }
+  function resize() {
+    var r = stage.getBoundingClientRect(), dpr = window.devicePixelRatio || 1;
+    if (r.width < 10 || r.height < 10) return;
+    Wd = r.width; Hd = r.height; cv.width = Math.round(Wd * dpr); cv.height = Math.round(Hd * dpr); ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    if (cam && !userMoved) stepCam(true);
+  }
+
+  /* ---- drawing --------------------------------------------------------------------------------- */
+  function quad(a, b, c, d, fill) { ctx.fillStyle = fill; ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.lineTo(c.x, c.y); ctx.lineTo(d.x, d.y); ctx.closePath(); ctx.fill(); }
+  function tileCol(F, v) {
+    if (F.kind === "weight") return mix(COL.cell, COL.acc, .14 + .86 * Math.sqrt(v));
+    if (F.kind === "relu") return v > 0 ? mix(COL.cell, COL.pos, .3 + .7 * Math.pow(Math.min(1, v / F.max), .75)) : COL.dead;
+    if (F.kind === "base") return mix(COL.deep, COL.slate, .55);
+    return signCol(v, F.max);
+  }
+  function grid(F) {            /* the projected corners of every tile, once per floor and frame */
+    var g = [];
+    for (var i = 0; i <= F.nx; i++) { var col = []; for (var j = 0; j <= F.nz; j++) col.push(P([F.x0 + i * F.cw, F.y, F.z0 + j * F.cz])); g.push(col); }
+    return g;
+  }
+  function inset(a, c, t) { return { x: a.x + (c.x - a.x) * t, y: a.y + (c.y - a.y) * t }; }
+  var hov = null;
+  function drawFloor(F, a, S_) {
+    if (a <= .01) return;
+    var X = F.nx * F.cw, Z = F.nz * F.cz, th = .35 * cam.bh / BH, g = grid(F), c = [g[0][0], g[F.nx][0], g[F.nx][F.nz], g[0][F.nz]];
+    var d = [P([F.x0, F.y - th, F.z0]), P([F.x0 + X, F.y - th, F.z0]), P([F.x0 + X, F.y - th, F.z0 + Z]), P([F.x0, F.y - th, F.z0 + Z])];
+    for (var s = 0; s < 4; s++) { var n = (s + 1) % 4; quad(c[s], c[n], d[n], d[s], rgba(COL.deep, .85 * a)); }
+    quad(c[0], c[1], c[2], c[3], rgba(mix(mix(COL.deep, COL.slate, .35), COL.acc, .5 * (F.glow || 0)), .92 * a));
+    var tw = Math.hypot(g[1][0].x - g[0][0].x, g[1][0].y - g[0][0].y), td = Math.hypot(g[0][1].x - g[0][0].x, g[0][1].y - g[0][0].y);
+    if (Math.min(tw, td) < 1.5) return;
+    var ins = Math.min(tw, td) > 7 ? .09 : .16, nums = tw >= 31 && Math.abs(g[0][1].y - g[0][0].y) >= 12.5, labels = [];
+    for (var i = 0; i < F.nx; i++) for (var j = 0; j < F.nz; j++) {
+      var p1 = g[i][j], p3 = g[i + 1][j + 1];
+      if (Math.max(p1.x, p3.x) < -40 || Math.min(p1.x, p3.x) > Wd + 40 || Math.max(p1.y, p3.y) < -40 || Math.min(p1.y, p3.y) > Hd + 40) continue;
+      var p2 = g[i + 1][j], p4 = g[i][j + 1], cx = (p1.x + p3.x) / 2, cy = (p1.y + p3.y) / 2, C = { x: cx, y: cy };
+      var q1 = inset(p1, C, ins), q2 = inset(p2, C, ins), q3 = inset(p3, C, ins), q4 = inset(p4, C, ins), v = F.v[i][j];
+      if (v == null) { ctx.strokeStyle = rgba(COL.slate, .55 * a); ctx.lineWidth = .7; ctx.beginPath(); ctx.moveTo(q1.x, q1.y); ctx.lineTo(q2.x, q2.y); ctx.lineTo(q3.x, q3.y); ctx.lineTo(q4.x, q4.y); ctx.closePath(); ctx.stroke(); continue; }
+      var fa = S_.fx ? S_.fx(F, i, j) : 1, lit = S_.lit ? S_.lit(F, i, j) : 0, col = tileCol(F, v);
+      if (lit > 0) col = mix(col, COL.amber, .62 * lit);
+      if (F.glow) col = mix(col, COL.acc, .3 * F.glow);
+      quad(q1, q2, q3, q4, rgba(col, a * fa));
+      if (hov && hov.F === F && hov.i === i && hov.j === j) { ctx.strokeStyle = "#fff"; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(q1.x, q1.y); ctx.lineTo(q2.x, q2.y); ctx.lineTo(q3.x, q3.y); ctx.lineTo(q4.x, q4.y); ctx.closePath(); ctx.stroke(); }
+      if (nums && a * fa > .5 && F.kind !== "base") labels.push([F.kind === "weight" ? pct(v) : f2(v), cx, cy]);
+    }
+    if (labels.length) { ctx.font = "500 10px ui-monospace, SFMono-Regular, Menlo, monospace"; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillStyle = rgba([255, 255, 255], .92 * a);
+      labels.forEach(function (l) { ctx.fillText(l[0], l[1], l[2]); }); ctx.textBaseline = "alphabetic"; }
+  }
+  function slab(x0, y, z0, X, Z, a, glow) {
+    var th = .35 * cam.bh / BH, c = [P([x0, y, z0]), P([x0 + X, y, z0]), P([x0 + X, y, z0 + Z]), P([x0, y, z0 + Z])],
+        d = [P([x0, y - th, z0]), P([x0 + X, y - th, z0]), P([x0 + X, y - th, z0 + Z]), P([x0, y - th, z0 + Z])];
+    for (var s = 0; s < 4; s++) { var n = (s + 1) % 4; quad(c[s], c[n], d[n], d[s], rgba(COL.deep, .85 * a)); }
+    quad(c[0], c[1], c[2], c[3], rgba(mix(mix(COL.deep, COL.slate, .4), COL.acc, .6 * glow), .92 * a));
+  }
+  function line(p, q, col, a, w, dash) {
+    if (a <= .01) return; var A = P(p), B = P(q);
+    ctx.strokeStyle = rgba(col, a); ctx.lineWidth = w || 1; ctx.setLineDash(dash || []);
+    ctx.beginPath(); ctx.moveTo(A.x, A.y); ctx.lineTo(B.x, B.y); ctx.stroke(); ctx.setLineDash([]);
+  }
+  function curve(p, q, col, a, w) {            /* a gentle S between two floors: up, across, up */
+    if (a <= .01) return;
+    var A = P(p), M1 = P([p[0], (p[1] + q[1]) / 2, p[2]]), M2 = P([q[0], (p[1] + q[1]) / 2, q[2]]), B = P(q);
+    ctx.strokeStyle = rgba(col, a); ctx.lineWidth = w || 1;
+    ctx.beginPath(); ctx.moveTo(A.x, A.y); ctx.bezierCurveTo(M1.x, M1.y, M2.x, M2.y, B.x, B.y); ctx.stroke();
+  }
+  function ctr(F, dy) { return [F.x0 + F.nx * F.cw / 2, F.y + (dy || 0), F.z0 + F.nz * F.cz / 2]; }
+  function colTop(F, t, dy) { return [F.x0 + (t + .5) * F.cw, F.y + (dy || 0), F.z0 + F.nz * F.cz / 2]; }
+  function link(A, B, col, a, w) { curve(ctr(A), ctr(B, -.4), col, a * Math.min(A.av, B.av), w || 1.1); }
+
+  /* bars standing on a one-row floor (e to the score, and the probabilities) */
+  function bars(F, hts, a, hot) {
+    if (a <= .02) return; var items = [];
+    for (var i = 0; i < F.nx; i++) { var h = hts[i], xa = F.x0 + i + .16, xb = F.x0 + i + .84, za = F.z0 + .3, zb = F.z0 + F.cz - .3, y = F.y;
+      items.push({ i: i, b: [P([xa, y, za]), P([xb, y, za]), P([xb, y, zb]), P([xa, y, zb])], t: [P([xa, y + h, za]), P([xb, y + h, za]), P([xb, y + h, zb]), P([xa, y + h, zb])] }); }
+    items.sort(function (p, q) { return q.b[0].z - p.b[0].z; });
+    items.forEach(function (it) {
+      var base = it.i === hot ? COL.acc : mix(COL.slate, COL.ink, .3); if (it.i === st.out && it.i !== hot) base = COL.amber;
+      quad(it.b[0], it.b[1], it.t[1], it.t[0], rgba(mix(base, COL.deep, .25), a));
+      quad(it.b[1], it.b[2], it.t[2], it.t[1], rgba(mix(base, COL.deep, .5), a));
+      quad(it.b[0], it.b[3], it.t[3], it.t[0], rgba(mix(base, COL.deep, .5), a));
+      quad(it.t[0], it.t[1], it.t[2], it.t[3], rgba(mix(base, COL.ink, .3), a));
+    });
+  }
+  /* how much the followed token takes from each earlier one, as arrows along the stream's front edge */
+  function arrows(F, w, grow) {
+    var y = F.y + .3, z = -.7, i = st.foc, from = [2 * i + 1, y, z];
+    for (var j = 0; j < i; j++) {
+      var to = [2 * j + 1, y, z], top = [(from[0] + to[0]) / 2, y + 1.3 + .9 * (i - j), z], A = P(from), B = P(to), Mx = P(top),
+          cx = 2 * Mx.x - (A.x + B.x) / 2, cy = 2 * Mx.y - (A.y + B.y) / 2, lw = (1 + 9 * w[j]) * grow, col = rgba(COL.amber, (.35 + .6 * w[j]) * grow);
+      ctx.strokeStyle = col; ctx.lineWidth = lw; ctx.lineCap = "round";
+      var ang = Math.atan2(B.y - cy, B.x - cx), hl = 6 + 10 * w[j], ex = B.x - Math.cos(ang) * hl * .8, ey = B.y - Math.sin(ang) * hl * .8;
+      ctx.beginPath(); ctx.moveTo(A.x, A.y); ctx.quadraticCurveTo(cx, cy, ex, ey); ctx.stroke();
+      ctx.fillStyle = col; ctx.beginPath(); ctx.moveTo(B.x, B.y);
+      ctx.lineTo(B.x - Math.cos(ang - .45) * hl, B.y - Math.sin(ang - .45) * hl); ctx.lineTo(B.x - Math.cos(ang + .45) * hl, B.y - Math.sin(ang + .45) * hl); ctx.closePath(); ctx.fill();
+    }
+    ctx.lineCap = "butt";
+  }
+  /* the feed-forward network for the followed token. half 0: the column into the hidden layer;
+     half 1: the units that fire, back into the column. Units that fire are drawn stronger. */
+  function network(half, grow, onlyUnit) {
+    var b = st.blk, Mf = FL["m" + b], Hf = FL["h" + b], Sf = FL["s" + b], t = st.foc, h = R.B[b].h[t], hm = Math.max.apply(null, h) || 1,
+        xs = 2 * t + 1, xh = Hf.x0 + 2 * t + 1, lo = half === 0 ? Mf : Sf, u = curUnit();
+    for (var k = 0; k < HID; k++) {
+      var on = h[k] > 0, zk = Hf.z0 + (k + .5) * Hf.cz, hot = onlyUnit && k === u;
+      if (half === 1 && !on) continue;
+      var a = hot ? .85 : on ? .1 + .3 * h[k] / hm : .05;
+      for (var i = 0; i < D; i++) line([xs, lo.y, i + .5], [xh, Hf.y, zk], hot ? COL.amber : COL.pos, a * grow, hot ? 1.1 : .6);
+    }
+  }
+  function blockBox(b, a) {
+    var x0 = -1.6, x1 = FL["v" + b].x0 + 2 * R.T + 1.6, y0 = FL["wq" + b].y - .8, y1 = FL["s" + b].y + .7, z0 = -7, z1 = 19,
+        c = [[x0, y0, z0], [x1, y0, z0], [x1, y0, z1], [x0, y0, z1], [x0, y1, z0], [x1, y1, z0], [x1, y1, z1], [x0, y1, z1]];
+    [[0, 1], [1, 2], [2, 3], [3, 0], [4, 5], [5, 6], [6, 7], [7, 4], [0, 4], [1, 5], [2, 6], [3, 7]].forEach(function (e) { line(c[e[0]], c[e[1]], COL.acc, a, 1.1, [5, 4]); });
+  }
+  /* the wiring every step shares */
+  function connectors() {
+    var T = R.T;
+    R.B.forEach(function (o, b) {
+      var lo = below(b), g = function (id) { return FL[id + b]; };
+      for (var t = 0; t < T; t++) line([2 * t + 1, lo.y, D + .4], [2 * t + 1, g("s").y, D + .4], COL.slate, .5 * Math.max(lo.av, g("s").av, g("m").av), 1, [2, 3]);
+      ["q", "k", "v"].forEach(function (n) { var w = g("w" + n);
+        if (w.av > .3) { link(lo, w, COL.slate, .5); link(w, g(n), COL.slate, .5); } else link(lo, g(n), COL.slate, .4); });
+      link(g("q"), g("sc"), COL.acc, .55, 1.2); link(g("k"), g("sc"), COL.acc, .55, 1.2); link(g("sc"), g("a"), COL.acc, .55, 1.2);
+      link(g("a"), g("m"), COL.acc, .55, 1.2); link(g("v"), g("m"), COL.slate, .4);
+      link(g("m"), g("h"), COL.slate, .4); link(g("h"), g("s"), COL.slate, .4);
+    });
+    var top = FL["s" + (L - 1)];
+    curve(colTop(top, T - 1), ctr(FL.ut, -.4), COL.acc, .6 * Math.min(top.av, FL.ut.av), 1.4);
+    link(FL.ut, FL.sco, COL.acc, .6, 1.4); link(FL.sco, FL.exp, COL.acc, .6, 1.4); link(FL.exp, FL.prb, COL.acc, .6, 1.4);
+  }
+
+  /* ---- labels in the drawing ---------------------------------------------------------------------- */
+  var tags = [], tagBoxes = [];
+  var TAGF = { t: ["700 10.5px", "#a8c0d4"], a: ["700 10.5px", "#4fc08d"], m: ["700 10.5px", "#f0b250"], tok: ["700 12.5px", "#e8eaec"],
+               tokq: ["700 12.5px", "#f0b250"], big: ["700 13px", "#4fc08d"], sm: ["500 10px", "#a8c0d4"] };
+  function tag(s, p, cls, anchor, dx, dy, o) { var t = { s: s, p: p, cls: cls || "t", anchor: anchor || "left", dx: dx || 0, dy: dy || 0 }; if (o) for (var k in o) t[k] = o[k]; tags.push(t); return t; }
+  function tokTags(F, dy, o) { for (var t = 0; t < R.T; t++) (function (t) {
+    tag(W(t), function () { return [F.x0 + 2 * t + 1, F.y, F.z0 - 1.3]; }, t === st.foc && !(o && o.plain) ? "tokq" : "tok", "center", 0, dy || 14, { click: function () { setFoc(t); } }); })(t); }
+  function vocTags(F, idx, dy, cls) { idx.forEach(function (i) { tag(VOC[i], function () { return [F.x0 + i + .5, F.y, F.z0 - .5]; }, cls || "sm", "right", 2, 9, { rot: -.9, minS: 11.5 }); }); }
+  function drawTags() {
+    tagBoxes = [];
+    tags.forEach(function (t) {
+      if (t.minS && cam.S < t.minS) return;
+      var a = t.alpha ? t.alpha() : 1; if (a <= .02) return;
+      var p = P(typeof t.p === "function" ? t.p() : t.p), f = TAGF[t.cls], x = p.x + t.dx, y = p.y + t.dy;
+      if (x < -200 || x > Wd + 200 || y < -20 || y > Hd + 30) return;
+      var font = f[0];
+      if (t.cls === "tok" || t.cls === "tokq") { if (cam.S < 8) return; font = "700 " + Math.min(12.5, Math.max(8, cam.S * .7)).toFixed(1) + "px"; }   /* token names shrink with the columns */
+      ctx.font = font + ' "Space Grotesk", system-ui, sans-serif'; ctx.textAlign = t.anchor; ctx.globalAlpha = a;
+      ctx.lineJoin = "round"; ctx.lineWidth = 3.5; ctx.strokeStyle = "rgba(16,36,58,.88)"; ctx.fillStyle = f[1];
+      if (t.rot) { ctx.save(); ctx.translate(x, y); ctx.rotate(t.rot); ctx.strokeText(t.s, 0, 0); ctx.fillText(t.s, 0, 0); ctx.restore(); ctx.globalAlpha = 1; return; }
+      var tw_ = ctx.measureText(t.s).width, xl = t.anchor === "center" ? x - tw_ / 2 : t.anchor === "right" ? x - tw_ : x;
+      if (xl < 4 && xl > -tw_) x += 4 - xl; else if (xl + tw_ > Wd - 4 && xl < Wd) x -= xl + tw_ - Wd + 4;      /* a label half out of the stage is pulled back in */
+      ctx.strokeText(t.s, x, y); ctx.fillText(t.s, x, y); ctx.globalAlpha = 1;
+      if (t.click || t.go != null) { var w = ctx.measureText(t.s).width, x0 = t.anchor === "center" ? x - w / 2 : t.anchor === "right" ? x - w : x; tagBoxes.push({ x: x0 - 5, y: y - 15, w: w + 10, h: 22, t: t }); }
+    });
+    ctx.textAlign = "left";
+  }
+
+  /* ---- the steps -----------------------------------------------------------------------------------
+     cam(): what to fit · show(): floor id → opacity (others `rest`, weight tables 0) · fx/lit: per tile ·
+     pre/after/post: extra drawing · tags() · html(): the panel's text · card(): its worked example */
+  function bid(n) { return n + st.blk; }
+  function allIds() { return floors.filter(function (F) { return !F.w; }).map(function (F) { return F.id; }); }
+  function overviewCam() { return { ids: allIds(), up: { prb: 12 }, yaw: -.45, pitch: .27, pad: [80, 46, 110, 58] }; }
+  function onlyCol(F, i, id, t) { return F.id === id && i !== t ? .28 : 1; }
+  function strip(label, vec, max, op) { max = max || Math.max.apply(null, vec.map(Math.abs)) || 1;
+    return '<div class="st"><div class="st-l">' + (op ? '<span class="op">' + op + "</span>" : "") + label + '</div><div class="st-c">' +
+      vec.map(function (v) { var c = signCol(v, max); return '<i style="background:rgb(' + c.map(Math.round).join(",") + ')">' + f2(v) + "</i>"; }).join("") + "</div></div>"; }
+  function blkRow() { var s = '<div class="row"><span class="k">Block</span>'; for (var b = 0; b < L; b++) s += '<button class="btn" data-act="blk" data-v="' + b + '" aria-pressed="' + (b === st.blk) + '">' + (b + 1) + "</button>"; return s + "</div>"; }
+  function chips(act, items, cur, label) { return '<div class="row">' + (label ? '<span class="k">' + label + "</span>" : "") + items.map(function (it) {
+    return '<button class="btn" data-act="' + act + '" data-v="' + it[0] + '" aria-pressed="' + (it[0] === cur) + '">' + it[1] + "</button>"; }).join("") + "</div>"; }
+  function replayBtn() { return reduced ? "" : '<div class="row" style="margin:9px 0 0"><button class="btn" data-act="replay">↻ Play again</button></div>'; }
+  function barRow(name, p, cls, scale) { return "<tr><td>" + name + '</td><td style="text-align:left;width:62%"><span class="bar ' + (cls || "") + '" style="width:' + (100 * p / (scale || 1) * .72).toFixed(1) + '%"></span>' + pct(p) + "</td></tr>"; }
+  function topTable(p, n) { var o = order(p).slice(0, n); return '<table class="t">' + o.map(function (i, r) { return barRow(VOC[i], p[i], r ? "g" : "", p[o[0]]); }).join("") + "</table>"; }
+  function sentence() { return st.ids.map(function (i) { return VOC[i]; }).join(" "); }
+  function attRow() { return R.B[st.blk].a[st.foc].slice(0, st.foc + 1); }
+
+  var STEPS = [
+  { ch: 0, title: "A language model, small enough to see",
+    cam: overviewCam, rest: 1,
+    pre: function (at, now) { if (reduced) return; var f = ((now - stepT0) / 620) % (4 * L + 6) - 1;
+      floors.forEach(function (F) { var fl = F.block != null ? 1 + 4 * F.block + (F.off <= OFF.qkv ? 0 : F.off <= OFF.a ? 1 : F.off <= OFF.m ? 1.6 : F.off <= OFF.h ? 2.3 : 3) : F.top != null ? 4 * L + 1 + F.top / 8 : F.id === "x" ? 0 : -1;
+        F.glow = Math.max(0, 1 - Math.abs(f - fl) / 1.1); }); },
+    tags: function () {
+      tokTags(FL.te, 14, { plain: true });
+      tag("THE PROMPT, AS NUMBERS", function () { return [0, FL.x.y, D]; }, "a", "right", -10, 4, { go: 1 });
+      R.B.forEach(function (o, b) { tag("BLOCK " + (b + 1), function () { return [-1, FL["m" + b].y, 0]; }, "t", "right", -12, 4, { go: 11 }); });
+      tag("ATTENTION", function () { var F = FL.v0; return [F.x0 + 2 * R.T, F.y, D / 2]; }, "a", "left", 10, 4, { go: 4 });
+      tag("FEED-FORWARD", function () { var F = FL.h0; return [F.x0 + 2 * R.T, F.y, D / 2]; }, "a", "left", 10, 4, { go: 9 });
+      tag("THE NEXT WORD", function () { return [FL.prb.x0, FL.prb.y, 6]; }, "a", "right", -10, 4, { go: 13 });
+      tag("EMBEDDING TABLE", function () { return [FL.toktab.x0, FL.toktab.y, -1.3]; }, "t", "left", 0, 16, { go: 2 });
+      var top = argmax(R.logits); tag(VOC[top] + " " + pct(probs()[top]), function () { return [FL.prb.x0 + top + .5, FL.prb.y + barH(probs()[top], probs()), 6]; }, "big", "center", 0, -8);
+    },
+    html: function () { return "<p>Every tile is one number. The prompt goes in at the bottom, one column of twelve numbers per token. Three blocks work on the columns, and at the top every word the model knows gets a probability of coming next.</p>" +
+      "<p>The model is really trained: " + M.n_weights.toLocaleString("en-US") + " weights, learned from " + M.n_sentences.toLocaleString("en-US") + " short sentences in an invented film-review language of " + V + " words. Every number you see is computed by it for the prompt at the top, and you can change that prompt.</p>" +
+      "<p>Step through with <b>Next</b>, or explore on your own at any point: drag to turn the model, scroll to zoom until the numbers appear, hover over a tile to read it, and click a token to follow it.</p>"; },
+    card: function () { return '<span class="k">The next word after “' + sentence() + "”</span>" + topTable(probs(), 5); } },
+
+  { ch: 1, title: "From words to rows of numbers",
+    cam: function () { return { ids: ["toktab", "te"], yaw: -.3, pitch: .8 }; },
+    show: function () { return { toktab: 1, te: 1, postab: .25, pe: .12, x: .12 }; },
+    fx: function (F, i) { return F.id === "toktab" && st.ids.indexOf(i) < 0 ? .4 : 1; },
+    lit: function (F, i) { return F.id === "toktab" && st.ids.indexOf(i) >= 0 ? .45 : 0; },
+    pre: function (at) { st.ids.forEach(function (id, t) { var g = ease((at - .25 * t) / .7);
+      curve([FL.toktab.x0 + id + .5, FL.toktab.y, D + .2], [2 * t + 1, FL.te.y, D + .2], COL.amber, .8 * g, 1.4); }); },
+    tags: function () {
+      tokTags(FL.te, 14, { plain: true });
+      st.ids.forEach(function (id, t) { tag(String(id + 1), function () { return [2 * t + 1, FL.te.y, -1.3]; }, "m", "center", 0, 29); });
+      tag("ROW", function () { return [0, FL.te.y, -1.3]; }, "m", "right", -6, 29);
+      tag("EMBEDDING TABLE · ONE ROW FOR EACH OF THE " + V + " WORDS", function () { return [FL.toktab.x0, FL.toktab.y, -1.3]; }, "t", "left", 0, 16);
+      tag("ONE COPIED ROW PER TOKEN", function () { return [R.T, FL.te.y, D]; }, "a", "center", 0, -10);
+    },
+    html: function () { return "<p>The model cannot read letters. The prompt is cut into tokens, and each token is looked up in the <b>embedding table</b>, which holds one row of twelve numbers for every word of the vocabulary.</p>" +
+      "<p>The row is copied into the model. From here on " + tk(W(st.foc)) + " is these twelve numbers, in this sentence and in every other.</p>" +
+      "<p>This toy knows " + V + " whole words. GPT-3 has 50,257 tokens and Llama 3 has 128,256, most of them pieces of words, and each row there holds thousands of numbers.</p>"; },
+    card: function () { return '<span class="k">The prompt as the model gets it</span><table class="t"><tr><th>token</th><th>row in the table</th></tr>' +
+      st.ids.map(function (id, t) { return "<tr><td>" + W(t) + "</td><td>" + (id + 1) + " of " + V + "</td></tr>"; }).join("") + "</table>" + replayBtn(); } },
+
+  { ch: 1, title: "Where the rows come from",
+    cam: function () { return { ids: ["toktab"], yaw: -.2, pitch: .78 }; },
+    show: function () { return { toktab: 1, te: .3 }; },
+    lit: function (F, i) { return F.id === "toktab" && i === nbWord() ? .5 : 0; },
+    tags: function () {
+      tag("EMBEDDING TABLE · " + (st.trained ? "AFTER TRAINING" : "BEFORE TRAINING: RANDOM NUMBERS"), function () { return [FL.toktab.x0, FL.toktab.y, D]; }, "a", "left", 0, -10);
+      vocTags(FL.toktab, VOC.map(function (_, i) { return i; }), 13, "sm");
+      tag(VOC[nbWord()], function () { return [FL.toktab.x0 + nbWord() + .5, FL.toktab.y, D + .4]; }, "m", "center", 0, -8);
+    },
+    html: function () { return "<p>Nobody fills in this table by hand. Before training it holds random numbers. Training shows the model a sentence, lets it predict every next word, and after each miss moves all the numbers that took part a small step in the direction that would have made the right word more likely. This is gradient descent, as in week 3, run here for " + M.steps.toLocaleString("en-US") + " rounds.</p>" +
+      "<p>Words that appear in the same places get pushed in the same directions, so their rows grow alike. That is the idea behind the embeddings of week 3. The difference is that this table is learned together with the rest of the model.</p>" +
+      "<p>Switch between the two tables and compare a word's neighbours. With twelve numbers and a small training set, the neighbourhoods are rough.</p>"; },
+    card: function () {
+      var w = nbWord(), tab = st.trained ? M.tok : M.tok0, cos = tab.map(function (r) { return dot(r, tab[w]) / Math.sqrt(dot(r, r) * dot(tab[w], tab[w])); }),
+          o = order(cos).filter(function (i) { return i !== w; }).slice(0, 5);
+      return chips("trained", [[1, "After training"], [0, "Before training"]], st.trained ? 1 : 0, "Table") +
+        '<div class="row"><span class="k">Rows most like</span><select data-act="word">' + VOC.map(function (x, i) { return '<option value="' + i + '"' + (i === w ? " selected" : "") + ">" + x + "</option>"; }).join("") + "</select></div>" +
+        '<table class="t"><tr><th>word</th><th style="text-align:left">cosine similarity</th></tr>' + o.map(function (i) { return "<tr><td>" + VOC[i] + '</td><td style="text-align:left"><span class="bar b" style="width:' + Math.max(1, 60 * cos[i]).toFixed(0) + '%"></span>' + f1(cos[i]) + "</td></tr>"; }).join("") + "</table>" +
+        "<small>Some of the " + M.n_sentences.toLocaleString("en-US") + " training sentences:</small><ul class=\"ex\">" + M.examples.slice(0, 4).map(function (s) { return "<li>" + s + "</li>"; }).join("") + "</ul>"; } },
+
+  { ch: 1, title: "Adding the position",
+    cam: function () { return { ids: ["postab", "te", "pe", "x"], yaw: -.38, pitch: .36, pad: [50, 46, 250, 58] }; },
+    show: function () { return { toktab: .22, postab: 1, te: 1, pe: 1, x: 1 }; },
+    fx: function (F, i, j) { if (F.id === "postab") return i < R.T ? 1 : .35; if (F.id !== "x" || i !== st.foc || reduced) return 1; return j <= sweep() ? 1 : .15; },
+    lit: function (F, i, j) { return (F.id === "te" || F.id === "pe" || F.id === "x") && i === st.foc && j === sweep() ? 1 : 0; },
+    pre: function () { for (var t = 0; t < R.T; t++) curve([FL.postab.x0 + t + .5, FL.pe.y, D + .2], [2 * t + 1, FL.pe.y, D + .2], COL.slate, t === st.foc ? .9 : .35, 1.1); },
+    post: function () { var j = Math.min(D - 1, sweep()), x = 2 * st.foc + 1; line([x, FL.te.y, j + .5], [x, FL.pe.y, j + .5], COL.amber, .8, 1.2); line([x, FL.pe.y, j + .5], [x, FL.x.y, j + .5], COL.amber, .8, 1.2); },
+    tags: function () {
+      tokTags(FL.te, 14);
+      tag("THE TOKEN'S ROW", function () { return [2 * R.T, FL.te.y, D / 2]; }, "t", "left", 12, 4);
+      tag("+ THE ROW OF ITS POSITION", function () { return [2 * R.T, FL.pe.y, D / 2]; }, "t", "left", 12, 4);
+      tag("= THE VECTOR THAT ENTERS BLOCK 1", function () { return [2 * R.T, FL.x.y, D / 2]; }, "a", "left", 12, 4);
+      tag("POSITION TABLE · " + CTX + " ROWS", function () { return [FL.postab.x0, FL.postab.y, -1.3]; }, "t", "left", 0, 16);
+      for (var t = 0; t < R.T; t++) (function (t) { tag(String(t + 1), function () { return [FL.postab.x0 + t + .5, FL.postab.y, D + .4]; }, t === st.foc ? "m" : "sm", "center", 0, 13); })(t);
+    },
+    html: function () { return "<p>The lookup gives a word the same row wherever it stands. Attention, the next part, compares tokens by their vectors alone, so it would have almost no way to tell “the film was not good” from the same words in another order.</p>" +
+      "<p>The model therefore has a second learned table with one row per <b>position</b>: one for the first token, one for the second, up to the eighth, the longest prompt this toy can read. Adding the position means adding the two rows number by number, twelve sums per token.</p>" +
+      "<p>The result is the vector that enters block 1. Each column now says which word it is and where it stands. GPT-3 works this way. Llama 3 builds the position into attention instead: it turns queries and keys by an angle that depends on the position.</p>"; },
+    card: function () { var t = st.foc, mx = Math.max(maxAbs([R.te[t]]), maxAbs([R.pe[t]]), maxAbs([R.x[t]]));
+      return '<span class="k">' + W(t) + ", the " + nth(t) + " token</span>" + strip("the row of <b>“" + W(t) + "”</b>", R.te[t], mx) + strip("the row of position " + (t + 1), R.pe[t], mx, "+") + strip("the input vector", R.x[t], mx, "=") +
+        '<div class="res">First number: ' + f1(R.te[t][0]) + " + " + f1(R.pe[t][0]) + " = <b>" + f1(R.x[t][0]) + "</b></div>" + replayBtn(); } },
+
+  { ch: 2, title: "Looking back at the other tokens",
+    cam: function () { return { ids: [below(st.blk).id, bid("m"), bid("q")], yaw: -.3, pitch: .3 }; },
+    show: function () { var o = {}; o[below(st.blk).id] = 1; o[bid("m")] = 1; ["q", "k", "v", "sc", "a"].forEach(function (n) { o[bid(n)] = .32; }); return o; },
+    fx: function (F, i) { return F.id === bid("m") && i !== st.foc ? .3 : 1; },
+    post: function (at) { arrows(below(st.blk), attRow(), ease(at / .9)); },
+    tags: function () { var lo = below(st.blk), w = attRow();
+      tokTags(lo, 14);
+      w.forEach(function (x, t) { tag(pct(x), function () { return [2 * t + 1, lo.y, -1.3]; }, "m", "center", 0, 29); });
+      tag(st.blk ? "THE VECTORS FROM BLOCK " + st.blk : "THE INPUT VECTORS", function () { return [2 * R.T, lo.y, D / 2]; }, "t", "left", 12, 4);
+      tag("AFTER ATTENTION", function () { return [2 * R.T, FL[bid("m")].y, D / 2]; }, "a", "left", 12, 4);
+      tag("QUERY", function () { return ctr(FL[bid("q")]); }, "t", "center", 0, 4, { go: 5 }); tag("KEY", function () { return ctr(FL[bid("k")]); }, "t", "center", 0, 4, { go: 5 }); tag("VALUE", function () { return ctr(FL[bid("v")]); }, "t", "center", 0, 4, { go: 5 });
+    },
+    html: function () { var w = attRow(), k = argmax(w), most = k === st.foc ? "most from itself (" + pct(w[k]) + ")" : "most from " + tk(W(k)) + " (" + pct(w[k]) + ")";
+      return "<p>So far each column describes one token and its position. What should come next depends on the other words: what the sentence is about, whether a “not” came before.</p>" +
+      "<p><b>Attention</b> lets every token collect information from the tokens before it. The arrows show how much " + tk(W(st.foc)) + " takes from each of them in block " + (st.blk + 1) + (st.foc ? ": " + most + "." : ". It is the first token, so it can only take from itself.") + "</p>" +
+      "<p>No token may look ahead. In training the model predicts the next word at every position at once, and a look ahead would give the answer away.</p>" +
+      "<p>The next four steps show where these percentages come from. Click another token to see its arrows.</p>"; },
+    card: function () { var w = attRow(); return blkRow() + '<span class="k">What ' + W(st.foc) + ' takes, block ' + (st.blk + 1) + '</span><table class="t">' + w.map(function (x, t) { return barRow(W(t) + (t === st.foc ? " (itself)" : ""), x, t === argmax(w) ? "" : "g", Math.max.apply(null, w)); }).join("") + "</table>" + replayBtn(); } },
+
+  { ch: 2, title: "Three vectors for every token",
+    cam: function () { return { ids: [below(st.blk).id, bid("wq"), bid("wv"), bid("q"), bid("k"), bid("v")], yaw: -.3, pitch: .62 }; },
+    show: function () { var o = {}; [below(st.blk).id, bid("wq"), bid("wk"), bid("wv"), bid("q"), bid("k"), bid("v")].forEach(function (id) { o[id] = 1; }); return o; },
+    fx: function (F, i) { return F.tok && F.block === st.blk && i !== st.foc || F === below(st.blk) && i !== st.foc ? .4 : 1; },
+    lit: function (F, i) { return F.id === bid("wq") && i === 0 ? .7 : 0; },
+    tags: function () { var lo = below(st.blk);
+      tokTags(lo, 14);
+      [["q", "QUERY · LOOKING FOR"], ["k", "KEY · ON OFFER"], ["v", "VALUE · HANDED OVER"]].forEach(function (n) {
+        tag(n[1], function () { var F = FL[bid(n[0])]; return [F.x0 + R.T, F.y, D]; }, "a", "center", 0, -10);
+        tag("12 × 12 WEIGHTS", function () { var F = FL[bid("w" + n[0])]; return [F.x0 + 3, F.y, F.z0]; }, "t", "center", 0, 16); });
+    },
+    html: function () { return "<p>Each column is multiplied by three learned weight tables of 12 × 12 numbers (the small squares). That gives every token three new vectors of twelve numbers.</p>" +
+      "<p><b>Query</b>: what this token is looking for. <b>Key</b>: what it has to offer to the others. <b>Value</b>: what it hands over when it is picked.</p>" +
+      "<p>Each number of a query is one multiply-then-add: the column times one row of the weight table. The weight tables start as random numbers and are learned, like everything else in the model.</p>"; },
+    card: function () { var t = st.foc, x = R.B[st.blk].inp[t], w = M.blocks[st.blk].Wq[0], pr = x.map(function (v, i) { return v * w[i]; });
+      return blkRow() + '<span class="k">The first number of the query of ' + W(t) + "</span>" + strip("the vector of <b>“" + W(t) + "”</b>", x) + strip("row 1 of the query weights", w, null, "×") + strip("the twelve products", pr, null, "=") +
+        '<div class="res">Their sum: <b>' + f1(R.B[st.blk].q[t][0]) + "</b>, the first number of the query. The other eleven use rows 2 to 12.</div>"; } },
+
+  { ch: 2, title: "Query against key",
+    cam: function () { return { ids: [bid("q"), bid("k"), bid("sc")], yaw: -.22, pitch: .46 }; },
+    show: function () { var o = {}; o[bid("q")] = 1; o[bid("k")] = 1; o[bid("sc")] = 1; o[bid("a")] = .25; return o; },
+    fx: function (F, i, j) { var p = curPair(); if (F.id === bid("q")) return i === st.foc ? 1 : .22; if (F.id === bid("k")) return i === p ? 1 : .22; if (F.id === bid("sc")) return i === st.foc ? 1 : .45; return 1; },
+    lit: function (F, i, j) { var p = curPair(); if (F.id === bid("sc")) return i === st.foc && j === p ? 1 : 0; return 0; },
+    pre: function (at) { if (st.pair == null && !reduced) { var p = Math.floor(Math.max(0, at) / 2.4) % (st.foc + 1); if (p !== autoPair) { autoPair = p; renderCard(); } } },
+    post: function () { var p = curPair(), Q = FL[bid("q")], K = FL[bid("k")], Sc = FL[bid("sc")], to = [Sc.x0 + 2 * st.foc + 1, Sc.y - .3, Sc.z0 + 2 * p + 1];
+      curve(colTop(Q, st.foc), to, COL.amber, .9, 1.6); curve(colTop(K, p), to, COL.amber, .9, 1.6); },
+    tags: function () { var Q = FL[bid("q")], K = FL[bid("k")], Sc = FL[bid("sc")];
+      tokTags(Q, 14);
+      for (var t = 0; t < R.T; t++) (function (t) { tag(W(t), function () { return [K.x0 + 2 * t + 1, K.y, -1.3]; }, "tok", "center", 0, 14, { alpha: function () { return t <= st.foc ? (t === curPair() ? 1 : .55) : .25; }, click: function () { if (t <= st.foc) { st.pair = t; renderCard(); } } });
+        tag(W(t), function () { return [Sc.x0 + 2 * R.T, Sc.y, Sc.z0 + 2 * t + 1]; }, "sm", "left", 8, 4); })(t);
+      tag("QUERIES", function () { return [Q.x0 + R.T, Q.y, D]; }, "t", "center", 0, -10); tag("KEYS", function () { return [K.x0 + R.T, K.y, D]; }, "t", "center", 0, -10);
+      tag("SCORES · ONE PER PAIR", function () { return [Sc.x0 + R.T, Sc.y, Sc.z0 + 2 * R.T]; }, "a", "center", 0, -10);
+    },
+    html: function () { var j = curPair(), self = j === st.foc;
+      return "<p>How much should " + tk(W(st.foc)) + " take from " + (self ? "itself" : tk(W(j))) + "? The model compares the <b>query</b> of " + tk(W(st.foc)) + " with the <b>key</b> of " + (self ? "the same token" : tk(W(j))) + ": it multiplies the two vectors number by number and adds up the twelve products. This is the dot product from the earlier weeks.</p>" +
+      "<p>The score is high when the key has large numbers where the query has them, with the same sign: this token offers what that one is looking for. Opposite signs pull the score down.</p>" +
+      "<p>Every token is compared with itself and with every token before it. The scores fill the table, one column of it per token. The empty half is the future.</p>"; },
+    card: function () { var t = st.foc, j = curPair(), o = R.B[st.blk], q = o.q[t], k = o.k[j], pr = q.map(function (v, i) { return v * k[i]; }), items = [];
+      for (var n = 0; n <= t; n++) items.push([n, W(n)]);
+      return blkRow() + chips("pair", items, j, "Key of") + strip("the query of <b>“" + W(t) + "”</b>", q) + strip("the key of <b>“" + W(j) + "”</b>", k, null, "×") + strip("the twelve products", pr, null, "=") +
+        '<div class="res">Their sum is the score: <b>' + f1(o.sc[t][j]) + "</b></div>" + (st.pair != null && !reduced ? '<div class="row" style="margin:9px 0 0"><button class="btn" data-act="replay">↻ Run through all pairs</button></div>' : ""); } },
+
+  { ch: 2, title: "From scores to shares",
+    cam: function () { return { ids: [bid("sc"), bid("a")], yaw: -.22, pitch: .46, pad: [200, 60, 90, 70], maxS: 34 }; },
+    show: function () { var o = {}; o[bid("sc")] = 1; o[bid("a")] = 1; o[bid("q")] = .25; o[bid("k")] = .25; return o; },
+    fx: function (F, i) { return (F.id === bid("sc") || F.id === bid("a")) && i !== st.foc ? .45 : 1; },
+    pre: function (at) { var Sc = FL[bid("sc")], A = FL[bid("a")], g = ease(at / .8);
+      for (var j = 0; j <= st.foc; j++) line([Sc.x0 + 2 * st.foc + 1, Sc.y, Sc.z0 + 2 * j + 1], [A.x0 + 2 * st.foc + 1, A.y - .35, A.z0 + 2 * j + 1], COL.amber, .8 * g, 1.2); },
+    tags: function () { var Sc = FL[bid("sc")], A = FL[bid("a")];
+      tokTags(Sc, 14);
+      for (var t = 0; t < R.T; t++) (function (t) { tag(W(t), function () { return [A.x0 + 2 * R.T, A.y, A.z0 + 2 * t + 1]; }, "sm", "left", 8, 4); })(t);
+      tag("SCORES", function () { return [Sc.x0, Sc.y, D / 2]; }, "t", "right", -10, 4);
+      tag("SOFTMAX ↑", function () { return [Sc.x0, (Sc.y + A.y) / 2, D / 2]; }, "m", "right", -10, 4);
+      tag("WEIGHTS · EACH COLUMN 100%", function () { return [A.x0, A.y, D / 2]; }, "a", "right", -10, 4);
+    },
+    html: function () { var w = attRow();
+      return "<p>A score can be any number, also a negative one. To share out attention, each token's scores go through a <b>softmax</b>: e is raised to the power of each score, which makes every number positive and widens the gaps, and each result is divided by their sum.</p>" +
+      "<p>The shares of " + tk(W(st.foc)) + " add up to 100%. These are the percentages on the arrows two steps back.</p>" +
+      "<p>The same function returns at the top of the model, where it turns the scores of words into probabilities.</p>"; },
+    card: function () { var t = st.foc, o = R.B[st.blk], sc = o.sc[t].slice(0, t + 1), e = sc.map(Math.exp), z = e.reduce(function (a, x) { return a + x; }, 0);
+      return blkRow() + '<span class="k">The scores of ' + W(t) + '</span><table class="t"><tr><th>looks at</th><th>score</th><th>e<sup>score</sup></th><th>share</th></tr>' +
+        sc.map(function (s, j) { return "<tr><td>" + W(j) + "</td><td>" + f1(s) + "</td><td>" + big(e[j]) + "</td><td>" + pct(o.a[t][j]) + "</td></tr>"; }).join("") +
+        '<tr class="sum"><td>together</td><td></td><td>' + big(z) + "</td><td>100%</td></tr></table><small>Share = e<sup>score</sup> divided by the sum of the column, " + big(z) + ".</small>"; } },
+
+  { ch: 2, title: "Mixing the values",
+    cam: function () { return { ids: [below(st.blk).id, bid("v"), bid("a"), bid("m")], yaw: -.36, pitch: .34 }; },
+    show: function () { var o = {}; o[below(st.blk).id] = 1; o[bid("v")] = 1; o[bid("a")] = 1; o[bid("m")] = 1; o[bid("q")] = .2; o[bid("k")] = .2; o[bid("sc")] = .2; return o; },
+    fx: function (F, i) { if (F.id === bid("a") || F.id === bid("m") || F === below(st.blk)) return i === st.foc ? 1 : .3; if (F.id === bid("v")) return i <= st.foc ? .35 + .65 * Math.sqrt(attRow()[i]) : .15; return 1; },
+    post: function (at) { var w = attRow(), Vf = FL[bid("v")], Mf = FL[bid("m")], lo = below(st.blk), g = ease(at / 1.1), to = colTop(Mf, st.foc, -.4);
+      w.forEach(function (x, j) { curve(colTop(Vf, j), to, COL.amber, (.3 + .65 * x) * g, (1 + 8 * x) * g); });
+      line(colTop(lo, st.foc), to, COL.ink, .7, 1.4, [3, 3]); },
+    tags: function () { var lo = below(st.blk), Vf = FL[bid("v")], Mf = FL[bid("m")], w = attRow();
+      tokTags(lo, 14);
+      for (var t = 0; t <= st.foc; t++) (function (t) { tag(pct(w[t]), function () { return [Vf.x0 + 2 * t + 1, Vf.y, -1.3]; }, "m", "center", 0, 14); })(t);
+      tag("VALUES", function () { return [Vf.x0 + R.T, Vf.y, D]; }, "t", "center", 0, -10);
+      tag("ATTENTION WEIGHTS", function () { var A = FL[bid("a")]; return [A.x0 + R.T, A.y, A.z0 + 2 * R.T]; }, "t", "center", 0, -10);
+      tag("CONTEXTUAL EMBEDDINGS", function () { return [R.T, Mf.y, D]; }, "a", "center", 0, -10);
+      tag("+ WHAT IT ALREADY HAD", function () { return [2 * st.foc + 1, (lo.y + Mf.y) / 2, D / 2]; }, "sm", "left", 8, 4);
+    },
+    html: function () { var w = attRow(), o = order(w).slice(0, 3).filter(function (j) { return w[j] >= .05; }), parts = o.map(function (j) { return pct(w[j]) + " of the value of " + tk(W(j)); });
+      return "<p>The shares say how much to take, the <b>values</b> are what is taken. For " + tk(W(st.foc)) + " the model adds up " + list(parts) + (o.length < w.length ? ", and the small remainder" : "") + ": a weighted average of value vectors.</p>" +
+      "<p>This mix is added to the vector the token already had. The old numbers stay, and the new information comes on top. The result is called a <b>contextual embedding</b>: the column of " + tk(W(st.foc)) + " now also carries something from the tokens it looked at.</p>" +
+      "<p>From here on, the same word has different numbers in different sentences.</p>"; },
+    card: function () { var t = st.foc, o = R.B[st.blk], mx = Math.max(maxAbs([o.inp[t]]), maxAbs([o.mix[t]]), maxAbs([o.m[t]]));
+      return blkRow() + '<span class="k">The column of ' + W(t) + "</span>" + strip("before attention", o.inp[t], mx) + strip("the mix of values", o.mix[t], mx, "+") + strip("after attention", o.m[t], mx, "=") + replayBtn(); } },
+
+  { ch: 3, title: "A layer of 48 detectors",
+    cam: function () { return { ids: [bid("m"), bid("h"), bid("s")], sp: 2, yaw: -.2, pitch: .24, pad: [50, 50, 200, 58] }; },
+    show: function () { var o = {}; o[bid("m")] = 1; o[bid("h")] = 1; o[bid("s")] = .3; return o; },
+    fx: function (F, i) { return (F.id === bid("m") || F.id === bid("h")) && i !== st.foc ? .25 : 1; },
+    after: function (F, at) { if (F.id === bid("m")) network(0, ease(at / .9), false); },
+    tags: function () { var Mf = FL[bid("m")], Hf = FL[bid("h")];
+      tokTags(Mf, 14);
+      tag("IN · THE COLUMN AFTER ATTENTION", function () { return [0, Mf.y, D]; }, "t", "left", 0, -10);
+      tag("HIDDEN LAYER · 48 UNITS PER TOKEN", function () { return [Hf.x0 + 2 * R.T, Hf.y, D / 2]; }, "a", "left", 12, 0);
+      tag("LIT = FIRES, DARK = SILENT", function () { return [Hf.x0 + 2 * R.T, Hf.y, D / 2]; }, "t", "left", 12, 14);
+    },
+    html: function () { var h = R.B[st.blk].h[st.foc], n = h.filter(function (x) { return x > 0; }).length;
+      return "<p>Attention moves information between columns, and all it can do is blend value vectors. It cannot draw a conclusion from the blend it has just made. That is the job of the second half of the block: a small <b>neural network</b> of the kind from week 3, applied to every column on its own.</p>" +
+      "<p>Its hidden layer has 48 units, four times the size of the vector. Each unit is a detector: it multiplies the column by its own twelve weights, adds its bias, and passes the result on only if it is above zero. Otherwise it stays silent.</p>" +
+      "<p>For " + tk(W(st.foc)) + ", " + n + " of the 48 units fire in block " + (st.blk + 1) + ". Which ones do depends on the whole column: on the token, its position and what attention has just added.</p>"; },
+    card: function () { var h = R.B[st.blk].h[st.foc], o = order(h).slice(0, 6).filter(function (k) { return h[k] > 0; });
+      return blkRow() + '<span class="k">The units that fire most for ' + W(st.foc) + '</span><table class="t">' + o.map(function (k) { return '<tr><td>unit ' + (k + 1) + '</td><td style="text-align:left;width:62%"><span class="bar b" style="width:' + (70 * h[k] / h[o[0]]).toFixed(0) + '%"></span>' + f1(h[k]) + "</td></tr>"; }).join("") + "</table>" + replayBtn(); } },
+
+  { ch: 3, title: "What a unit writes back",
+    cam: function () { return { ids: [bid("m"), bid("h"), bid("s")], sp: 2, yaw: -.2, pitch: .24, pad: [50, 50, 200, 58] }; },
+    show: function () { var o = {}; o[bid("m")] = 1; o[bid("h")] = .6; o[bid("s")] = 1; return o; },
+    fx: function (F, i) { return (F.id === bid("m") || F.id === bid("h") || F.id === bid("s")) && i !== st.foc ? .25 : 1; },
+    lit: function (F, i, j) { return F.id === bid("h") && i === st.foc && j === curUnit() ? 1 : 0; },
+    after: function (F, at) { if (F.id === bid("m")) network(0, 1, true); if (F.id === bid("h")) network(1, ease(at / .9), true); },
+    post: function () { var Mf = FL[bid("m")], Sf = FL[bid("s")]; line(colTop(Mf, st.foc), colTop(Sf, st.foc, -.4), COL.ink, .6, 1.3, [3, 3]); },
+    tags: function () { var Mf = FL[bid("m")], Hf = FL[bid("h")], Sf = FL[bid("s")];
+      tokTags(Mf, 14);
+      tag("UNIT " + (curUnit() + 1), function () { return [Hf.x0 + 2 * st.foc + 2, Hf.y, Hf.z0 + (curUnit() + .5) * Hf.cz]; }, "m", "left", 8, 4);
+      tag("OUT · ADDED TO THE COLUMN", function () { return [0, Sf.y, D]; }, "a", "left", 0, -10);
+      tag("IN", function () { return [0, Mf.y, D]; }, "t", "left", 0, -10);
+    },
+    html: function () { return "<p>Each unit has a second set of twelve weights. When it fires, it adds them to the column, multiplied by how strongly it fired. A unit works like a rule: if the column looks like this, add that.</p>" +
+      "<p>What all firing units write is summed and added to the vector, on top of what attention added.</p>" +
+      "<p>Why can this do what attention cannot? A unit can respond to a combination, for example a certain subject together with a “not”, and stay silent for each of the two alone. The cut-off at zero makes that possible. In large models about two thirds of all weights sit in these networks, and research has located much of what a model knows in them (Geva et al., 2021; Meng et al., 2022).</p>"; },
+    card: function () { var b = st.blk, t = st.foc, o = R.B[b], h = o.h[t], u = curUnit(), top = order(h).slice(0, 5).filter(function (k) { return h[k] > 0; });
+      if (h[u] <= 0) return blkRow() + "<small>No unit fires for this token in this block.</small>";
+      var wr = M.blocks[b].W2.map(function (r) { return r[u] * h[u]; }), eff = matvec(M.U, wr), oe = order(eff),
+          up = oe.slice(0, 3).map(function (i) { return tk(VOC[i]); }), dn = oe.slice(-3).reverse().map(function (i) { return tk(VOC[i]); }),
+          mx = Math.max(maxAbs([o.m[t]]), maxAbs([o.f[t]]), maxAbs([o.s[t]]));
+      return blkRow() + chips("unit", top.map(function (k) { return [k, String(k + 1)]; }), u, "Unit") +
+        '<div class="res" style="margin:0 0 4px">Unit ' + (u + 1) + " fires at <b>" + f1(h[u]) + "</b> for " + tk(W(t)) + ". Read through the output table at the top of the model, what it writes raises the scores of " + list(up) + " and lowers those of " + list(dn) + ".</div>" +
+        strip("what unit " + (u + 1) + " writes", wr, mx) + strip("the column after attention", o.m[t], mx) + strip("what all units write together", o.f[t], mx, "+") + strip("the column after block " + (b + 1), o.s[t], mx, "=") + replayBtn(); } },
+
+  { ch: 4, title: "One block",
+    cam: function () { var b = st.blk; return { ids: [below(b).id].concat(["wq", "q", "k", "v", "sc", "a", "m", "h", "s"].map(function (n) { return n + b; })), yaw: -.42, pitch: .27, pad: [175, 64, 40, 58] }; },
+    show: function () { var o = {}; o[below(st.blk).id] = 1; ["q", "k", "v", "sc", "a", "m", "h", "s"].forEach(function (n) { o[bid(n)] = 1; }); return o; },
+    pre: function () { blockBox(st.blk, .7); },
+    post: function () { var lo = below(st.blk), Sf = FL[bid("s")], x = 2 * st.foc + 1; line([x, lo.y, D + .4], [x, Sf.y, D + .4], COL.amber, .9, 1.6, [4, 3]); },
+    tags: function () { var b = st.blk, lo = below(b);
+      tokTags(lo, 14);
+      tag("BLOCK " + (b + 1), function () { return [FL["v" + b].x0 + 2 * R.T + 1.6, FL["s" + b].y + .7, -7]; }, "big", "right", 0, -8);
+      tag("IN", function () { return [0, lo.y, D / 2]; }, "t", "right", -12, 4);
+      tag("+ ATTENTION", function () { return [0, FL["m" + b].y, D / 2]; }, "a", "right", -12, 4, { go: 4 });
+      tag("+ FEED-FORWARD = OUT", function () { return [0, FL["s" + b].y, D / 2]; }, "a", "right", -12, 4, { go: 9 });
+      tag("1 · ATTENTION", function () { var F = FL["k" + b]; return [F.x0 + R.T, F.y, D]; }, "t", "center", 0, -10, { go: 4 });
+      tag("2 · FEED-FORWARD", function () { var F = FL["h" + b]; return [F.x0 + R.T, F.y, F.z0 + HID * F.cz]; }, "t", "center", 0, -10, { go: 9 });
+    },
+    html: function () { return "<p>Attention and the feed-forward network together form one <b>block</b>, the frame in the drawing. " + R.T + " vector" + (R.T > 1 ? "s" : "") + " of twelve numbers go in at the bottom, and as many come out at the top.</p>" +
+      "<p>Inside, nothing is replaced. Each token's column runs straight up through the block (the dashed lines) and is added to twice: first what attention collected from the other tokens, then what the network worked out from the result.</p>" +
+      "<p>The strips show both additions for " + tk(W(st.foc)) + ".</p>"; },
+    card: function () { var b = st.blk, t = st.foc, o = R.B[b], mx = Math.max(maxAbs([o.inp[t]]), maxAbs([o.mix[t]]), maxAbs([o.f[t]]), maxAbs([o.s[t]]));
+      return blkRow() + '<span class="k">The column of ' + W(t) + " through block " + (b + 1) + "</span>" + strip("in", o.inp[t], mx) + strip("what attention adds", o.mix[t], mx, "+") + strip("what the network adds", o.f[t], mx, "+") + strip("out", o.s[t], mx, "="); } },
+
+  { ch: 4, title: "The block repeats",
+    cam: overviewCam, rest: 1,
+    pre: function (at, now) { for (var b = 0; b < L; b++) blockBox(b, .55); STEPS[0].pre(at, now); },
+    tags: function () {
+      tokTags(FL.te, 14, { plain: true });
+      R.B.forEach(function (o, b) { tag("BLOCK " + (b + 1), function () { return [-1.6, FL["s" + b].y + .7, -7]; }, "big", "left", 0, -8, { click: function () { st.blk = b; go(11); } });
+        tag("OWN WEIGHTS", function () { return [FL["v" + b].x0 + 2 * R.T + 1.6, FL["a" + b].y, D / 2]; }, "t", "left", 8, 4); });
+    },
+    html: function () { return "<p>The output of block 1 is the input of block 2, and its output is the input of block 3. The parts and their order repeat. The weights do not: every block has its own tables, learned for its place in the stack.</p>" +
+      "<p>Why several? A block can only use what is in the columns when they arrive. Block 1 sees tokens and positions. Later blocks see columns that already carry context and can combine it. Try the prompt “the film was good but the music was” and look at the attention of the last token in block 2.</p>" +
+      "<p>The table shows what the model would answer if its output were read after each block. Usually the answer only settles in the last one.</p>"; },
+    card: function () { return '<span class="k">Read out early: the next word after…</span><table class="t">' + R.lens.map(function (p, n) { var o = order(p).slice(0, 3);
+      return "<tr" + (n < L ? ' class="dim"' : "") + "><td>" + (n ? "block " + n : "the input") + '</td><td style="text-align:left;font-family:var(--font)">' + o.map(function (i) { return VOC[i] + " " + pct(p[i]); }).join(" · ") + "</td></tr>"; }).join("") + "</table>"; } },
+
+  { ch: 5, title: "A score for every word",
+    cam: function () { return { ids: ["s" + (L - 1), "ut", "sco"], yaw: -.25, pitch: .44, pad: [200, 46, 50, 58] }; },
+    show: function () { var o = { ut: 1, sco: 1, exp: .2, prb: .2 }; o["s" + (L - 1)] = 1; return o; },
+    fx: function (F, i) { if (F.id === "s" + (L - 1)) return i === R.T - 1 ? 1 : .2; if (F.id === "ut") return i === curOut() ? 1 : .5; return 1; },
+    lit: function (F, i) { return (F.id === "sco" || F.id === "ut") && i === curOut() ? (F.id === "sco" ? 1 : .35) : 0; },
+    pre: function (at) { var top = FL["s" + (L - 1)], g = ease(at / .9), w = curOut();
+      curve(colTop(top, R.T - 1), [FL.ut.x0 + w + .5, FL.ut.y - .4, D / 2], COL.amber, .9 * g, 1.6);
+      for (var i = 0; i < V; i++) line([FL.ut.x0 + i + .5, FL.ut.y, 6], [FL.sco.x0 + i + .5, FL.sco.y - .35, 6], i === w ? COL.amber : COL.pos, (i === w ? .9 : .3) * g, i === w ? 1.6 : .8); },
+    tags: function () { var top = FL["s" + (L - 1)];
+      tokTags(top, 14, { plain: true });
+      tag("THE LAST TOKEN'S COLUMN", function () { return [2 * R.T, top.y, D / 2]; }, "t", "left", 12, 4);
+      tag("OUTPUT TABLE · ONE ROW PER WORD", function () { return [FL.ut.x0, FL.ut.y, D / 2]; }, "t", "right", -10, 4);
+      tag("SCORES · ONE PER WORD", function () { return [FL.sco.x0, FL.sco.y, 6]; }, "a", "right", -10, 4);
+      tag(VOC[curOut()], function () { return [FL.sco.x0 + curOut() + .5, FL.sco.y, FL.sco.z0 + 1.5]; }, "m", "center", 0, -9);
+    },
+    html: function () { return "<p>At the top only the column of the <b>last token</b> is read. It is the only one that has seen the whole prompt.</p>" +
+      "<p>The model has one more learned table, the output table, again with one row of twelve numbers for every word of the vocabulary: " + V + " rows here, 128,256 in Llama 3. A row can be read as a description of what the last column looks like when this word should come next.</p>" +
+      "<p>The last column is compared with every row by the same multiply-then-add as before. Each word gets one <b>score</b>: high when column and row agree, low or negative when they do not. Every word gets a score, also the ones that do not fit at all.</p>"; },
+    card: function () { var w = curOut(), o = order(R.logits), x = R.B[L - 1].s[R.T - 1], u = M.U[w], pr = x.map(function (v, i) { return v * u[i]; }), pick = o.slice(0, 4).concat(o.slice(-1));
+      if (pick.indexOf(w) < 0) pick.push(w);
+      return chips("out", pick.map(function (i) { return [i, VOC[i]]; }), w, "Row of") + strip("the last column, <b>“" + W(R.T - 1) + "”</b>", x) + strip("the row of <b>“" + VOC[w] + "”</b>", u, null, "×") + strip("the twelve products", pr, null, "=") +
+        '<div class="res">Their sum is the score of ' + tk(VOC[w]) + ": <b>" + f1(R.logits[w]) + "</b></div><small>Click a word's row or bar in the drawing to see its sum.</small>"; } },
+
+  { ch: 5, title: "The softmax",
+    cam: function () { return { ids: ["sco", "exp", "prb"], up: { exp: 5, prb: 12 }, yaw: -.16, pitch: .3, pad: [170, 46, 40, 58] }; },
+    show: function () { var o = { ut: .25, sco: 1, exp: 1, prb: 1 }; o["s" + (L - 1)] = .2; return o; },
+    pre: function (at) { var g = ease(at / .8); for (var i = 0; i < V; i++) { line([FL.sco.x0 + i + .5, FL.sco.y, 6], [FL.exp.x0 + i + .5, FL.exp.y - .35, 6], COL.ink, .3 * g, .8); } },
+    after: function (F, at) { if (F.id === "exp") { var g = ease(at / .8), ex = FL.exp.v, mx = maxAbs(ex); for (var i = 0; i < V; i++) line([FL.exp.x0 + i + .5, FL.exp.y + 5 * ex[i][0] / mx, 6], [FL.prb.x0 + i + .5, FL.prb.y - .35, 6], COL.ink, .22 * g, .8); } },
+    tags: function () { outTags();
+      tag("1 · SCORES", function () { return [FL.sco.x0, FL.sco.y, 6]; }, "t", "right", -10, 4);
+      tag("2 · e TO THE SCORE", function () { return [FL.exp.x0, FL.exp.y, 6]; }, "t", "right", -10, 4);
+      tag("3 · PROBABILITIES", function () { return [FL.prb.x0, FL.prb.y, 6]; }, "a", "right", -10, 4);
+    },
+    html: function () { return "<p>The softmax turns the " + V + " scores into probabilities in two moves, drawn as two rows of bars.</p>" +
+      "<p>First, e (about 2.72) is raised to the power of each score. Every result is positive, and one point more in the score makes the result 2.72 times as large: differences between scores become ratios.</p>" +
+      "<p>Second, each result is divided by the sum of all " + V + ". The shares add up to 100%.</p>" +
+      "<p>The <b>temperature</b> divides the scores before the softmax. Below 1 the top word takes nearly everything; above 1 the distribution flattens. At temperature 0, the setting used in the labs, the model always takes the top word.</p>"; },
+    card: function () { return '<div class="formula"><span>p(word) =</span><span class="frac"><span>e<sup>score of the word' + '</sup></span><span>sum of e<sup>score</sup> over all ' + V + " words</span></span></div>" +
+      '<div class="row" style="margin-bottom:2px"><span class="k">Temperature</span><span id="tempv" style="font-family:var(--mono);font-size:12px">' + st.temp.toFixed(1) + '</span></div><input type="range" id="temp" min="0.2" max="2" step="0.1" value="' + st.temp + '" aria-label="Temperature"><div id="dyn">' + softTable() + "</div>"; } },
+
+  { ch: 5, title: "One word, then run again",
+    cam: function () { return { ids: ["s" + (L - 1), "ut", "sco", "exp", "prb"], up: { exp: 5, prb: 12 }, yaw: -.3, pitch: .3 }; },
+    show: function () { var o = { ut: .3, sco: .5, exp: .5, prb: 1 }; o["s" + (L - 1)] = 1; return o; },
+    tags: function () { outTags(); tokTags(FL["s" + (L - 1)], 14, { plain: true });
+      tag("THE NEXT WORD", function () { return [FL.prb.x0, FL.prb.y, 6]; }, "a", "right", -10, 4); },
+    html: function () { return "<p>The distribution is all the model gives. To write text, one word is drawn from it: the most probable one, or a random one in proportion to the probabilities.</p>" +
+      "<p>The word is appended to the prompt and the whole model runs again on the longer prompt. A chat model writes its answer this way, one token per run.</p>" +
+      "<p>This toy reads at most eight tokens. When the prompt is full, the oldest token drops out and the model no longer knows it was there. GPT-3 could read 2,048 tokens, Llama 3.1 reads 128,000.</p>"; },
+    card: function () { var p = probs(), o = order(p).slice(0, 5);
+      return '<span class="k">Append a word to “' + sentence() + '”</span><div class="row">' + o.map(function (i) { return '<button class="btn" data-act="append" data-v="' + i + '">' + VOC[i] + " " + pct(p[i]) + "</button>"; }).join("") + "</div>" +
+        '<div class="row"><button class="btn go" data-act="sample">Draw one at random</button><button class="btn" data-act="reset">Start over</button></div>' +
+        "<small>" + (st.ids.length >= CTX ? "The prompt is full: the next word pushes “" + W(0) + "” out." : "After a full stop the model has seen nothing in training, so what follows there means little.") + (st.temp !== 1 ? " Temperature is " + st.temp.toFixed(1) + " (set in the previous step)." : "") + "</small>"; } },
+
+  { ch: 6, title: "The same machine, much larger",
+    cam: function () { var T = R.T; return { boxes: [[-2, -8, -7, 8 * T + 12, Y0 + BIG * 4 + 2, 19]], bh: 4, yaw: -.42, pitch: .3 }; },
+    rest: 1, show: function () { return { ut: 0, sco: 0, exp: 0, prb: 0 }; },
+    post: function (at) { var g = reduced ? 1 : ease((at - .9) / 2.6), nb = L + (BIG - L) * g, T = R.T, SW = 2 * T, QX = SW + 4, k = cam.bh / BH;
+      for (var b = L; b < BIG; b++) { var a = clamp01(nb - b); if (a <= 0) break; var y = yb(b, cam.bh), gl = Math.max(0, 1 - Math.abs(nb - 1 - b) / 1.5) * (g < 1 ? 1 : 0);
+        slab(QX, y + OFF.qkv * k, 0, 3 * SW + 2 * GAP, D, a, gl); slab(QX, y + OFF.h * k, -6, SW, 24, a, gl); slab(0, y + OFF.s * k, 0, SW, D, a, gl); }
+      bigDone = g > .97; },
+    tags: function () {
+      tag("THE TOY · 3 BLOCKS", function () { return [-1, FL["s" + (L - 1)].y, 0]; }, "t", "right", -10, 4);
+      tag("LLAMA 3.1 8B · 32 BLOCKS", function () { return [-1, yb(BIG - 1, cam.bh) + OFF.s * cam.bh / BH, 0]; }, "a", "right", -10, 4, { alpha: function () { return bigDone ? 1 : 0; } });
+    },
+    html: function () { return "<p>Llama 3.1 8B, a model small enough to run on a laptop, has 32 of these blocks, 4,096 numbers per token and a vocabulary of 128,256 tokens. GPT-3 (2020) had 96 blocks.</p>" +
+      "<p>What the toy leaves out: real models run several attention heads side by side in each block, each with its own queries, keys and values; they rescale the vectors before each part of a block; and their tokens are pieces of words. The steps are the ones you have walked through.</p>" +
+      "<p>The rest is size and training text: billions of weights, learned from a large part of the written internet in place of " + M.n_sentences.toLocaleString("en-US") + " invented sentences.</p>"; },
+    card: function () { var r = function (a) { return "<tr><td>" + a[0] + "</td><td>" + a[1] + "</td><td>" + a[2] + "</td><td>" + a[3] + "</td></tr>"; };
+      return '<table class="t"><tr><th></th><th>this toy</th><th>GPT-3</th><th>Llama 3.1 8B</th></tr>' +
+        [["numbers per token", D, "12,288", "4,096"], ["blocks", L, "96", "32"], ["heads per block", 1, "96", "32"], ["vocabulary", V, "50,257", "128,256"], ["longest prompt", CTX, "2,048", "128,000"],
+         ["weights", M.n_weights.toLocaleString("en-US"), "175 billion", "8 billion"]].map(r).join("") + "</table><small>GPT-3: Brown et al. (2020). For GPT-4 and later models, OpenAI has not published these numbers.</small>" + replayBtn(); } }
+  ];
+  var CHAPTERS = ["The model", "Input", "Attention", "Feed-forward", "Blocks", "Output", "Real size"], bigDone = false;
+  function nbWord() { return st.word != null ? st.word : st.ids[st.foc]; }
+  function sweep() { if (reduced) return D; var at = (performance.now() - stepT0) / 1000 - .5; return at < 0 ? -1 : Math.floor(at / .3); }
+  function outTags() { var p = probs(), o = order(p), top = o.slice(0, 5);
+    top.forEach(function (i, n) { if (n && p[i] < .04) return; tag(n ? pct(p[i]) : VOC[i] + " " + pct(p[i]), function () { return [FL.prb.x0 + i + .5, FL.prb.y + barH(probs()[i], probs()), 6]; }, n ? "sm" : "big", "center", 0, -7); });
+    vocTags(FL.prb, VOC.map(function (_, i) { return i; })); }
+  function softTable() { var p = probs(), o = order(p), ex = R.logits.map(function (s) { return Math.exp(s / st.temp); }), z = ex.reduce(function (a, x) { return a + x; }, 0), n = 6,
+      restE = 0, restP = 0; o.slice(n).forEach(function (i) { restE += ex[i]; restP += p[i]; });
+    return '<table class="t"><tr><th>word</th><th>score</th><th>e<sup>score' + (st.temp !== 1 ? " ÷ " + st.temp.toFixed(1) : "") + "</sup></th><th>probability</th></tr>" +
+      o.slice(0, n).map(function (i) { return "<tr><td>" + VOC[i] + "</td><td>" + f1(R.logits[i]) + "</td><td>" + big(ex[i]) + "</td><td>" + (100 * p[i]).toFixed(1) + "%</td></tr>"; }).join("") +
+      '<tr class="dim"><td>' + (V - n) + " more words</td><td></td><td>" + big(restE) + "</td><td>" + (100 * restP).toFixed(1) + '%</td></tr><tr class="sum"><td>together</td><td></td><td>' + big(z) + "</td><td>100%</td></tr></table>"; }
+
+  /* ---- one frame ------------------------------------------------------------------------------------- */
+  function frame(now) {
+    requestAnimationFrame(frame);
+    if (document.hidden || !cam) return;
+    tweenCam(now);
+    sway = reduced || userMoved || hov ? sway * .9 : .07 * Math.sin(now / 4200);
+    place(cam.sp, cam.bh);
+    var S_ = STEPS[st.step], at = reduced ? 1e3 : (now - stepT0) / 1000, sh = S_.show ? S_.show() : {}, rest = S_.rest != null ? S_.rest : .1;
+    floors.forEach(function (F) { var a = sh[F.id] != null ? sh[F.id] : (F.w ? 0 : rest); F.av = F.av == null || reduced ? a : F.av + (a - F.av) * .14; F.glow = 0; });
+    ctx.clearRect(0, 0, Wd, Hd);
+    if (S_.pre) S_.pre(at, now);
+    connectors();
+    var p = probs(), ex = FL.exp.v, exm = maxAbs(ex), grow = st.step >= 14 ? ease((at - .3) / .9) : 1, hot = argmax(p);
+    floors.filter(function (F) { return F.av > .01; }).map(function (F) { F._z = P(ctr(F)).z; return F; })
+      .sort(function (a, b) { return a.y - b.y || b._z - a._z; })
+      .forEach(function (F) {
+        drawFloor(F, F.av, S_);
+        if (F.id === "exp") bars(F, ex.map(function (r) { return 5 * r[0] / exm * grow; }), F.av, hot);
+        if (F.id === "prb") bars(F, p.map(function (x) { return barH(x, p) * grow; }), F.av, hot);
+        if (S_.after) S_.after(F, at);
+      });
+    if (S_.post) S_.post(at);
+    drawTags();
+  }
+
+  /* ---- panel, prompt, navigation ----------------------------------------------------------------------- */
+  function renderCard() { var S_ = STEPS[st.step]; $("body").innerHTML = S_.html(); var c = S_.card ? S_.card() : ""; $("card").innerHTML = c ? '<div class="card">' + c + "</div>" : ""; rebuildTags(); }
+  function rebuildTags() { tags = []; STEPS[st.step].tags(); }
+  function renderPanel() { var S_ = STEPS[st.step]; $("kick").textContent = CHAPTERS[S_.ch]; $("title").textContent = S_.title; renderCard(); $("panel").scrollTop = 0; }
+  function renderPrompt() {
+    $("prompt").innerHTML = st.ids.map(function (id, t) { return '<button class="btn tokb" data-t="' + t + '" aria-pressed="' + (t === st.foc) + '" title="Follow this token">' + VOC[id] + "</button>"; }).join("");
+    $("delBtn").disabled = st.ids.length < 2;
+    $("presets").value = M.presets.indexOf(sentence()) >= 0 ? sentence() : "";
+  }
+  function renderNav() {
+    var html = "";
+    CHAPTERS.forEach(function (name, c) { var on = STEPS[st.step].ch === c, first = -1, dots = "";
+      STEPS.forEach(function (S_, n) { if (S_.ch !== c) return; if (first < 0) first = n; dots += '<i data-go="' + n + '" class="' + (n === st.step ? "on" : n < st.step ? "done" : "") + '" title="' + S_.title + '"></i>'; });
+      html += '<button class="ch' + (on ? " on" : "") + '" data-go="' + first + '"><span>' + name + '</span><div class="dots">' + dots + "</div></button>"; });
+    $("rail").innerHTML = html; $("count").textContent = (st.step + 1) + " / " + STEPS.length;
+    $("prev").disabled = st.step === 0; $("next").disabled = st.step === STEPS.length - 1;
+  }
+  function go(n, snap) {
+    n = Math.max(0, Math.min(STEPS.length - 1, n));
+    st.step = n; stepT0 = performance.now(); st.pair = null; st.unit = null; autoPair = 0; bigDone = false;
+    if (n !== 2 && !st.trained) { st.trained = true; rerun(true); }
+    stepCam(snap); renderPanel(); renderNav();
+    try { history.replaceState(null, "", "#" + n); } catch (e) { /* file:// in some browsers */ }
+  }
+  /* run the model again (new prompt, or a switch that changes what a floor shows) */
+  function rerun(keepCam) {
+    var old = FL; R = run(st.ids); st.foc = Math.min(st.foc, R.T - 1); build();
+    floors.forEach(function (F) { if (old[F.id]) F.av = old[F.id].av; });
+    if (cam) place(cam.sp, cam.bh);
+    renderPrompt();
+    if (!keepCam && cam) { stepCam(false); renderPanel(); }
+  }
+  function setIds(ids) { st.ids = ids; st.foc = ids.length - 1; st.out = null; st.unit = null; st.pair = null; st.word = null; stepT0 = performance.now(); rerun(); }
+  function setFoc(t) { st.foc = t; st.pair = null; st.unit = null; st.word = null; autoPair = 0; stepT0 = performance.now(); renderPrompt(); renderPanel(); }
+  function append(id) { var ids = st.ids.concat([id]); if (ids.length > CTX) ids = ids.slice(ids.length - CTX); setIds(ids); }
+
+  $("prompt").addEventListener("click", function (e) { var b = e.target.closest("[data-t]"); if (b) setFoc(+b.getAttribute("data-t")); });
+  $("delBtn").addEventListener("click", function () { if (st.ids.length > 1) setIds(st.ids.slice(0, -1)); });
+  $("popList").innerHTML = VOC.map(function (w, i) { return '<button class="btn" data-v="' + i + '">' + w + "</button>"; }).join("");
+  $("addBtn").addEventListener("click", function (e) { e.stopPropagation(); $("pop").classList.toggle("open"); });
+  $("popList").addEventListener("click", function (e) { var b = e.target.closest("[data-v]"); if (b) { append(+b.getAttribute("data-v")); $("pop").classList.remove("open"); } });
+  document.addEventListener("click", function () { $("pop").classList.remove("open"); });
+  $("presets").innerHTML = '<option value="">Example prompts…</option>' + M.presets.map(function (p) { return '<option value="' + p + '">' + p + "</option>"; }).join("");
+  $("presets").addEventListener("change", function () { if (this.value) setIds(toIds(this.value)); });
+  $("prev").addEventListener("click", function () { go(st.step - 1); });
+  $("next").addEventListener("click", function () { go(st.step + 1); });
+  $("rail").addEventListener("click", function (e) { var b = e.target.closest("[data-go]"); if (b) go(+b.getAttribute("data-go")); });
+  $("card").addEventListener("click", function (e) {
+    var b = e.target.closest("[data-act]"); if (!b || b.tagName === "SELECT") return;
+    var act = b.getAttribute("data-act"), v = +b.getAttribute("data-v");
+    if (act === "blk") { st.blk = v; st.unit = null; stepT0 = performance.now(); stepCam(false); renderPanel(); }
+    else if (act === "pair") { st.pair = v; renderCard(); }
+    else if (act === "unit") { st.unit = v; renderCard(); }
+    else if (act === "out") { st.out = v; renderCard(); }
+    else if (act === "trained") { st.trained = !!v; rerun(true); renderCard(); }
+    else if (act === "replay") { st.pair = null; autoPair = 0; stepT0 = performance.now(); renderCard(); }
+    else if (act === "append") append(v);
+    else if (act === "reset") setIds(toIds(M.presets[0]));
+    else if (act === "sample") { var p = probs(), r = Math.random(), i = 0; while (i < V - 1 && (r -= p[i]) > 0) i++; append(i); }
+  });
+  $("card").addEventListener("change", function (e) { if (e.target.getAttribute("data-act") === "word") { st.word = +e.target.value; renderCard(); } });
+  $("card").addEventListener("input", function (e) { if (e.target.id !== "temp") return;
+    st.temp = +e.target.value; $("tempv").textContent = st.temp.toFixed(1); rerun(true); $("dyn").innerHTML = softTable(); rebuildTags(); });
+  document.addEventListener("keydown", function (e) {
+    if (e.metaKey || e.ctrlKey || e.altKey || /^(INPUT|SELECT|TEXTAREA)$/.test(e.target.tagName)) return;
+    if (e.key === "ArrowRight" || e.key === "PageDown") { e.preventDefault(); go(st.step + 1); }
+    else if (e.key === "ArrowLeft" || e.key === "PageUp") { e.preventDefault(); go(st.step - 1); }
+  });
+  window.addEventListener("hashchange", function () { var n = parseInt(location.hash.slice(1), 10); if (!isNaN(n) && n !== st.step) go(n); });
+
+  /* ---- the free camera: turn, move, zoom, read, pick --------------------------------------------------- */
+  function inQuad(x, y, q) { var s = 0; for (var i = 0; i < 4; i++) { var a = q[i], b = q[(i + 1) % 4], c = (b.x - a.x) * (y - a.y) - (b.y - a.y) * (x - a.x); if (c === 0) continue; if (s === 0) s = c > 0 ? 1 : -1; else if ((c > 0 ? 1 : -1) !== s) return false; } return true; }
+  function hit(x, y) {
+    var vis = floors.filter(function (F) { return F.av > .08; }).sort(function (a, b) { return b.y - a.y || a._z - b._z; });
+    for (var n = 0; n < vis.length; n++) { var F = vis[n], g = grid(F);
+      if (!inQuad(x, y, [g[0][0], g[F.nx][0], g[F.nx][F.nz], g[0][F.nz]])) continue;
+      for (var i = 0; i < F.nx; i++) for (var j = 0; j < F.nz; j++) if (inQuad(x, y, [g[i][j], g[i + 1][j], g[i + 1][j + 1], g[i][j + 1]])) return { F: F, i: i, j: j };
+    }
+    return null;
+  }
+  function tagAt(x, y) { for (var i = tagBoxes.length - 1; i >= 0; i--) { var b = tagBoxes[i]; if (x >= b.x && x <= b.x + b.w && y >= b.y && y <= b.y + b.h) return b.t; } return null; }
+  function zoomAt(f, x, y) { f = Math.max(1.2 / cam.S, Math.min(90 / cam.S, f)); camFrom = null; userMoved = true; cam.S *= f; cam.cx = x - (x - cam.cx) * f; cam.cy = y - (y - cam.cy) * f; }
+  var ptrs = {}, drag = null, active = !framed, tip = $("tip");
+  function local(e) { var r = stage.getBoundingClientRect(); return { x: e.clientX - r.left, y: e.clientY - r.top }; }
+  stage.addEventListener("pointerdown", function (e) {
+    if (e.target.closest(".view")) return;
+    var p = local(e); ptrs[e.pointerId] = p; active = true; stage.setPointerCapture(e.pointerId);
+    var ids = Object.keys(ptrs);
+    if (ids.length === 2) { var a = ptrs[ids[0]], b = ptrs[ids[1]]; drag = { pinch: Math.hypot(a.x - b.x, a.y - b.y), mx: (a.x + b.x) / 2, my: (a.y + b.y) / 2, moved: 9 }; }
+    else drag = { x: p.x, y: p.y, pan: e.shiftKey || e.button === 2 || e.button === 1, moved: 0 };
+    tip.style.display = "none";
+  });
+  stage.addEventListener("pointermove", function (e) {
+    var p = local(e);
+    if (drag && ptrs[e.pointerId]) {
+      ptrs[e.pointerId] = p; var ids = Object.keys(ptrs);
+      if (drag.pinch && ids.length === 2) { var a = ptrs[ids[0]], b = ptrs[ids[1]], d = Math.hypot(a.x - b.x, a.y - b.y), mx = (a.x + b.x) / 2, my = (a.y + b.y) / 2;
+        zoomAt(d / drag.pinch, mx, my); cam.cx += mx - drag.mx; cam.cy += my - drag.my; drag.pinch = d; drag.mx = mx; drag.my = my; return; }
+      if (drag.pinch) return;
+      var dx = p.x - drag.x, dy = p.y - drag.y; drag.moved += Math.abs(dx) + Math.abs(dy); drag.x = p.x; drag.y = p.y;
+      if (drag.moved < 4) return;
+      camFrom = null; userMoved = true; stage.classList.add("drag");
+      if (drag.pan) { cam.cx += dx; cam.cy += dy; } else { cam.yaw -= dx * .006; cam.pitch = Math.max(.05, Math.min(1.5, cam.pitch + dy * .005)); }
+      return;
+    }
+    if (e.pointerType === "touch") return;
+    var t = tagAt(p.x, p.y); hov = t ? null : hit(p.x, p.y);
+    stage.classList.toggle("pt", !!t || !!(hov && (hov.F.tok || hov.F.vocab)));
+    if (hov) { var v = hov.F.v[hov.i][hov.j]; tip.innerHTML = hov.F.tip(hov.i, hov.j, v); tip.style.display = "block";
+      var tw = tip.offsetWidth, thh = tip.offsetHeight; tip.style.left = Math.max(4, Math.min(Wd - tw - 4, p.x + 14)) + "px"; tip.style.top = Math.max(4, p.y - thh - 10) + "px"; }
+    else tip.style.display = "none";
+  });
+  function up(e) {
+    var p = local(e), was = drag; delete ptrs[e.pointerId]; if (!Object.keys(ptrs).length) drag = null; stage.classList.remove("drag");
+    if (!was || was.pinch || was.moved >= 4 || e.type !== "pointerup") return;
+    var t = tagAt(p.x, p.y);
+    if (t) { if (t.click) t.click(); else go(t.go); return; }
+    var h = hit(p.x, p.y); if (!h) return;
+    if (h.F.pairs) { st.foc = h.i; if (h.j <= h.i) st.pair = h.j; renderPrompt(); renderPanel(); }
+    else if (h.F.tok) { if (h.F.units && h.F.v[h.i][h.j] > 0) { st.foc = h.i; st.unit = h.j; renderPrompt(); renderPanel(); } else setFoc(h.i); }
+    else if (h.F.id === "toktab") { st.word = h.i; renderCard(); }
+    else if (h.F.vocab) { st.out = h.i; renderCard(); }
+  }
+  stage.addEventListener("pointerup", up); stage.addEventListener("pointercancel", up);
+  stage.addEventListener("pointerleave", function () { hov = null; tip.style.display = "none"; if (framed && !drag) active = false; });
+  stage.addEventListener("contextmenu", function (e) { e.preventDefault(); });
+  stage.addEventListener("wheel", function (e) {
+    /* inside a page, the wheel belongs to the page until the model has been clicked (or pinched) */
+    if (!active && !e.ctrlKey) { var h = $("hint"); h.textContent = "click the model first, then scroll to zoom"; h.classList.add("flash"); setTimeout(function () { h.classList.remove("flash"); }, 1200); return; }
+    e.preventDefault(); var p = local(e); zoomAt(Math.exp(-e.deltaY * (e.ctrlKey ? .012 : .0022)), p.x, p.y);
+  }, { passive: false });
+  stage.addEventListener("dblclick", function (e) { if (e.target.closest(".view")) return; var p = local(e), h = hit(p.x, p.y); if (!h) return;
+    var c = fit({ boxes: [boxOf(h.F, 1)], yaw: cam.yaw, pitch: cam.pitch, sp: cam.sp, bh: cam.bh, pad: [90, 80, 90, 90] }); userMoved = true; flyTo(c); });
+  $("zIn").addEventListener("click", function () { zoomAt(1.35, Wd / 2, Hd / 2); });
+  $("zOut").addEventListener("click", function () { zoomAt(1 / 1.35, Wd / 2, Hd / 2); });
+  $("zReset").addEventListener("click", function () { stepCam(false); });
+
+  /* ---- start ---------------------------------------------------------------------------------------------- */
+  build(); renderPrompt();
+  if (window.ResizeObserver) new ResizeObserver(resize).observe(stage); else window.addEventListener("resize", resize);
+  var r0 = stage.getBoundingClientRect(); Wd = r0.width || 800; Hd = r0.height || 600;
+  cv.width = Math.round(Wd * (window.devicePixelRatio || 1)); cv.height = Math.round(Hd * (window.devicePixelRatio || 1)); ctx.setTransform(window.devicePixelRatio || 1, 0, 0, window.devicePixelRatio || 1, 0, 0);
+  go(parseInt((location.hash || "").slice(1), 10) || 0, true);
+  if (reduced) stepT0 = -1e7;
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
