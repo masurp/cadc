@@ -533,7 +533,7 @@
   function attRow() { return R.B[st.blk].a[st.foc].slice(0, st.foc + 1); }
 
   var STEPS = [
-  { ch: 0, title: "A language model, small enough to see",
+  { ch: 0, title: "A language model, small enough to understand",
     cam: overviewCam, rest: 1,
     pre: function (at, now) { if (reduced) return; var f = ((now - stepT0) / 620) % (4 * L + 6) - 1;
       floors.forEach(function (F) { var fl = F.block != null ? 1 + 4 * F.block + (F.off <= OFF.qkv ? 0 : F.off <= OFF.a ? 1 : F.off <= OFF.m ? 1.6 : F.off <= OFF.h ? 2.3 : 3) : F.top != null ? 4 * L + 1 + F.top / 8 : F.id === "x" ? 0 : -1;
