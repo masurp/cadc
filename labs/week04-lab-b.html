@@ -409,7 +409,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </div>
 <ol type="1">
 <li>Ollama running with <code>llama3.2:3b</code>, or the course key, as on Tuesday (see <a href="../setup.html#week4">the setup page</a>).</li>
-<li>Download <a href="files/week04-lab-b.zip">the lab folder</a> (version 13d1f704) and unzip it. It holds the Part 1 script, the Part 2 skeleton and the Dutch headlines.</li>
+<li>Download <a href="files/week04-lab-b.zip">the lab folder</a> (version a2492a18) and unzip it. It holds the Part 1 script, the Part 2 skeleton and the Dutch headlines.</li>
 <li>For Part 2, copy your <code>gold-corona.csv</code> from week 2 (Lab B folder) into this folder, and find your week 2 codebook.</li>
 </ol>
 <p>Trouble with the download, the zip, or a file R cannot find? See <a href="../setup.html#zip">Setup help</a>.</p>
@@ -583,13 +583,14 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <li>Load the packages and your gold standard.</li>
 <li>Turn your week 2 codebook into a prompt, with the rules you added after reading your disagreements.</li>
 <li>Version 1: run the model with a schema on all 50 tweets, and time it.</li>
-<li>Version 2: run the same prompt and model in free text, find the code in each reply with the parser the skeleton gives you, and time it.</li>
+<li>Version 2: run the same prompt and model in free text, find the code in each reply with the parser the skeleton gives you, count the replies without a code, and time it.</li>
 <li>Give each tweet the dictionary’s verdict, with your code from Homework 2.</li>
-<li>Make one table: your partner, the dictionary, both model versions and the majority baseline, with accuracy, κ, replies without a label, and time.</li>
-<li>List the tweets on which version 1 and your gold standard disagree.</li>
-<li>Fill in the six reporting lines from the lecture.</li>
+<li>Make one table: your partner, the dictionary, both model versions and the majority baseline, with accuracy, κ, replies without a code, and time.</li>
+<li>List the tweets on which version 1 and your gold standard disagree, and compare the model’s accuracy on the tweets you and your partner agreed on with the ones you did not.</li>
+<li>Fill in the six reporting lines from the lecture’s slide <em>What to report</em>.</li>
 </ol>
 <p>There is no trained classifier in the table: there is no training data for these tweets. Then three short reflections on your own results, and your AI disclosure.</p>
+<p>Expect modest scores. Your gold standard was made in one lab session, and a model cannot agree with it much better than your partner did. A low score is a result you can report; the reflections are graded on how well you explain it.</p>
 <div class="cadc-note cadc-note--check">
 <div class="cadc-note__label">
 <p>HANDING IN HOMEWORK 4</p>
