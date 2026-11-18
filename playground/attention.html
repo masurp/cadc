@@ -45,9 +45,9 @@ ul.task-list li input[type="checkbox"] {
 <link href="../site_libs/quarto-html/quarto-syntax-highlighting-bf27225e3a48a9273f3daa8f8e829971.css" rel="stylesheet" class="quarto-color-scheme-extra" id="quarto-text-highlighting-styles">
 <script src="../site_libs/bootstrap/bootstrap.min.js"></script>
 <link href="../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
-<link href="../site_libs/bootstrap/bootstrap-2e2e607a7148bff3b2e5edf6c9d4694a.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme" id="quarto-bootstrap" data-mode="light">
-<link href="../site_libs/bootstrap/bootstrap-dark-d8c0b66fa26e6d282b7f7daa13e4442f.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme quarto-color-alternate" id="quarto-bootstrap" data-mode="dark">
-<link href="../site_libs/bootstrap/bootstrap-2e2e607a7148bff3b2e5edf6c9d4694a.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme-extra" id="quarto-bootstrap" data-mode="light">
+<link href="../site_libs/bootstrap/bootstrap-c3971e29faa8a6ea69faeb8860c20087.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme" id="quarto-bootstrap" data-mode="light">
+<link href="../site_libs/bootstrap/bootstrap-dark-834d1ff7c5197f9afc03a1a015278663.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme quarto-color-alternate" id="quarto-bootstrap" data-mode="dark">
+<link href="../site_libs/bootstrap/bootstrap-c3971e29faa8a6ea69faeb8860c20087.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme-extra" id="quarto-bootstrap" data-mode="light">
 <script id="quarto-search-options" type="application/json">{
   "location": "navbar",
   "copy-button": false,
@@ -339,7 +339,7 @@ ul.task-list li input[type="checkbox"] {
 </ul>
 </div>
 </div>
-<figure class="cadc-explainer figure"><iframe src="../explainers/attention/index.html" title="Interactive explainer: attention" loading="lazy" style="width:100%;height:1215px;border:1px solid var(--cadc-hairline);border-radius:var(--cadc-r-lg);background:var(--cadc-surface)"></iframe><noscript><img src="../explainers/attention/fallback.png" alt="Interactive explainer: attention" style="width:100%;border:1px solid var(--cadc-hairline);border-radius:var(--cadc-r-lg)" class="figure-img"></noscript><figcaption class="cadc-explainer__cap">Interactive: try the switches. <a href="../explainers/attention/index.html" target="_blank" rel="noopener">Open full screen</a></figcaption></figure>
+<figure class="cadc-explainer figure"><iframe src="../explainers/attention/index.html" title="Interactive explainer: attention" loading="lazy" style="--cadc-explainer-h:1215px;width:100%;height:1215px;border:1px solid var(--cadc-hairline);border-radius:var(--cadc-r-lg);background:var(--cadc-surface)"></iframe><noscript><img src="../explainers/attention/fallback.png" alt="Interactive explainer: attention" style="width:100%;border:1px solid var(--cadc-hairline);border-radius:var(--cadc-r-lg)" class="figure-img"></noscript><figcaption class="cadc-explainer__cap">Interactive: try the switches. <a href="../explainers/attention/index.html" target="_blank" rel="noopener">Open full screen</a></figcaption></figure>
 <section id="what-to-notice" class="level3">
 <h3 data-anchor-id="what-to-notice">What to notice</h3>
 <p><strong>The grid shows every attention head BERT has</strong>: twelve layers of twelve heads. <strong>Up</strong> is later in the computation: each layer rewrites every word using the layer below, so order matters. <strong>Across</strong> is not a sequence: the twelve heads in one layer run simultaneously, never see each other, and are combined at the end of the layer. “Head 7” is a slot number, not a stage. The shading shows how much each head looks at the word that settles the meaning; about 70% of it sits in the bottom half.</p>

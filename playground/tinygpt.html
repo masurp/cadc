@@ -45,9 +45,9 @@ ul.task-list li input[type="checkbox"] {
 <link href="../site_libs/quarto-html/quarto-syntax-highlighting-bf27225e3a48a9273f3daa8f8e829971.css" rel="stylesheet" class="quarto-color-scheme-extra" id="quarto-text-highlighting-styles">
 <script src="../site_libs/bootstrap/bootstrap.min.js"></script>
 <link href="../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
-<link href="../site_libs/bootstrap/bootstrap-2e2e607a7148bff3b2e5edf6c9d4694a.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme" id="quarto-bootstrap" data-mode="light">
-<link href="../site_libs/bootstrap/bootstrap-dark-d8c0b66fa26e6d282b7f7daa13e4442f.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme quarto-color-alternate" id="quarto-bootstrap" data-mode="dark">
-<link href="../site_libs/bootstrap/bootstrap-2e2e607a7148bff3b2e5edf6c9d4694a.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme-extra" id="quarto-bootstrap" data-mode="light">
+<link href="../site_libs/bootstrap/bootstrap-c3971e29faa8a6ea69faeb8860c20087.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme" id="quarto-bootstrap" data-mode="light">
+<link href="../site_libs/bootstrap/bootstrap-dark-834d1ff7c5197f9afc03a1a015278663.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme quarto-color-alternate" id="quarto-bootstrap" data-mode="dark">
+<link href="../site_libs/bootstrap/bootstrap-c3971e29faa8a6ea69faeb8860c20087.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme-extra" id="quarto-bootstrap" data-mode="light">
 <script id="quarto-search-options" type="application/json">{
   "location": "navbar",
   "copy-button": false,
@@ -339,7 +339,7 @@ ul.task-list li input[type="checkbox"] {
 </ul>
 </div>
 </div>
-<figure class="cadc-explainer figure"><iframe src="../explainers/tinygpt/index.html" title="Inside a small language model: an interactive 3D model" loading="lazy" style="width:100%;height:860px;border:1px solid var(--cadc-hairline);border-radius:var(--cadc-r-lg);background:var(--cadc-surface)"></iframe><noscript><img src="../explainers/tinygpt/fallback.png" alt="Inside a small language model: an interactive 3D model" style="width:100%;border:1px solid var(--cadc-hairline);border-radius:var(--cadc-r-lg)" class="figure-img"></noscript><figcaption class="cadc-explainer__cap">Interactive: drag to turn the model, scroll to zoom, click a token to follow it. <a href="../explainers/tinygpt/index.html" target="_blank" rel="noopener">Open full screen</a></figcaption></figure>
+<figure class="cadc-explainer figure"><iframe src="../explainers/tinygpt/index.html" title="Inside a small language model: an interactive 3D model" loading="lazy" style="--cadc-explainer-h:860px;width:100%;height:860px;border:1px solid var(--cadc-hairline);border-radius:var(--cadc-r-lg);background:var(--cadc-surface)"></iframe><noscript><img src="../explainers/tinygpt/fallback.png" alt="Inside a small language model: an interactive 3D model" style="width:100%;border:1px solid var(--cadc-hairline);border-radius:var(--cadc-r-lg)" class="figure-img"></noscript><figcaption class="cadc-explainer__cap">Interactive: drag to turn the model, scroll to zoom, click a token to follow it. <a href="../explainers/tinygpt/index.html" target="_blank" rel="noopener">Open full screen</a></figcaption></figure>
 <section id="what-to-notice" class="level3">
 <h3 data-anchor-id="what-to-notice">What to notice</h3>
 <p><strong>An embedding is a row in a table that training filled in.</strong> In the second input step, switch the table to <em>before training</em>: random numbers, and a word’s nearest rows are arbitrary. After training, <em>good</em> sits next to <em>great</em> and <em>happy</em>, and <em>bad</em> next to <em>loud</em> and <em>slow</em>. Nobody told the model which words are positive. The rows moved together because those words are followed and preceded by the same words, which is the idea behind <span data-when-meta="cadc-hide.embeddings"><a href="../playground/embeddings.html">where words live</a></span>.</p>
