@@ -1,0 +1,1009 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Inside a small neural network — CADC</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap">
+<style>
+  /* --- tokens ---------------------------------------------------------------
+     A dark stage in both colour schemes, like the lecture figures it grew out
+     of (explainers/network, explainers/descent) and like its week 4 sibling
+     (explainers/tinygpt). Blue and orange are the sign of a number, green is
+     the accent, amber marks the gradient and the one thing a step is about. */
+  :root{
+    --bg:#10243a; --panel:#142c44; --surface:#16304a; --strip:#1b3550; --hair:#2c4560;
+    --ink:#e8eaec; --ink-2:#cfd6de; --ink-3:#a8c0d4; --muted:#7d9bb5; --faint:#4e6a86;
+    --accent:#4fc08d; --amber:#f0b250; --pos:#4aa8dc; --neg:#e07a52;
+    --font:"Space Grotesk", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+    --mono:ui-monospace, SFMono-Regular, Menlo, monospace;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0; height:100%}
+  body{font-family:var(--font); background:var(--bg); color:var(--ink); font-size:14px; line-height:1.5; overflow:hidden}
+  button,select,input{font:inherit; color:inherit}
+  .app{display:grid; grid-template-columns:minmax(0,1fr); grid-template-rows:auto minmax(0,1fr) auto; height:100vh; height:100dvh; min-height:400px}
+
+  /* --- top: the review ------------------------------------------------------ */
+  .top{display:flex; flex-wrap:wrap; gap:8px 10px; align-items:center; padding:9px 14px; border-bottom:1px solid var(--hair); background:var(--panel)}
+  .k{font-size:10px; font-weight:700; letter-spacing:.1em; text-transform:uppercase; color:var(--muted)}
+  .btn{font-size:12px; padding:4px 9px; cursor:pointer; border:1px solid var(--hair); border-radius:6px; background:var(--surface); color:var(--ink-2)}
+  .btn:hover:not(:disabled){border-color:var(--accent); color:var(--ink)}
+  .btn:disabled{opacity:.4; cursor:default}
+  .btn[aria-pressed=true]{background:var(--accent); border-color:var(--accent); color:#0c1c2c; font-weight:700}
+  .btn.go{background:var(--accent); border-color:var(--accent); color:#0c1c2c; font-weight:700}
+  .btn.go:hover:not(:disabled){color:#0c1c2c; filter:brightness(1.08)}
+  .top select, .top input[type=text]{font-size:12px; padding:4px 6px; border:1px solid var(--hair); border-radius:6px; background:var(--surface); color:var(--ink-2)}
+  .top select{max-width:230px} .top input[type=text]{width:190px}
+  .top input[type=text]::placeholder{color:var(--muted)}
+  .top input[type=text]:focus, .top select:focus{outline:none; border-color:var(--accent)}
+  .spacer{flex:1 1 0}
+  .status{font-size:11.5px; color:var(--ink-3); white-space:nowrap} .status b{color:var(--ink); font-family:var(--mono); font-weight:700}
+  #ownlab{display:none; gap:4px; align-items:center} #ownlab.on{display:inline-flex}
+
+  /* --- the stage and the panel ---------------------------------------------- */
+  .main{display:grid; grid-template-columns:minmax(0,1fr) 410px; min-height:0}
+  .stage{position:relative; min-height:0; overflow:hidden; touch-action:none; cursor:grab; user-select:none; -webkit-user-select:none}
+  .stage.drag{cursor:grabbing}
+  .stage.pt{cursor:pointer}
+  canvas{position:absolute; inset:0; width:100%; height:100%; display:block}
+  .tip{position:absolute; z-index:3; pointer-events:none; max-width:250px; padding:6px 9px; font-size:11.5px; line-height:1.4;
+       background:rgba(10,24,40,.94); border:1px solid var(--hair); border-radius:6px; color:var(--ink-2); display:none}
+  .tip b{color:var(--ink)} .tip .n{font-family:var(--mono); color:var(--amber); font-weight:700}
+  .view{position:absolute; right:10px; top:10px; display:flex; gap:4px; z-index:2}
+  .view .btn{background:rgba(22,48,74,.85); min-width:30px}
+  .legend{position:absolute; left:12px; bottom:9px; z-index:2; font-size:10.5px; color:var(--muted); pointer-events:none; display:flex; flex-wrap:wrap; gap:3px 12px; max-width:calc(100% - 24px)}
+  .legend i{display:inline-block; width:14px; height:3px; border-radius:2px; margin-right:4px; vertical-align:3px}
+  .legend .hint{transition:color .3s} .legend .hint.flash{color:var(--amber)}
+
+  .panel{border-left:1px solid var(--hair); background:var(--panel); overflow-y:auto; padding:16px 18px 22px; min-height:0}
+  .panel .kick{font-size:10.5px; font-weight:700; letter-spacing:.1em; color:var(--accent); text-transform:uppercase}
+  .panel h2{font-size:19px; line-height:1.25; margin:3px 0 10px; font-weight:700}
+  .panel p{margin:0 0 9px; color:var(--ink-2); font-size:13.5px}
+  .panel p b{color:var(--ink)} .tk{color:var(--ink); font-weight:700}
+  .panel .a{color:var(--accent); font-weight:700} .panel .m{color:var(--amber); font-weight:700}
+  .panel .p{color:var(--pos); font-weight:700} .panel .n{color:var(--neg); font-weight:700}
+  .num{font-family:var(--mono); color:var(--ink); font-weight:700; white-space:nowrap}
+  .card{margin-top:14px; padding:11px 12px 12px; background:var(--surface); border:1px solid var(--hair); border-radius:8px}
+  .card > .k{display:block; margin-bottom:7px}
+  .card .row{display:flex; flex-wrap:wrap; gap:4px; align-items:center; margin-bottom:9px}
+  .card .row .k{margin:0 4px 0 0}
+  .card small, .panel small.note{display:block; color:var(--muted); font-size:11.5px; margin-top:7px; line-height:1.45}
+  .res{margin-top:8px; font-size:12.5px; color:var(--ink-2)} .res b{font-family:var(--mono); color:var(--amber)}
+  table.t{width:100%; border-collapse:collapse; font-size:12px}
+  table.t th{font-size:10px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:var(--muted); text-align:right; padding:2px 4px 4px; border-bottom:1px solid var(--hair)}
+  table.t td{padding:3px 4px; text-align:right; font-family:var(--mono); font-size:11.5px; color:var(--ink-2); border-bottom:1px solid rgba(44,69,96,.5)}
+  table.t th:first-child, table.t td:first-child{text-align:left; font-family:var(--font); font-weight:700; color:var(--ink)}
+  table.t tr.sum td{border-bottom:0; color:var(--ink); font-weight:700}
+  table.t tr.dim td, table.t tr.dim td:first-child{color:var(--muted); font-weight:400}
+  table.t tr.pick{cursor:pointer} table.t tr.pick:hover td{background:rgba(79,192,141,.08)}
+  table.t tr.on td:first-child{color:var(--accent)}
+  table.t td .p, table.t td .n, table.t td .a, table.t td .m{font-weight:700}
+  table.t td.l{text-align:left} table.t td.txt{font-family:var(--font)}
+  .formula{font-family:var(--mono); font-size:12.5px; color:var(--ink); margin:2px 0 10px}
+  input[type=range]{width:100%; accent-color:var(--accent); margin:2px 0 8px; cursor:pointer}
+  .toks{display:flex; flex-wrap:wrap; gap:4px}
+  .toks span{font-size:12px; padding:3px 8px; border-radius:6px; border:1px dashed var(--faint); color:var(--muted)}
+  .toks span.in{border:1px solid var(--accent); color:var(--ink); font-weight:700}
+  .dotrow{display:flex; gap:3px; margin-top:8px}
+  .dotrow i{flex:1 1 0; height:14px; border-radius:3px; background:var(--neg); cursor:pointer; opacity:.9}
+  .dotrow i.ok{background:var(--accent)} .dotrow i.me{outline:2px solid var(--ink); outline-offset:1px}
+  svg.pl{display:block; width:100%; height:auto; margin-top:4px}
+  .pl .ax{stroke:var(--faint); stroke-width:1} .pl .gr{stroke:var(--faint); stroke-width:1; stroke-dasharray:3 4}
+  .pl .fn{fill:none; stroke:var(--accent); stroke-width:2} .pl .fn.dim{stroke:var(--faint); stroke-width:1.5}
+  .pl .tan{stroke:var(--amber); stroke-width:1.6} .pl .gd{stroke:var(--accent); stroke-width:1.1; stroke-dasharray:3 3}
+  .pl text{font-size:10.5px; fill:var(--muted); font-family:var(--font)} .pl text.v{font-size:12px; font-weight:700; fill:var(--accent)}
+  .pl text.v.m{fill:var(--amber)} .pl text.v.n{fill:var(--neg)}
+  .pl .pt{fill:var(--accent)} .pl .pt.m{fill:var(--amber)} .pl .pt.n{fill:var(--neg)}
+  .pl .bar{fill:var(--faint); cursor:pointer} .pl .bar.me{fill:var(--neg)} .pl .bar:hover{fill:var(--ink-3)}
+  .sw{display:inline-block; width:9px; height:9px; border-radius:50%; margin-right:5px; vertical-align:0}
+
+  /* --- bottom: the steps ----------------------------------------------------- */
+  .nav{display:flex; gap:10px; align-items:center; padding:8px 14px; border-top:1px solid var(--hair); background:var(--panel)}
+  .rail{flex:1 1 0; display:flex; gap:5px; min-width:0; overflow-x:auto; scrollbar-width:none}
+  .ch{flex:1 1 0; min-width:max-content; padding:4px 8px 5px; border-radius:6px; border:1px solid transparent; cursor:pointer; background:none; text-align:left}
+  .ch:hover{border-color:var(--hair)}
+  .ch.on{background:var(--surface); border-color:var(--hair)}
+  .ch span{display:block; font-size:10px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:var(--muted); white-space:nowrap}
+  .ch.on span{color:var(--accent)}
+  .dots{display:flex; gap:4px; margin-top:4px}
+  .dots i{width:14px; height:4px; border-radius:2px; background:var(--faint); cursor:pointer}
+  .dots i:hover{background:var(--ink-3)} .dots i.on{background:var(--accent)} .dots i.done{background:var(--muted)}
+  .count{font-size:11.5px; color:var(--muted); white-space:nowrap; min-width:48px; text-align:center}
+
+  @media (max-width: 860px){
+    .main{grid-template-columns:minmax(0,1fr); grid-template-rows:minmax(230px,46%) minmax(0,1fr)}
+    .panel{border-left:0; border-top:1px solid var(--hair)}
+    .ch span{display:none} .ch{min-width:0; padding:6px 4px} .dots{margin:0}
+    .legend .hint{display:none} .status{display:none}
+    .top input[type=text]{width:140px}
+  }
+</style>
+</head>
+<!-- ===========================================================================
+  PLAYGROUND, WEEK 3 — the lecture's small network (explainers/learning and
+  explainers/network) as a tool to walk through, with the loss landscape of
+  explainers/descent built in. The lecture figures stay as they are; this page
+  shares no code with them and repeats the model so that it is self-contained.
+
+  What is real: everything. The network is the lecture's (15 word counts in,
+  4 tanh units, one logistic output, cross-entropy, full-batch gradient
+  descent, same twenty reviews, same seeded start), trained in the browser on
+  load: 300 epochs are recorded so any epoch can be shown. With the default
+  settings (4 units, learning rate 0.6, start 1) the run is the lecture's run.
+  Every sum, probability, loss, slope and step on the page is computed from
+  the weights on screen for the review on screen; no number is written into
+  the text. The loss landscape is the average loss of this network over two of
+  its weights with all others held where they are, and the walks on it are
+  gradient descent on those two weights.
+
+  What the toy leaves out is said in the last step: batches, a penalty,
+  more layers, a test set. The comparison there is with the network deck 3
+  fits with mlp() (1,000 inputs, 16 hidden units, 3 classes).
+
+  Twenty-one steps in eight chapters; #N opens step N. The camera flies to each
+  step's view and is free at any time (drag, wheel, pinch).
+=========================================================================== -->
+<body>
+<div class="app">
+  <div class="top">
+    <span class="k">Review</span>
+    <select id="rev" aria-label="Choose one of the twenty training reviews"></select>
+    <input type="text" id="own" maxlength="70" placeholder="or type your own review" aria-label="Type your own review" autocomplete="off" spellcheck="false">
+    <span id="ownlab"><span class="k">Your label</span>
+      <button class="btn" data-lab="0">negative</button><button class="btn" data-lab="1">positive</button></span>
+    <span class="spacer"></span>
+    <span class="status" id="status"></span>
+  </div>
+  <div class="main">
+    <div class="stage" id="stage">
+      <canvas id="c" role="img" aria-label="A small neural network drawn in three dimensions. Fifteen input units, one per word, stand on the left, a hidden layer of units in the middle and one output unit on the right. Lines between the units are the weights. In the chapters on gradient descent the drawing shows the loss as a surface over two weights. The panel beside the drawing explains each step in text."></canvas>
+      <div class="view">
+        <button class="btn" id="zOut" title="Zoom out" aria-label="Zoom out">−</button>
+        <button class="btn" id="zIn" title="Zoom in" aria-label="Zoom in">+</button>
+        <button class="btn" id="zReset" title="Back to this step's view">Reset view</button>
+      </div>
+      <div class="legend"><span><i style="background:var(--pos)"></i>positive</span><span><i style="background:var(--neg)"></i>negative</span><span>thicker = further from zero</span>
+        <span class="hint" id="hint">drag to turn · scroll to zoom · shift-drag to move · hover for numbers</span></div>
+      <div class="tip" id="tip"></div>
+    </div>
+    <div class="panel" id="panel" aria-live="polite">
+      <div class="kick" id="kick"></div>
+      <h2 id="title"></h2>
+      <div id="body"></div>
+      <div id="card"></div>
+    </div>
+  </div>
+  <div class="nav">
+    <button class="btn" id="prev">‹ Back</button>
+    <div class="rail" id="rail"></div>
+    <span class="count" id="count"></span>
+    <button class="btn go" id="next">Next ›</button>
+  </div>
+</div>
+<noscript><p style="max-width:34em;margin:2em;font-family:sans-serif;color:#fff">This tool needs JavaScript: it trains a small neural network in your browser and draws it.</p></noscript>
+
+<script>
+(function () {
+  "use strict";
+  function $(id) { return document.getElementById(id); }
+  var reduced = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  var framed = window.top !== window.self;
+
+  /* ---- the data: the lecture's twenty reviews and fifteen words ------------------------------ */
+  var REVIEWS = [
+    ["Good, really good.", 1], ["Not good at all.", 0], ["A great cast.", 1], ["Not funny.", 0],
+    ["Great fun.", 1], ["Dull and slow.", 0], ["Brilliant and funny.", 1], ["Boring.", 0],
+    ["Funny and warm.", 1], ["A boring, slow mess.", 0], ["Loved every minute.", 1], ["Never good.", 0],
+    ["Not boring at all.", 1], ["Not great, not funny.", 0], ["Never dull.", 1], ["Slow and dull.", 0],
+    ["Good fun, great cast.", 1], ["A mess.", 0], ["Warm and brilliant.", 1], ["Not brilliant.", 0]
+  ];
+  var VOCAB = ["good", "great", "fun", "funny", "brilliant", "warm", "loved", "cast", "not", "never", "boring", "dull", "slow", "mess", "really"];
+  var NV = VOCAB.length, N = REVIEWS.length, MAXEP = 300, LETTERS = "ABCDEFGH";
+  function tokens(s) { return s.toLowerCase().replace(/[^a-z ]/g, " ").split(/\s+/).filter(Boolean); }
+  function featurise(s) { var x = VOCAB.map(function () { return 0; }); tokens(s).forEach(function (w) { var i = VOCAB.indexOf(w); if (i >= 0) x[i] += 1; }); return x; }
+  var X = REVIEWS.map(function (r) { return featurise(r[0]); }), Y = REVIEWS.map(function (r) { return r[1]; });
+  var NG = 1, NB = 12;                                    /* "Not good at all." and "Not boring at all." */
+
+  /* ---- the arithmetic: the network, its loss, its gradient, its training ---------------------
+     Kept in step with explainers/shared/mlp.js (same generator, same order of draws, same
+     update), so the default run here is the run the lecture shows. */
+  function rng(seed) { return function () { seed |= 0; seed = seed + 0x6D2B79F5 | 0; var t = Math.imul(seed ^ seed >>> 15, 1 | seed);
+    t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+  function init(H, seed) {
+    var r = rng(seed), s = .9, W1 = [], b1 = [], W2 = [], b2 = (r() * 2 - 1) * s;
+    for (var h = 0; h < H; h++) { W1.push(VOCAB.map(function () { return (r() * 2 - 1) * s; })); b1.push((r() * 2 - 1) * s); W2.push((r() * 2 - 1) * s); }
+    return { W1: W1, b1: b1, W2: W2, b2: b2 };
+  }
+  function sigmoid(z) { return 1 / (1 + Math.exp(-z)); }
+  function forward(p, x) {
+    var H = p.W1.length, z1 = [], a1 = [], z2 = p.b2;
+    for (var h = 0; h < H; h++) { var s = p.b1[h]; for (var i = 0; i < NV; i++) s += p.W1[h][i] * x[i]; z1.push(s); a1.push(Math.tanh(s)); z2 += p.W2[h] * a1[h]; }
+    return { z1: z1, a1: a1, z2: z2, out: sigmoid(z2) };
+  }
+  function lossOf(o, y) { return -(y * Math.log(o + 1e-9) + (1 - y) * Math.log(1 - o + 1e-9)); }
+  /* backpropagation for one review: the error at the output, each unit's share, a slope per weight */
+  function gradOne(p, x, y) {
+    var f = forward(p, x), H = p.W1.length, d2 = f.out - y, g = { f: f, d2: d2, d1: [], gW1: [], gb1: [], gW2: [], gb2: d2 };
+    for (var h = 0; h < H; h++) { var d1 = d2 * p.W2[h] * (1 - f.a1[h] * f.a1[h]); g.d1.push(d1); g.gb1.push(d1); g.gW2.push(d2 * f.a1[h]);
+      g.gW1.push(x.map(function (xi) { return d1 * xi; })); }
+    return g;
+  }
+  function gradAvg(p) {
+    var H = p.W1.length, G = { gW1: p.W1.map(function () { return VOCAB.map(function () { return 0; }); }), gb1: p.b1.map(function () { return 0; }), gW2: p.W2.map(function () { return 0; }), gb2: 0 };
+    for (var n = 0; n < N; n++) { var g = gradOne(p, X[n], Y[n]); G.gb2 += g.gb2 / N;
+      for (var h = 0; h < H; h++) { G.gW2[h] += g.gW2[h] / N; G.gb1[h] += g.gb1[h] / N; for (var i = 0; i < NV; i++) G.gW1[h][i] += g.gW1[h][i] / N; } }
+    return G;
+  }
+  function avgLoss(p) { var s = 0; for (var n = 0; n < N; n++) s += lossOf(forward(p, X[n]).out, Y[n]); return s / N; }
+  function clone(p) { return { W1: p.W1.map(function (r) { return r.slice(); }), b1: p.b1.slice(), W2: p.W2.slice(), b2: p.b2 }; }
+  function lerpP(a, b, k) { return { W1: a.W1.map(function (r, h) { return r.map(function (v, i) { return v + (b.W1[h][i] - v) * k; }); }),
+    b1: a.b1.map(function (v, h) { return v + (b.b1[h] - v) * k; }), W2: a.W2.map(function (v, h) { return v + (b.W2[h] - v) * k; }), b2: a.b2 + (b.b2 - a.b2) * k }; }
+  function snapshot(p) { var outs = X.map(function (x) { return forward(p, x).out; }), loss = 0, right = 0;
+    outs.forEach(function (o, i) { loss += lossOf(o, Y[i]); if ((o >= .5 ? 1 : 0) === Y[i]) right++; });
+    return { params: clone(p), outs: outs, loss: loss / N, right: right }; }
+  /* one epoch: all twenty forward, all twenty backward, one step */
+  function trainRun(H, lr, seed, epochs) {
+    var p = init(H, seed), hist = [snapshot(p)];
+    for (var ep = 1; ep <= epochs; ep++) { var G = gradAvg(p);
+      for (var h = 0; h < H; h++) { p.W2[h] -= lr * G.gW2[h]; p.b1[h] -= lr * G.gb1[h]; for (var i = 0; i < NV; i++) p.W1[h][i] -= lr * G.gW1[h][i]; }
+      p.b2 -= lr * G.gb2; hist.push(snapshot(p)); }
+    return hist;
+  }
+  function decisive(p, x, y) { var f = forward(p, x), best = 0, bv = -Infinity;
+    for (var h = 0; h < p.W1.length; h++) { var c = p.W2[h] * f.a1[h] * (y === 1 ? 1 : -1); if (c > bv) { bv = c; best = h; } } return best; }
+
+  /* ---- state ---------------------------------------------------------------------------------- */
+  var st = { step: 0, rev: NG, own: { text: "", x: VOCAB.map(function () { return 0; }), y: 0 }, unit: null, H: 4, lr: .6, seed: 1, ep: 0,
+             playing: false, wsel: null, nudge: 0, surf: false };
+  var HIST = null, ALLRIGHT = -1, REFEP = 65, stepT0 = 0;
+  function retrain() { HIST = trainRun(st.H, st.lr, st.seed, MAXEP);
+    ALLRIGHT = -1; for (var e = 0; e <= MAXEP; e++) if (HIST[e].right === N) { ALLRIGHT = e; break; }
+    REFEP = ALLRIGHT > 0 ? ALLRIGHT : MAXEP; st.ep = 0; st.unit = null; st.wsel = null; st.nudge = 0; st.playing = false; SURF = null; }
+  function P() { return HIST[st.ep].params; }
+  function Xc() { return st.rev >= 0 ? X[st.rev] : st.own.x; }
+  function Yc() { return st.rev >= 0 ? Y[st.rev] : st.own.y; }
+  function revText() { return st.rev >= 0 ? REVIEWS[st.rev][0] : (st.own.text || "(no words)"); }
+  function U() { return st.unit != null ? st.unit : decisive(HIST[REFEP].params, Xc(), Yc()); }
+  function un(h) { return LETTERS[st.H - 1 - h]; }                  /* unit 0 is drawn lowest, so A is on top */
+  function order() { var o = []; for (var h = st.H - 1; h >= 0; h--) o.push(h); return o; }
+  function active() { var x = Xc(), o = []; x.forEach(function (c, i) { if (c > 0) o.push(i); }); return o; }
+  function nWeights() { return NV * st.H + st.H + st.H + 1; }
+  /* one weight, addressed: a line into a hidden unit, a line into the output, or the output's bias */
+  function wsel() { return st.wsel || { k: "W2", h: U() === 0 && st.H > 1 ? 1 : 0 }; }
+  function wget(p, w) { return w.k === "W1" ? p.W1[w.h][w.i] : w.k === "W2" ? p.W2[w.h] : p.b2; }
+  function wset(p, w, v) { if (w.k === "W1") p.W1[w.h][w.i] = v; else if (w.k === "W2") p.W2[w.h] = v; else p.b2 = v; }
+  function gget(G, w) { return w.k === "W1" ? G.gW1[w.h][w.i] : w.k === "W2" ? G.gW2[w.h] : G.gb2; }
+  function wshort(w) { return w.k === "W1" ? "“" + VOCAB[w.i] + "” → " + un(w.h) : w.k === "W2" ? un(w.h) + " → output" : "output bias"; }
+  function wlong(w) { return w.k === "W1" ? "the line from " + q(VOCAB[w.i]) + " to unit " + un(w.h) : w.k === "W2" ? "the line from unit " + un(w.h) + " to the output" : "the bias of the output unit"; }
+  function axname(w) { return w.k === "b2" ? "output bias" : "weight " + wshort(w); }
+  function same(a, b) { return a.k === b.k && a.h === b.h && a.i === b.i; }
+  function pair() { var u = U(), a = { k: "W2", h: u }; return [a, st.H > 1 ? { k: "W2", h: u === 0 ? 1 : 0 } : { k: "b2" }]; }
+
+  /* ---- words and numbers ---------------------------------------------------------------------- */
+  function f2(v) { return (v < 0 ? "−" : "") + Math.abs(v).toFixed(2); }
+  function s2(v) { return (v < 0 ? "−" : "+") + Math.abs(v).toFixed(2); }
+  function f3(v) { return (v < 0 ? "−" : "") + Math.abs(v).toFixed(3); }
+  function s3(v) { return (v < 0 ? "−" : "+") + Math.abs(v).toFixed(3); }
+  function sg(v, s) { return '<span class="' + (v < 0 ? "n" : "p") + '">' + (s || s2(v)) + "</span>"; }
+  function q(w) { return '<span class="tk">“' + w + '”</span>'; }
+  function lab(y) { return '<span class="' + (y ? "p" : "n") + '">' + (y ? "positive" : "negative") + "</span>"; }
+  function num(s) { return '<span class="num">' + s + "</span>"; }
+  function list(a) { return a.length < 2 ? a.join("") : a.slice(0, -1).join(", ") + " and " + a[a.length - 1]; }
+  function nword(n) { return ["no", "one", "two", "three", "four", "five", "six", "seven", "eight"][n] || String(n); }
+  function cap(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
+  function esc(s) { return s.replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); }
+  function rv() { return '<span class="tk">“' + esc(revText()) + '”</span>'; }
+  function updown(g) { return g < 0 ? "up" : "down"; }
+
+  /* ---- colours ---------------------------------------------------------------------------------- */
+  var COL = { pos: [74, 168, 220], neg: [224, 122, 82], acc: [79, 192, 141], amber: [240, 178, 80], ink: [232, 234, 236],
+              slate: [70, 96, 122], deep: [22, 44, 68], bg: [16, 36, 58], muted: [125, 155, 181] };
+  function rgba(c, a) { return "rgba(" + Math.round(c[0]) + "," + Math.round(c[1]) + "," + Math.round(c[2]) + "," + Math.max(0, Math.min(1, a)).toFixed(3) + ")"; }
+  function mix(a, b, t) { return [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, a[2] + (b[2] - a[2]) * t]; }
+  function ease(t) { t = Math.max(0, Math.min(1, t)); return t < .5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2; }
+  function clamp01(t) { return Math.max(0, Math.min(1, t)); }
+  function wcol(v) { return v >= 0 ? COL.pos : COL.neg; }
+  function valCol(v) { return mix(COL.slate, wcol(v), .2 + .8 * Math.min(1, Math.abs(v))); }
+
+  /* ---- the scene ----------------------------------------------------------------------------------
+     x runs through the layers, y is up, z is depth. The columns bend back a little at their ends so
+     that the network has depth when it is turned. The loss surface stands to the right of the output. */
+  var XI = 0, XH = 9, XO = 17, SX = 31, SR = 5.5, SY0 = -3.5, SH = 6.5;
+  function bend(y) { return -.03 * y * y; }
+  function inPos(i) { var y = (7 - i) * 1.5; return [XI, y, bend(y)]; }
+  function hidPos(h) { var H = st.H, gap = H <= 4 ? 4.2 : 19.6 / (H - 1), y = (h - (H - 1) / 2) * gap; return [XH, y, bend(y)]; }
+  function outPos() { return [XO, 0, 0]; }
+  var BOX = { net: [-5.5, -11.5, -4, 20, 13.2, .5], inp: [-5.5, -11.5, -4, 4, 13.2, .5], hid: [-5.5, -11.5, -4, 12, 13.2, .5], out: [6.5, -9, -3, 21, 10, .5],
+              surf: [SX - SR - .5, SY0 - .4, -SR - .5, SX + SR + .5, SY0 + SH + 1.4, SR + .5] };
+
+  /* ---- camera -------------------------------------------------------------------------------- */
+  var cv = $("c"), ctx = cv.getContext("2d"), stage = $("stage"), Wd = 800, Hd = 600, DP = 260;
+  var cam = null, camFrom = null, camTo = null, camT0 = 0, CAMDUR = 1300, sway = 0, userMoved = false;
+  function prj(c, x, y, z, sw) {
+    x -= c.t[0]; y -= c.t[1]; z -= c.t[2];
+    var yw = c.yaw + (sw || 0), cy_ = Math.cos(yw), sy = Math.sin(yw), x1 = x * cy_ - z * sy, z1 = x * sy + z * cy_,
+        cp = Math.cos(c.pitch), sp = Math.sin(c.pitch), y1 = y * cp + z1 * sp, z2 = -y * sp + z1 * cp,
+        k = DP / Math.max(40, DP + z2 * Math.min(1, c.S / 5));
+    return { x: c.cx + x1 * c.S * k, y: c.cy - y1 * c.S * k, z: z2, k: k };
+  }
+  function PR(p) { return prj(cam, p[0], p[1], p[2], sway); }
+  /* a camera that shows the given box as large as the stage allows */
+  function fit(spec) {
+    var c = { yaw: spec.yaw, pitch: spec.pitch, S: 8, cx: Wd / 2, cy: Hd / 2, t: [0, 0, 0] }, b = spec.box;
+    c.t = [(b[0] + b[3]) / 2, (b[1] + b[4]) / 2, (b[2] + b[5]) / 2];
+    var pad = spec.pad || [86, 40, 74, 48];
+    if (Wd < 520) pad = [58, 30, 40, 30];
+    function bbox() { var r = [1e9, 1e9, -1e9, -1e9];
+      for (var n = 0; n < 8; n++) { var p = prj(c, b[n & 1 ? 3 : 0], b[n & 2 ? 4 : 1], b[n & 4 ? 5 : 2]);
+        r[0] = Math.min(r[0], p.x); r[1] = Math.min(r[1], p.y); r[2] = Math.max(r[2], p.x); r[3] = Math.max(r[3], p.y); } return r; }
+    for (var it = 0; it < 5; it++) {
+      var r = bbox(); c.S *= Math.min((Wd - pad[0] - pad[2]) / (r[2] - r[0]), (Hd - pad[1] - pad[3]) / (r[3] - r[1]));
+      c.S = Math.min(c.S, spec.maxS || 60); r = bbox();
+      c.cx += pad[0] + (Wd - pad[0] - pad[2]) / 2 - (r[0] + r[2]) / 2; c.cy += pad[1] + (Hd - pad[1] - pad[3]) / 2 - (r[1] + r[3]) / 2;
+    }
+    return c;
+  }
+  function lerp(a, b, t) { return a + (b - a) * t; }
+  function tweenCam(now) {
+    if (!camFrom) return;
+    var t = reduced ? 1 : ease((now - camT0) / CAMDUR);
+    ["yaw", "pitch", "cx", "cy"].forEach(function (k) { cam[k] = lerp(camFrom[k], camTo[k], t); });
+    cam.S = Math.exp(lerp(Math.log(camFrom.S), Math.log(camTo.S), t));
+    for (var i = 0; i < 3; i++) cam.t[i] = lerp(camFrom.t[i], camTo.t[i], t);
+    if (t >= 1) camFrom = null;
+  }
+  function flyTo(c, snap) { camTo = c; if (snap || !cam) { cam = JSON.parse(JSON.stringify(c)); camFrom = null; } else { camFrom = JSON.parse(JSON.stringify(cam)); camT0 = performance.now(); } }
+  function onSurf() { var v = STEPS[st.step].view; return v === "surf" || (v === "both" && st.surf); }
+  function stepCam(snap) { userMoved = false; var S_ = STEPS[st.step];
+    flyTo(fit(onSurf() ? { box: BOX.surf, yaw: -.62, pitch: .5, pad: [50, 50, 110, 70] } : S_.cam()), snap); }
+  function resize() {
+    var r = stage.getBoundingClientRect(), dpr = window.devicePixelRatio || 1;
+    if (r.width < 10 || r.height < 10) return;
+    Wd = r.width; Hd = r.height; cv.width = Math.round(Wd * dpr); cv.height = Math.round(Hd * dpr); ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    if (cam && !userMoved) stepCam(true);
+  }
+
+  /* ---- drawing: spheres, lines, labels ----------------------------------------------------------- */
+  function sphere(x, y, r, base, glow, a) {
+    ctx.save(); ctx.globalAlpha = a == null ? 1 : a;
+    if (glow) { var gl = ctx.createRadialGradient(x, y, r * .6, x, y, r * 2.5); gl.addColorStop(0, rgba(glow === true ? base : glow, .4)); gl.addColorStop(1, rgba(glow === true ? base : glow, 0)); ctx.fillStyle = gl; ctx.beginPath(); ctx.arc(x, y, r * 2.5, 0, 6.2832); ctx.fill(); }
+    var gr = ctx.createRadialGradient(x - r * .35, y - r * .4, r * .1, x, y, r);
+    gr.addColorStop(0, rgba(mix(base, COL.ink, .75), 1)); gr.addColorStop(.35, rgba(mix(base, COL.ink, .25), 1)); gr.addColorStop(1, rgba(mix(base, COL.deep, .55), 1));
+    ctx.fillStyle = gr; ctx.beginPath(); ctx.arc(x, y, r, 0, 6.2832); ctx.fill(); ctx.restore();
+  }
+  function seg(a, b, col, alpha, w, dash) { ctx.strokeStyle = rgba(col, alpha); ctx.lineWidth = w; ctx.setLineDash(dash || []); ctx.lineCap = "round"; ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke(); ctx.setLineDash([]); }
+  function arrow(a, b, col, label) {
+    ctx.save(); ctx.strokeStyle = rgba(col, 1); ctx.fillStyle = rgba(col, 1); ctx.lineWidth = 2.4; ctx.lineCap = "round";
+    ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
+    var ang = Math.atan2(b.y - a.y, b.x - a.x); ctx.beginPath(); ctx.moveTo(b.x, b.y); ctx.lineTo(b.x - 10 * Math.cos(ang - .45), b.y - 10 * Math.sin(ang - .45)); ctx.lineTo(b.x - 10 * Math.cos(ang + .45), b.y - 10 * Math.sin(ang + .45)); ctx.closePath(); ctx.fill();
+    ctx.restore();
+    if (label) text(label, b.x + (b.x >= a.x ? 9 : -9), b.y - 5, "700 11px", rgba(col, 1), b.x >= a.x ? "left" : "right");
+  }
+  var LBL = [];
+  var FONT = { t: ["700 10.5px", "#a8c0d4"], a: ["700 10.5px", "#4fc08d"], w: ["500 11.5px", "#7d9bb5"], wk: ["700 12px", "#e8eaec"], c: ["700 11px", "#4fc08d"], c0: ["500 11px", "#4e6a86"],
+               u: ["700 12.5px", "#e8eaec"], uq: ["700 12.5px", "#f0b250"], v: ["600 11.5px", "#cfd6de"], m: ["700 11.5px", "#f0b250"], p: ["700 11.5px", "#4aa8dc"], n: ["700 11.5px", "#e07a52"],
+               big: ["700 13px", "#e8eaec"], sm: ["500 10.5px", "#a8c0d4"] };
+  function label(s, p, cls, anchor, dx, dy, alpha) { LBL.push({ s: s, p: p, cls: cls || "t", anchor: anchor || "left", dx: dx || 0, dy: dy || 0, a: alpha == null ? 1 : alpha }); }
+  function text(s, x, y, font, fill, anchor, a) {
+    ctx.font = font + ' "Space Grotesk", system-ui, sans-serif'; ctx.textAlign = anchor || "left"; ctx.globalAlpha = a == null ? 1 : a;
+    var tw = ctx.measureText(s).width, xl = anchor === "center" ? x - tw / 2 : anchor === "right" ? x - tw : x;
+    if (xl < 4 && xl > -tw) x += 4 - xl; else if (xl + tw > Wd - 4 && xl < Wd) x -= xl + tw - Wd + 4;            /* a label half out of the stage is pulled back in */
+    ctx.lineJoin = "round"; ctx.lineWidth = 3.5; ctx.strokeStyle = "rgba(16,36,58,.9)"; ctx.fillStyle = fill; ctx.strokeText(s, x, y); ctx.fillText(s, x, y); ctx.globalAlpha = 1; ctx.textAlign = "left";
+  }
+  function drawLabels() { LBL.forEach(function (t) { if (t.a <= .02) return; var p = t.p.x != null ? t.p : PR(t.p), f = FONT[t.cls]; text(t.s, p.x + t.dx, p.y + t.dy, f[0], f[1], t.anchor, t.a); }); }
+
+  /* ---- drawing: the network ------------------------------------------------------------------------
+     c says what this step shows: c.input (a review is fed in), c.reach (0 nothing computed, 1 hidden
+     units, 2 output), c.reachU (a single hidden unit computed), c.focusU (follow this unit's lines),
+     c.outFocus (the lines into the output), c.flow1 / c.flow2 (signals travelling), c.grad (amber
+     slopes), c.sel (one weight picked out), c.elabels, c.hidText, c.outText. */
+  var HITS = [], EHITS = [], netA = 1, surfA = 0, hov = null;
+  function drawNet(c, at) {
+    var p = c.params || P(), x = Xc(), f = forward(p, x), H = st.H, u = U(), k, h, i;
+    var PI = [], PH = [], PO = PR(outPos()); for (i = 0; i < NV; i++) PI.push(PR(inPos(i))); for (h = 0; h < H; h++) PH.push(PR(hidPos(h)));
+    var zs = Math.max(.55, Math.min(2.2, cam.S / 17)), gmax = 1e-9, sel = c.sel;
+    HITS = []; EHITS = [];
+    if (c.grad) { c.grad.g2.forEach(function (g) { gmax = Math.max(gmax, Math.abs(g)); }); if (c.grad.g1) c.grad.g1.forEach(function (r) { r.forEach(function (g) { gmax = Math.max(gmax, Math.abs(g)); }); }); }
+    ctx.save(); ctx.globalAlpha = netA;
+    /* the lines */
+    for (h = 0; h < H; h++) for (i = 0; i < NV; i++) {
+      var w = p.W1[h][i], mag = Math.min(1, Math.abs(w) / 2.2), a = .14 + .5 * mag, on = x[i] > 0;
+      if (c.input) a *= on ? 1.3 : .3;
+      if (c.focusU != null) a *= h === c.focusU ? (on || !c.input ? 1.5 : .7) : .12;
+      if (c.outFocus) a *= .3;
+      if (c.grad) a *= .22;
+      var isSel = sel && sel.k === "W1" && sel.h === h && sel.i === i, isHov = hov && hov.e && hov.e.k === "W1" && hov.e.h === h && hov.e.i === i;
+      if (isSel || isHov) { seg(PI[i], PH[h], isSel ? COL.amber : COL.ink, .5, (1.2 + 3 * mag) * zs + 4); a = Math.max(a, .9); }
+      seg(PI[i], PH[h], wcol(w), a, (.5 + 2.6 * mag) * zs);
+      EHITS.push({ a: PI[i], b: PH[h], e: { k: "W1", h: h, i: i } });
+    }
+    for (h = 0; h < H; h++) {
+      var w2 = p.W2[h], m2 = Math.min(1, Math.abs(w2) / 2.2), a2 = .3 + .6 * m2;
+      if (c.focusU != null && !c.outFocus) a2 *= h === c.focusU ? .8 : .3;
+      if (c.grad) a2 *= .22;
+      var sel2 = sel && sel.k === "W2" && sel.h === h, hov2 = hov && hov.e && hov.e.k === "W2" && hov.e.h === h;
+      if (sel2 || hov2) { seg(PH[h], PO, sel2 ? COL.amber : COL.ink, .5, (1.2 + 3 * m2) * zs + 4); a2 = Math.max(a2, .95); }
+      seg(PH[h], PO, wcol(w2), a2, (.7 + 3 * m2) * zs);
+      EHITS.push({ a: PH[h], b: PO, e: { k: "W2", h: h } });
+    }
+    /* the gradient, in amber, travelling back from the output */
+    if (c.grad) {
+      var ph = c.grad.ph, back = reduced ? .5 : (at * .45) % 1;
+      for (h = 0; h < H; h++) { var g2 = Math.abs(c.grad.g2[h]) / gmax, e2 = clamp01(ph * 2.5);
+        if (e2 > 0) { var q2 = { x: lerp(PO.x, PH[h].x, e2), y: lerp(PO.y, PH[h].y, e2) }; seg(PO, q2, COL.amber, .25 + .7 * g2, (.6 + 4.6 * g2) * zs);
+          if (g2 > .04 && !reduced) dot(PO, PH[h], back, COL.amber, (1.6 + 2 * g2) * zs); } }
+      if (c.grad.g1) for (h = 0; h < H; h++) for (i = 0; i < NV; i++) { var g1 = Math.abs(c.grad.g1[h][i]) / gmax, e1 = clamp01((ph - .45) * 2.5);
+        if (e1 > 0 && g1 > .004) { var q1 = { x: lerp(PH[h].x, PI[i].x, e1), y: lerp(PH[h].y, PI[i].y, e1) }; seg(PH[h], q1, COL.amber, .2 + .75 * g1, (.5 + 4.6 * g1) * zs);
+          if (g1 > .08 && !reduced && e1 >= 1) dot(PH[h], PI[i], back, COL.amber, (1.4 + 2 * g1) * zs); } }
+    }
+    /* signals travelling forward */
+    if (!reduced && c.flow1) for (h = 0; h < H; h++) { if (c.flow1 !== true && c.flow1 !== h) continue;
+      for (i = 0; i < NV; i++) if (x[i] > 0) dot(PI[i], PH[h], (at * .55 + i * .13) % 1, mix(wcol(p.W1[h][i]), COL.ink, .45), 2.6 * zs); }
+    if (!reduced && c.flow2) for (h = 0; h < H; h++) dot(PH[h], PO, (at * .55 + h * .2) % 1, mix(wcol(p.W2[h] * f.a1[h]), COL.ink, .45), 3 * zs);
+    /* the units, far ones first */
+    var nodes = [];
+    for (i = 0; i < NV; i++) nodes.push({ P: PI[i], kind: "in", i: i });
+    for (h = 0; h < H; h++) nodes.push({ P: PH[h], kind: "hid", i: h });
+    nodes.push({ P: PO, kind: "out", i: 0 });
+    nodes.sort(function (m, n) { return n.P.z - m.P.z; });
+    nodes.forEach(function (nd) {
+      var S = cam.S * nd.P.k, r, base, glow = false, hv = hov && hov.n && hov.n.kind === nd.kind && hov.n.i === nd.i;
+      if (nd.kind === "in") { var lit = c.input && x[nd.i] > 0; r = (lit ? .56 : .44) * S; base = lit ? mix(COL.acc, COL.ink, .35) : COL.slate; glow = lit; }
+      else if (nd.kind === "hid") { var shown = c.reach >= 1 || c.reachU === nd.i; r = .95 * S; base = shown ? valCol(f.a1[nd.i]) : COL.slate;
+        glow = c.focusU === nd.i ? COL.amber : (shown && Math.abs(f.a1[nd.i]) > .5); }
+      else { r = 1.2 * S; base = c.reach >= 2 ? valCol((f.out - .5) * 2) : COL.slate; glow = c.outGlow || (c.reach >= 2); }
+      r = Math.max(2.5, r); if (hv) glow = COL.ink;
+      sphere(nd.P.x, nd.P.y, r, base, glow, netA);
+      HITS.push({ x: nd.P.x, y: nd.P.y, r: Math.max(r, 7), n: { kind: nd.kind, i: nd.i } });
+      nd.r = r;
+      if (nd.kind === "in") {
+        var lit2 = c.input && x[nd.i] > 0;
+        label(VOCAB[nd.i], nd.P, lit2 ? "wk" : "w", "right", -r - (c.input ? 22 : 8), 4, netA * (c.focusOut ? .5 : 1));
+        if (c.input) label(String(x[nd.i]), nd.P, lit2 ? "c" : "c0", "right", -r - 7, 4, netA);
+      } else if (nd.kind === "hid") {
+        /* with many units there is no room above and below a unit: the letter goes inside, the number beside */
+        if (H > 4) label(un(nd.i), nd.P, c.focusU === nd.i ? "uq" : "u", "center", 0, 4.5, netA); else label(un(nd.i), nd.P, c.focusU === nd.i ? "uq" : "u", "center", 0, -r - 6, netA);
+        if (c.hidText && c.hidText[nd.i] != null) { if (H > 4) label(c.hidText[nd.i][0], nd.P, c.hidText[nd.i][1] || "v", "left", r + 6, 4, netA); else label(c.hidText[nd.i][0], nd.P, c.hidText[nd.i][1] || "v", "center", 0, r + 15, netA); }
+      } else if (c.outText) c.outText.forEach(function (ln, n) { label(ln[0], nd.P, ln[1] || "v", "center", 0, r + 16 + n * 15, netA); });
+    });
+    ctx.restore();
+    /* numbers on lines */
+    (c.elabels || []).forEach(function (L) { var A = L.e.k === "W1" ? PI[L.e.i] : PH[L.e.h], B = L.e.k === "W1" ? PH[L.e.h] : PO, t = L.t == null ? .5 : L.t;
+      label(L.s, { x: lerp(A.x, B.x, t), y: lerp(A.y, B.y, t) }, L.cls, "center", 0, 4, netA); });
+    /* layer names */
+    var top = 12.4;
+    label(Wd < 520 ? "INPUT" : "INPUT · WORD COUNTS", [XI, top, bend(top)], "t", "center", -20, 0, netA); label(Wd < 520 ? "HIDDEN" : "HIDDEN LAYER", [XH, top, bend(top)], "t", "center", 0, 0, netA); label("OUTPUT", [XO, top, 0], "t", "center", 0, 0, netA);
+  }
+  function dot(A, B, t, col, r) { var x = lerp(A.x, B.x, t), y = lerp(A.y, B.y, t), fade = Math.sin(Math.PI * t); ctx.fillStyle = rgba(col, .25 + .75 * fade); ctx.beginPath(); ctx.arc(x, y, r, 0, 6.2832); ctx.fill(); }
+
+  /* ---- the loss landscape: the average loss over two weights, all others held ------------------------
+     A patch of 3 either side of where the two weights stand now. The walks are gradient descent on the
+     two weights alone, each step against the slope at the place it starts from. */
+  var SURF = null, GN = 22, RANGE = 3, RACE = [{ eta: .6, col: COL.pos }, { eta: 6, col: COL.acc }, { eta: 22, col: COL.neg }], WALK = 40;
+  function surface() {
+    var pr = pair(), key = [st.ep, st.H, st.lr, st.seed, pr[0].h, pr[1].k, pr[1].h].join("|");
+    if (SURF && SURF.key === key) return SURF;
+    var base = clone(P()), ca = wget(base, pr[0]), cb = wget(base, pr[1]);
+    function L(a, b) { wset(base, pr[0], a); wset(base, pr[1], b); return avgLoss(base); }
+    function grad(a, b) { var e = 1e-4; return [(L(a + e, b) - L(a - e, b)) / (2 * e), (L(a, b + e) - L(a, b - e)) / (2 * e)]; }
+    function walk(eta) { var pt = [ca, cb], path = [[ca, cb, L(ca, cb)]]; for (var n = 0; n < WALK; n++) { var g = grad(pt[0], pt[1]); pt = [pt[0] - eta * g[0], pt[1] - eta * g[1]]; path.push([pt[0], pt[1], L(pt[0], pt[1])]); } return path; }
+    var grid = [], lo = 1e9, hi = -1e9, at = null;
+    for (var i = 0; i <= GN; i++) { var row = []; for (var j = 0; j <= GN; j++) { var a = ca - RANGE + 2 * RANGE * i / GN, b = cb - RANGE + 2 * RANGE * j / GN, l = L(a, b);
+      if (l < lo) { lo = l; at = [a, b]; } hi = Math.max(hi, l); row.push([a, b, l]); } grid.push(row); }
+    /* the patch is turned so that its lowest corner faces the viewer and no wall hides the valley */
+    var cn = [[0, 0], [0, GN], [GN, 0], [GN, GN]].sort(function (m, n) { return grid[m[0]][m[1]][2] - grid[n[0]][n[1]][2]; })[0];
+    SURF = { key: key, pr: pr, ca: ca, cb: cb, fa: cn[0] ? 1 : -1, fb: cn[1] ? -1 : 1, L: L, g: grad(ca, cb), here: L(ca, cb), grid: grid, lo: lo, hi: hi, lowAt: at,
+             path: walk(st.lr), races: RACE.map(function (r) { return { eta: r.eta, col: r.col, path: walk(r.eta) }; }) };
+    return SURF;
+  }
+  function sw(S, a, b, l) { return [SX + S.fa * (a - S.ca) / RANGE * SR, SY0 + (Math.min(l, S.hi) - S.lo) / (S.hi - S.lo || 1) * SH, S.fb * (b - S.cb) / RANGE * SR]; }
+  function inPatch(S, pt) { return Math.abs(pt[0] - S.ca) <= RANGE && Math.abs(pt[1] - S.cb) <= RANGE; }
+  var LOW = [36, 74, 110], MIDC = [42, 130, 122], HIGH = [240, 178, 80];
+  function shade(t) { return t < .5 ? mix(LOW, MIDC, t * 2) : mix(MIDC, HIGH, (t - .5) * 2); }
+  function drawSurf(c, at) {
+    if (surfA < .02) return;
+    var S = surface(), Pg = S.grid.map(function (r) { return r.map(function (g) { return PR(sw(S, g[0], g[1], g[2])); }); }), quads = [];
+    for (var i = 0; i < GN; i++) for (var j = 0; j < GN; j++) quads.push({ i: i, j: j, z: (Pg[i][j].z + Pg[i + 1][j + 1].z) / 2 });
+    quads.sort(function (m, n) { return n.z - m.z; });
+    ctx.save(); ctx.globalAlpha = surfA;
+    quads.forEach(function (qd) { var a = Pg[qd.i][qd.j], b = Pg[qd.i + 1][qd.j], d = Pg[qd.i + 1][qd.j + 1], e = Pg[qd.i][qd.j + 1],
+      l = (S.grid[qd.i][qd.j][2] + S.grid[qd.i + 1][qd.j + 1][2]) / 2, col = shade((l - S.lo) / (S.hi - S.lo || 1));
+      ctx.fillStyle = rgba(col, .93); ctx.strokeStyle = rgba(mix(col, COL.ink, .35), .35); ctx.lineWidth = .6;
+      ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.lineTo(d.x, d.y); ctx.lineTo(e.x, e.y); ctx.closePath(); ctx.fill(); ctx.stroke(); });
+    function trail(path, upto, col) { var n = Math.min(upto, path.length - 1), k, pts = [];
+      for (k = 0; k <= n; k++) { if (!inPatch(S, path[k]) || !isFinite(path[k][2])) break; pts.push(PR(sw(S, path[k][0], path[k][1], path[k][2] + .0))); }
+      if (pts.length > 1) { ctx.strokeStyle = rgba(col, .9); ctx.lineWidth = 2; ctx.beginPath(); pts.forEach(function (pt, m) { if (m) ctx.lineTo(pt.x, pt.y); else ctx.moveTo(pt.x, pt.y); }); ctx.stroke(); }
+      pts.forEach(function (pt, m) { if (m && m < pts.length - 1) sphere(pt.x, pt.y, 2.4, col, false, surfA); });
+      var last = pts[pts.length - 1]; if (last) sphere(last.x, last.y, Math.max(5, .3 * cam.S * last.k), col, true, surfA);
+      return pts.length - 1 < n; }
+    var here = PR(sw(S, S.ca, S.cb, S.here));
+    if (c.walk === "one") { var k1 = reduced ? WALK : Math.max(0, Math.floor((at - .6) / .22)); trail(S.path, k1, COL.acc); c.walkK = Math.min(k1, WALK); }
+    else if (c.walk === "race") { var k3 = reduced ? WALK : Math.max(0, Math.floor((at - .6) / .22)); S.races.forEach(function (r) { trail(r.path, k3, r.col); }); }
+    else sphere(here.x, here.y, Math.max(6, .34 * cam.S * here.k), COL.amber, true, surfA);
+    if (c.arrows) { var g = S.g, n = Math.hypot(g[0], g[1]) || 1, ua = g[0] / n * 1.1, ub = g[1] / n * 1.1;
+      arrow(here, PR(sw(S, S.ca + ua, S.cb + ub, S.L(S.ca + ua, S.cb + ub))), COL.amber, "gradient: steepest uphill");
+      arrow(here, PR(sw(S, S.ca - ua, S.cb - ub, S.L(S.ca - ua, S.cb - ub))), COL.acc, "the step: the other way"); }
+    ctx.restore();
+    /* the two axes run along the near edges, with the weight's value at either end */
+    label(axname(S.pr[0]), [SX, SY0 - .4, -SR - 1.5], "t", "center", 0, 22, surfA);
+    label(f2(S.ca - S.fa * RANGE), [SX - SR, SY0 - .4, -SR - .6], "sm", "center", 0, 12, surfA); label(f2(S.ca + S.fa * RANGE), [SX + SR, SY0 - .4, -SR - .6], "sm", "center", 0, 12, surfA);
+    label(axname(S.pr[1]), [SX + SR + 1.5, SY0 - .4, 0], "t", "left", 6, 16, surfA);
+    label(f2(S.cb - S.fb * RANGE), [SX + SR + .6, SY0 - .4, -SR], "sm", "left", 4, 4, surfA); label(f2(S.cb + S.fb * RANGE), [SX + SR + .6, SY0 - .4, SR], "sm", "left", 4, 4, surfA);
+    label("AVERAGE LOSS", [SX - SR, SY0 + SH + .9, SR], "t", "center", 0, 0, surfA);
+    if (!c.walk) label("the network now · loss " + S.here.toFixed(2), here, "m", "left", 12, -10, surfA);
+  }
+
+  /* ---- small plots for the panel (SVG as a string) ---------------------------------------------- */
+  function plot(o) {
+    var Wp = 350, Hp = o.h || 150, ml = 34, mr = 12, mt = 12, mb = o.xlab ? 36 : 22, w = Wp - ml - mr, h = Hp - mt - mb;
+    function sx(v) { return ml + (v - o.xr[0]) / (o.xr[1] - o.xr[0]) * w; } function sy(v) { return mt + h - (Math.max(o.yr[0], Math.min(o.yr[1], v)) - o.yr[0]) / (o.yr[1] - o.yr[0]) * h; }
+    var s = '<svg class="pl" viewBox="0 0 ' + Wp + " " + Hp + '" role="img" aria-label="' + (o.aria || "") + '">';
+    s += '<line class="ax" x1="' + ml + '" y1="' + (mt + h) + '" x2="' + (ml + w) + '" y2="' + (mt + h) + '"/><line class="ax" x1="' + ml + '" y1="' + mt + '" x2="' + ml + '" y2="' + (mt + h) + '"/>';
+    (o.hl || []).forEach(function (v) { s += '<line class="gr" x1="' + ml + '" y1="' + sy(v) + '" x2="' + (ml + w) + '" y2="' + sy(v) + '"/>'; });
+    (o.yt || []).forEach(function (t) { s += '<text x="' + (ml - 6) + '" y="' + (sy(t[0]) + 4) + '" text-anchor="end">' + t[1] + "</text>"; });
+    (o.xt || []).forEach(function (t) { s += '<text x="' + sx(t[0]) + '" y="' + (mt + h + 14) + '" text-anchor="middle">' + t[1] + "</text>"; });
+    if (o.xlab) s += '<text x="' + (ml + w) + '" y="' + (mt + h + 29) + '" text-anchor="end">' + o.xlab + "</text>";
+    function path(f, a, b, cls) { var d = ""; for (var k = 0; k <= 120; k++) { var v = a + (b - a) * k / 120; d += (k ? " L" : "M") + sx(v).toFixed(1) + "," + sy(f(v)).toFixed(1); } return '<path class="fn ' + (cls || "") + '" d="' + d + '"/>'; }
+    if (o.f) s += path(o.f, o.xr[0], o.xr[1]);
+    if (o.extra) s += o.extra(sx, sy, path);
+    (o.pts || []).forEach(function (pt) { var px = sx(pt.x), py = sy(pt.y);
+      if (pt.guide) s += '<line class="gd" x1="' + px + '" y1="' + (mt + h) + '" x2="' + px + '" y2="' + py + '"/><line class="gd" x1="' + ml + '" y1="' + py + '" x2="' + px + '" y2="' + py + '"/>';
+      s += '<circle class="pt ' + (pt.cls || "") + '" cx="' + px + '" cy="' + py + '" r="5"/>';
+      if (pt.lab) { var right = px < ml + w * .55; s += '<text class="v ' + (pt.cls || "") + '" x="' + (px + (right ? 9 : -9)) + '" y="' + (py + (pt.dy != null ? pt.dy : (py < mt + 24 ? 16 : -9))) + '" text-anchor="' + (right ? "start" : "end") + '">' + pt.lab + "</text>"; } });
+    return s + "</svg>";
+  }
+
+  /* ---- pieces of the panel that several steps use ------------------------------------------------- */
+  function verdict(f) { var says = f.out >= .5 ? 1 : 0, y = Yc();
+    return says === y ? "The network says " + lab(says) + ", and so did the human coder." : "The network says " + lab(says) + ", and the human coder said " + lab(y) + "."; }
+  function unitRow() { return '<div class="row"><span class="k">Follow unit</span>' + order().map(function (h) { return '<button class="btn" data-act="unit" data-v="' + h + '" aria-pressed="' + (h === U()) + '">' + un(h) + "</button>"; }).join("") + "</div>"; }
+  function epochNote() { return st.ep === 0 ? "The network is at epoch 0. Its weights are the random numbers it started with." : "The network is at epoch " + st.ep + " of its training."; }
+  function nudgeDyn() {
+    var w = wsel(), p = P(), v0 = wget(p, w), v1 = v0 + st.nudge, G = gradAvg(p), g = gget(G, w), L0 = avgLoss(p), pp = clone(p);
+    function L(v) { wset(pp, w, v); return avgLoss(pp); }
+    var L1 = L(v1), lo = 1e9, hi = -1e9; for (var k = 0; k <= 40; k++) { var l = L(v0 - 3 + 6 * k / 40); lo = Math.min(lo, l); hi = Math.max(hi, l); }
+    var pad = (hi - lo) * .12 + .01, yr = [Math.max(0, lo - pad), hi + pad];
+    var s = '<table class="t"><tr><th></th><th>before</th><th>now</th></tr><tr><td>The weight</td><td>' + f2(v0) + "</td><td>" + f2(v1) + "</td></tr>" +
+      '<tr class="sum"><td>Average loss</td><td>' + f3(L0) + '</td><td><span class="' + (L1 < L0 - 5e-4 ? "a" : L1 > L0 + 5e-4 ? "n" : "") + '">' + f3(L1) + "</span></td></tr></table>";
+    s += plot({ h: 160, xr: [v0 - 3, v0 + 3], yr: yr, f: L, aria: "The average loss as this one weight changes",
+      xt: [[v0 - 3, f2(v0 - 3)], [v0, f2(v0)], [v0 + 3, f2(v0 + 3)]], yt: [[yr[0], yr[0].toFixed(2)], [yr[1], yr[1].toFixed(2)]], xlab: "the weight on " + wshort(w),
+      extra: function (sx, sy) { return '<line class="tan" x1="' + sx(v0 - 1.1) + '" y1="' + sy(L0 - 1.1 * g) + '" x2="' + sx(v0 + 1.1) + '" y2="' + sy(L0 + 1.1 * g) + '"/>'; },
+      pts: [{ x: v0, y: L0, cls: "m", lab: st.nudge === 0 ? "now" : "" }].concat(st.nudge !== 0 ? [{ x: v1, y: L1, lab: f3(L1), guide: true }] : []) });
+    s += '<div class="res">The amber line is the slope of the curve where the weight stands: <b>' + f3(g) + "</b>. " +
+      (Math.abs(g) < 5e-4 ? "The curve is flat here, so moving this weight a little changes almost nothing." :
+       g < 0 ? "A negative slope means that the loss falls when the weight grows, so this weight should go <b>up</b>." : "A positive slope means that the loss rises when the weight grows, so this weight should go <b>down</b>.") + "</div>";
+    return s;
+  }
+  function trainDyn() {
+    var hs = HIST[st.ep], f = forward(P(), Xc()), top = Math.min(3, Math.max(1, Math.max.apply(null, HIST.map(function (s) { return s.loss; }))));
+    var s = '<table class="t"><tr><td>Epoch</td><td>' + st.ep + " of " + MAXEP + '</td></tr><tr><td>Average loss</td><td>' + f3(hs.loss) + '</td></tr><tr><td>Reviews on the right side of 0.5</td><td>' + hs.right + " of " + N + "</td></tr>" +
+      '<tr class="sum"><td>This review, p(positive)</td><td>' + sg(f.out - .5, f.out.toFixed(2)) + "</td></tr></table>";
+    s += plot({ h: 140, xr: [0, MAXEP], yr: [0, top], aria: "The average loss over the epochs of training", xt: [[0, "0"], [MAXEP / 2, String(MAXEP / 2)], [MAXEP, String(MAXEP)]], yt: [[0, "0"], [top, top.toFixed(1)]], xlab: "epoch",
+      extra: function (sx, sy) { var d = "", e = ""; HIST.forEach(function (h, k) { var pt = (k ? " L" : "M") + sx(k).toFixed(1) + "," + sy(h.loss).toFixed(1); d += pt; if (k <= st.ep) e += pt; });
+        return '<path class="fn dim" d="' + d + '"/><path class="fn" d="' + e + '"/>'; },
+      pts: [{ x: st.ep, y: hs.loss, lab: "loss " + hs.loss.toFixed(2) }] });
+    s += '<div class="dotrow" title="One box per review: green when the network is on the right side of 0.5">' + hs.outs.map(function (o, i) { return '<i data-act="rev" data-v="' + i + '" class="' + ((o >= .5 ? 1 : 0) === Y[i] ? "ok" : "") + (i === st.rev ? " me" : "") + '" title="' + esc(REVIEWS[i][0]) + " p(positive) " + o.toFixed(2) + '"></i>'; }).join("") + "</div>";
+    return s;
+  }
+  function chips(act, items, cur, label, fmt) { return '<div class="row"><span class="k">' + label + "</span>" + items.map(function (v) { return '<button class="btn" data-act="' + act + '" data-v="' + v + '" aria-pressed="' + (v === cur) + '">' + (fmt ? fmt(v) : v) + "</button>"; }).join("") + "</div>"; }
+  function viewRow() { return '<div class="row" style="margin:10px 0 0"><span class="k">Show</span><button class="btn" data-act="surf" data-v="0" aria-pressed="' + !st.surf + '">the network</button><button class="btn" data-act="surf" data-v="1" aria-pressed="' + st.surf + '">the loss landscape</button></div>'; }
+  function replayBtn() { return reduced ? "" : '<div class="row" style="margin:9px 0 0"><button class="btn" data-act="replay">↻ Play again</button></div>'; }
+
+  /* ---- the steps -----------------------------------------------------------------------------------
+     Each step: chapter, title, camera, the text (html), an optional card, and cfg(at): what the
+     drawing shows at `at` seconds into the step. All numbers in the text are computed here. */
+  function camNet() { return { box: BOX.net, yaw: -.36, pitch: .13 }; }
+  function wl(e, s, cls, t) { return { e: e, s: s, cls: cls || (wget(P(), e) < 0 ? "n" : "p"), t: t }; }
+  function actLabels(u, t) { return active().map(function (i) { var e = { k: "W1", h: u, i: i }; return wl(e, f2(wget(P(), e)), null, t || .62); }); }
+  var CHAPTERS = ["The network", "Input", "Hidden layer", "Output", "Loss", "Backpropagation", "Gradient descent", "Learning"];
+  var STEPS = [
+    { ch: 0, title: "A network of units", cam: camNet,
+      html: function () { return "<p>This is the network from the lecture. It reads a short film review and returns the probability that the review is positive.</p>" +
+        "<p>It has three layers. The <b>input layer</b> has one unit for each of " + NV + " words. The <b>hidden layer</b> has " + nword(st.H) + " unit" + (st.H > 1 ? "s, named A to " + LETTERS[st.H - 1] : ", named A") + ". The <b>output layer</b> is a single unit.</p>" +
+        "<p>Every line between two units is a <b>weight</b>, which is one number. Each hidden unit and the output unit also have a number of their own, the bias. In total the network has " + num(nWeights()) + " numbers that training can change.</p>" +
+        "<p>" + epochNote() + " A " + '<span class="p">blue</span> line is a positive weight, an <span class="n">orange</span> line a negative one, and a thicker line is a larger weight.</p>'; },
+      card: function () { var hs = HIST[st.ep];
+        return '<span class="k">The training set: twenty reviews with a human label</span><table class="t"><tr><th>Review</th><th>Human</th><th>p(positive)</th></tr>' +
+          REVIEWS.map(function (r, i) { var o = hs.outs[i], ok = (o >= .5 ? 1 : 0) === Y[i];
+            return '<tr class="pick' + (i === st.rev ? " on" : "") + '" data-act="rev" data-v="' + i + '"><td>' + r[0] + '</td><td class="txt">' + lab(r[1]) + "</td><td>" + o.toFixed(2) + " " + (ok ? '<span class="a">✓</span>' : '<span class="n">✗</span>') + "</td></tr>"; }).join("") +
+          "</table><small>Click a review to follow it through the network. The last column is the network's answer at epoch " + st.ep + ".</small>"; },
+      cfg: function () { return { input: false, reach: 0 }; } },
+
+    { ch: 1, title: "A review becomes numbers", cam: function () { return { box: BOX.inp, yaw: -.3, pitch: .12, pad: [96, 40, 60, 48] }; },
+      html: function () { var x = Xc(), act = active(), out = st.rev < 0 && !st.own.typed ? [] : tokens(revText()).filter(function (w, k, a) { return VOCAB.indexOf(w) < 0 && a.indexOf(w) === k; });
+        return "<p>The network cannot read. It gets the review " + rv() + " as <b>word counts</b>: for each of its " + NV + " words, how often the word occurs in the review.</p>" +
+          "<p>" + (act.length ? "Here: " + list(act.map(function (i) { return q(VOCAB[i]) + " " + x[i]; })) + ", and 0 for the other " + nword(NV - act.length) + " words." : "None of the " + NV + " words occurs in this review, so every count is 0.") +
+          (out.length ? " The network has no unit for " + list(out.map(q)) + ", so it never sees " + (out.length > 1 ? "these words" : "this word") + "." : "") + "</p>" +
+          "<p>The order of the words is lost at this point. What reaches the network is a bag of words, as in weeks 1 and 2.</p>"; },
+      card: function () { var tk = st.rev < 0 && !st.own.typed ? active().map(function (i) { return VOCAB[i]; }) : tokens(revText());
+        return '<span class="k">The review, word by word</span><div class="toks">' + (tk.length ? tk.map(function (w) { return '<span class="' + (VOCAB.indexOf(w) >= 0 ? "in" : "") + '">' + w + "</span>"; }).join("") : '<span>no words</span>') +
+          "</div><small>Words with a solid frame have an input unit. Choose another review at the top, type your own, or click an input unit in the drawing to switch its word on or off.</small>"; },
+      cfg: function () { return { input: true, reach: 0 }; } },
+
+    { ch: 2, title: "Every line is a weight", cam: function () { return { box: BOX.hid, yaw: -.3, pitch: .13 }; },
+      html: function () { var u = U();
+        return "<p>Each hidden unit is connected to all " + NV + " input units. The weight on a line says how strongly the word pushes the unit, and in which direction.</p>" +
+          "<p>We follow unit <span class=\"m\">" + un(u) + "</span>" + (st.unit == null ? ". Once the network is trained, it is the unit that does most to get this review right" : "") + ". The numbers on its lines in the drawing are its weights for the words of this review.</p><p>" + epochNote() + "</p>"; },
+      card: function () { var u = U(), x = Xc(), p = P();
+        return unitRow() + '<table class="t"><tr><th>Word</th><th>Count</th><th>Weight to ' + un(u) + "</th></tr>" + VOCAB.map(function (w, i) { return '<tr class="' + (x[i] > 0 ? "" : "dim") + '"><td>' + w + "</td><td>" + x[i] + "</td><td>" + (x[i] > 0 ? sg(p.W1[u][i]) : s2(p.W1[u][i])) + "</td></tr>"; }).join("") +
+          '<tr class="sum"><td>Bias of ' + un(u) + "</td><td></td><td>" + s2(p.b1[u]) + "</td></tr></table>"; },
+      cfg: function () { var u = U(); return { input: true, reach: 0, focusU: u, elabels: actLabels(u) }; } },
+
+    { ch: 2, title: "One unit adds up", cam: function () { return { box: BOX.hid, yaw: -.3, pitch: .13 }; },
+      html: function () { var act = active(), u = U();
+        return "<p>A unit does two things. First it multiplies each count by the weight on its line and adds the results up, together with its own number, the <b>bias</b>.</p>" +
+          "<p>A word with a count of 0 adds nothing. " + (act.length ? "For this review only " + list(act.map(function (i) { return q(VOCAB[i]); })) + " reach" + (act.length === 1 ? "es" : "") + " unit " + un(u) + "." : "For this review nothing reaches unit " + un(u) + " except its bias.") + "</p>"; },
+      card: function () { var u = U(), x = Xc(), p = P(), f = forward(p, x);
+        return '<div class="formula">sum = count₁ × weight₁ + count₂ × weight₂ + … + bias</div><table class="t"><tr><th>Unit ' + un(u) + "</th><th>count × weight</th><th></th></tr>" +
+          active().map(function (i) { return "<tr><td>" + VOCAB[i] + "</td><td>" + x[i] + " × " + sg(p.W1[u][i], f2(p.W1[u][i])) + "</td><td>= " + f2(x[i] * p.W1[u][i]) + "</td></tr>"; }).join("") +
+          '<tr class="dim"><td>bias</td><td></td><td>' + s2(p.b1[u]) + '</td></tr><tr class="sum"><td>sum</td><td></td><td><span class="a">' + f2(f.z1[u]) + "</span></td></tr></table>" + unitRow().replace('class="row"', 'class="row" style="margin:10px 0 0"'); },
+      cfg: function () { var u = U(), f = forward(P(), Xc()), ht = {}; ht[u] = ["sum " + f2(f.z1[u]), "a"]; return { input: true, reach: 0, focusU: u, flow1: u, elabels: actLabels(u), hidText: ht }; } },
+
+    { ch: 2, title: "The activation function", cam: function () { return { box: BOX.hid, yaw: -.3, pitch: .13 }; },
+      html: function () { var u = U(), f = forward(P(), Xc());
+        return "<p>Second, the unit passes the sum through an <b>activation function</b>. Here that is tanh, an S-shaped curve. Whatever the sum is, the number the unit sends on lies between −1 and +1.</p>" +
+          "<p>Unit " + un(u) + " has a sum of " + num(f2(f.z1[u])) + " and sends " + sg(f.a1[u], f2(f.a1[u])) + ".</p>" +
+          "<p>The bend in the curve is essential. Without it, the hidden layer would pass on weighted sums of the counts, the output would add those up again, and the whole network could be replaced by one list of word weights.</p>"; },
+      card: function () { var u = U(), f = forward(P(), Xc()), r = Math.max(3, Math.ceil(Math.abs(f.z1[u])));
+        return '<span class="k">tanh: from the sum to what unit ' + un(u) + " sends</span>" + plot({ xr: [-r, r], yr: [-1.08, 1.08], f: Math.tanh, hl: [0], aria: "The tanh curve with unit " + un(u) + "'s sum marked",
+          yt: [[1, "+1"], [0, "0"], [-1, "−1"]], xt: [[-r, "−" + r], [0, "0"], [r, "+" + r]], xlab: "the sum", pts: [{ x: f.z1[u], y: f.a1[u], cls: f.a1[u] < 0 ? "n" : "", lab: f2(f.z1[u]) + " → " + f2(f.a1[u]), guide: true }] }) + unitRow().replace('class="row"', 'class="row" style="margin:10px 0 0"'); },
+      cfg: function () { var u = U(), f = forward(P(), Xc()), ht = {}; ht[u] = ["sends " + f2(f.a1[u]), f.a1[u] < 0 ? "n" : "p"]; return { input: true, reach: 0, reachU: u, focusU: u, elabels: actLabels(u), hidText: ht }; } },
+
+    { ch: 2, title: "The whole hidden layer", cam: function () { return { box: BOX.hid, yaw: -.3, pitch: .13 }; },
+      html: function () { return "<p>" + (st.H > 1 ? "The other units do the same, each with its own weights and its own bias. " + cap(nword(st.H)) + " numbers leave the hidden layer." : "With one hidden unit, one number leaves the hidden layer.") + "</p>" +
+        "<p>These numbers are the network's own description of the review. From here on they take the place of the word counts: the output unit sees " + (st.H > 1 ? "them" : "this number") + " and nothing else.</p>"; },
+      card: function () { var f = forward(P(), Xc());
+        return '<table class="t"><tr><th>Unit</th><th>Sum</th><th>Sends</th></tr>' + order().map(function (h) { return '<tr class="pick' + (h === U() ? " on" : "") + '" data-act="unit" data-v="' + h + '"><td>' + un(h) + "</td><td>" + f2(f.z1[h]) + "</td><td>" + sg(f.a1[h]) + "</td></tr>"; }).join("") +
+          "</table><small>Click a unit, here or in the drawing, to follow it in the other steps.</small>"; },
+      cfg: function () { var f = forward(P(), Xc()), ht = {}; f.a1.forEach(function (a, h) { ht[h] = [s2(a), a < 0 ? "n" : "p"]; }); return { input: true, reach: 1, flow1: true, hidText: ht }; } },
+
+    { ch: 3, title: "The output unit adds up", cam: function () { return { box: BOX.out, yaw: -.24, pitch: .13, pad: [70, 44, 90, 60] }; },
+      html: function () { return "<p>The output unit works like a hidden unit. Its inputs are the numbers the hidden layer sends. Each is multiplied by the weight on its line, and the output's bias is added.</p>" +
+        "<p>A unit that sends a positive number over a positive weight pushes the sum up. So does a unit that sends a negative number over a negative weight.</p>"; },
+      card: function () { var p = P(), f = forward(p, Xc());
+        return '<table class="t"><tr><th>Unit</th><th>sends × weight</th><th></th></tr>' + order().map(function (h) { return "<tr><td>" + un(h) + "</td><td>" + sg(f.a1[h]) + " × " + sg(p.W2[h]) + "</td><td>= " + s2(f.a1[h] * p.W2[h]) + "</td></tr>"; }).join("") +
+          '<tr class="dim"><td>bias</td><td></td><td>' + s2(p.b2) + '</td></tr><tr class="sum"><td>sum</td><td></td><td><span class="a">' + s2(f.z2) + "</span></td></tr></table>"; },
+      cfg: function () { var p = P(), f = forward(p, Xc()), ht = {}; f.a1.forEach(function (a, h) { ht[h] = [s2(a), a < 0 ? "n" : "p"]; });
+        return { input: true, reach: 1, outFocus: true, flow2: true, hidText: ht, outText: [["sum " + s2(f.z2), "a"]], elabels: order().map(function (h) { return wl({ k: "W2", h: h }, f2(p.W2[h]), null, .5); }) }; } },
+
+    { ch: 3, title: "From the sum to a probability", cam: function () { return { box: BOX.out, yaw: -.24, pitch: .13, pad: [70, 44, 90, 60] }; },
+      html: function () { var f = forward(P(), Xc());
+        return "<p>The output unit has its own activation function, the logistic curve. It turns any sum into a number between 0 and 1. The network reports that number as the probability that the review is positive.</p>" +
+          "<p>For " + rv() + ": p(positive) = " + sg(f.out - .5, f.out.toFixed(2)) + ". " + verdict(f) + "</p>" +
+          "<p>Seen from the hidden layer, the output unit is a logistic regression. Its predictors are the " + nword(st.H) + " number" + (st.H > 1 ? "s" : "") + " the hidden layer sends, where a classifier on word counts has the counts.</p>"; },
+      card: function () { var f = forward(P(), Xc()), r = Math.max(4, Math.ceil(Math.abs(f.z2)));
+        return '<span class="k">The logistic curve: from the sum to p(positive)</span>' + plot({ xr: [-r, r], yr: [0, 1.04], f: sigmoid, hl: [.5], aria: "The logistic curve with the output unit's sum marked",
+          yt: [[1, "1"], [.5, ".5"], [0, "0"]], xt: [[-r, "−" + r], [0, "0"], [r, "+" + r]], xlab: "the sum", pts: [{ x: f.z2, y: f.out, cls: f.out < .5 ? "n" : "", lab: s2(f.z2) + " → " + f.out.toFixed(2), guide: true }] }) +
+          "<small>Above 0.5 the network's answer is positive, below 0.5 it is negative.</small>"; },
+      cfg: function () { var f = forward(P(), Xc()), ht = {}; f.a1.forEach(function (a, h) { ht[h] = [s2(a), a < 0 ? "n" : "p"]; });
+        return { input: true, reach: 2, outFocus: true, hidText: ht, outText: [["p(positive) " + f.out.toFixed(2), f.out < .5 ? "n" : "p"], ["human label: " + (Yc() ? "positive" : "negative"), "v"]] }; } },
+
+    { ch: 4, title: "How wrong is the answer?", cam: camNet,
+      html: function () { var f = forward(P(), Xc()), y = Yc(), qy = y ? f.out : 1 - f.out, l = lossOf(f.out, y);
+        return "<p>Training needs one number that says how wrong an answer is. That number is the <b>loss</b>. This network uses the cross-entropy: the negative logarithm of the probability that the network gave to the human label.</p>" +
+          "<p>The human label for " + rv() + " is " + lab(y) + ". The network gave " + (y ? "positive" : "negative") + " a probability of " + (y ? "" : "1 − " + f.out.toFixed(2) + " = ") + num(qy.toFixed(2)) + ", so the loss is −log(" + qy.toFixed(2) + ") = " + '<span class="m">' + l.toFixed(2) + "</span>.</p>" +
+          "<p>The loss is close to 0 when the network is right and sure. It grows quickly when the network is wrong and sure.</p>"; },
+      card: function () { var f = forward(P(), Xc()), y = Yc(), qy = y ? f.out : 1 - f.out, l = lossOf(f.out, y), top = Math.max(3, Math.ceil(l));
+        return '<span class="k">The loss for one review</span>' + plot({ xr: [0, 1], yr: [0, top], f: function (v) { return -Math.log(Math.max(v, 1e-4)); }, aria: "The loss as a function of the probability given to the human label",
+          yt: [[0, "0"], [1, "1"], [top, String(top)]], xt: [[0, "0"], [.5, ".5"], [1, "1"]], xlab: "probability the network gave to the human label", pts: [{ x: qy, y: l, cls: "m", lab: "loss " + l.toFixed(2), guide: true }] }); },
+      cfg: function () { var f = forward(P(), Xc()), l = lossOf(f.out, Yc());
+        return { input: true, reach: 2, outGlow: mix(COL.acc, COL.neg, clamp01(l / 1.4)), outText: [["p(positive) " + f.out.toFixed(2), f.out < .5 ? "n" : "p"], ["human label: " + (Yc() ? "positive" : "negative"), "v"], ["loss " + l.toFixed(2), "m"]] }; } },
+
+    { ch: 4, title: "The loss over all twenty reviews", cam: camNet,
+      html: function () { var hs = HIST[st.ep];
+        return "<p>Every review in the training set gets its own loss. Their <b>average</b> says how well the current weights fit the training set as a whole.</p>" +
+          "<p>At epoch " + st.ep + " the average loss is " + '<span class="m">' + hs.loss.toFixed(2) + "</span>, and the network is on the right side of 0.5 for " + num(hs.right + " of " + N) + " reviews.</p>" +
+          "<p>For this network, learning means changing the " + nWeights() + " numbers so that the average loss gets smaller.</p>"; },
+      card: function () { var hs = HIST[st.ep], ls = hs.outs.map(function (o, i) { return lossOf(o, Y[i]); }), top = Math.max(2, Math.ceil(Math.max.apply(null, ls)));
+        return '<span class="k">One bar per review</span>' + plot({ h: 170, xr: [0, N], yr: [0, top], yt: [[0, "0"], [top, String(top)]], aria: "The loss of each of the twenty reviews and their average", xlab: "the twenty reviews · click a bar to follow that review",
+          extra: function (sx, sy) { var s = ""; ls.forEach(function (l, i) { s += '<rect class="bar' + (i === st.rev ? " me" : "") + '" data-act="rev" data-v="' + i + '" x="' + (sx(i) + 2) + '" y="' + sy(l) + '" width="' + (sx(1) - sx(0) - 4) + '" height="' + Math.max(1, sy(0) - sy(l)) + '" rx="2"><title>' + esc(REVIEWS[i][0]) + " loss " + l.toFixed(2) + "</title></rect>"; });
+            return s + '<line class="tan" x1="' + sx(0) + '" y1="' + sy(hs.loss) + '" x2="' + sx(N) + '" y2="' + sy(hs.loss) + '"/><text class="v m" x="' + sx(N) + '" y="' + (sy(hs.loss) - 6) + '" text-anchor="end">average ' + hs.loss.toFixed(2) + "</text>"; } }) +
+          (st.rev >= 0 ? "<small>The orange bar is the review you are following.</small>" : "<small>Your own review is not part of the training set, so it has no bar.</small>"); },
+      cfg: function () { var f = forward(P(), Xc()); return { input: true, reach: 2, outText: [["average loss " + HIST[st.ep].loss.toFixed(2), "m"]] }; } },
+
+    { ch: 5, title: "Which way should a weight move?", cam: camNet,
+      html: function () { var w = wsel();
+        return "<p>Take one weight and change it a little, with everything else fixed. If the average loss falls, the change went in the right direction.</p>" +
+          "<p>The slider changes the weight on <span class=\"m\">" + wlong(w) + "</span>, drawn in amber. Move it and read the average loss over the twenty reviews.</p>" +
+          "<p>How much the loss changes for a small change of the weight is the <b>slope</b> of the loss for this weight. Its sign says which way the weight should move, and its size says how much the weight matters at the moment.</p>"; },
+      card: function () { return '<span class="k">Change the weight by <span id="nv">' + s2(st.nudge) + '</span></span><input type="range" id="nudge" min="-2" max="2" step="0.05" value="' + st.nudge + '" aria-label="Change the selected weight">' +
+        '<div id="dyn">' + nudgeDyn() + "</div><small>Click another line in the drawing to choose a different weight.</small>"; },
+      cfg: function () { var w = wsel(), p = clone(P()), v0 = wget(p, w); wset(p, w, v0 + st.nudge); var f = forward(p, Xc());
+        return { input: true, reach: 2, params: p, sel: w, elabels: [{ e: w.k === "b2" ? { k: "W2", h: 0 } : w, s: st.nudge === 0 ? f2(v0) : f2(v0) + " → " + f2(v0 + st.nudge), cls: "m", t: .5 }].filter(function () { return w.k !== "b2"; }),
+                 outText: [["p(positive) " + f.out.toFixed(2), f.out < .5 ? "n" : "p"], ["average loss " + avgLoss(p).toFixed(3), "m"]] }; } },
+
+    { ch: 5, title: "Backpropagation starts at the output", cam: camNet,
+      html: function () { var g = gradOne(P(), Xc(), Yc()), y = Yc();
+        return "<p>Finding every slope by trying would mean running all twenty reviews through the network again for each of the " + nWeights() + " numbers. <b>Backpropagation</b> computes all slopes from one run, by working backwards from the loss. The numbers below are for the review " + rv() + ".</p>" +
+          "<p>It starts with the <b>error</b> at the output: p(positive) minus the human label, which is 1 for positive and 0 for negative. Here: " + g.f.out.toFixed(2) + " − " + y + " = " + '<span class="m">' + s2(g.d2) + "</span>.</p>" +
+          "<p>For a line into the output, the slope is the error times the number that came over that line. A unit that sent a number far from zero had a large part in the answer, so its weight gets a large slope.</p>"; },
+      card: function () { var g = gradOne(P(), Xc(), Yc());
+        return '<table class="t"><tr><th>Line</th><th>error × sent</th><th>Slope</th><th>Should go</th></tr>' + order().map(function (h) {
+          return "<tr><td>" + un(h) + " → output</td><td>" + s2(g.d2) + " × " + sg(g.f.a1[h]) + '</td><td><span class="m">' + s2(g.gW2[h]) + '</span></td><td class="txt">' + updown(g.gW2[h]) + "</td></tr>"; }).join("") +
+          "</table><small>A positive slope means that the loss rises when the weight grows, so the weight should go down. A negative slope means it should go up.</small>"; },
+      cfg: function (at) { var g = gradOne(P(), Xc(), Yc());
+        return { input: true, reach: 2, grad: { g2: g.gW2, g1: null, ph: reduced ? 1 : Math.min(.44, at / 3) }, outText: [["error " + s2(g.d2), "m"]],
+                 elabels: at > 1.1 || reduced ? order().map(function (h) { return { e: { k: "W2", h: h }, s: updown(g.gW2[h]), cls: "m", t: .5 }; }) : [] }; } },
+
+    { ch: 5, title: "… and goes back one layer", cam: camNet,
+      html: function () { var act = active(), u = U();
+        return "<p>A hidden unit has no human label, so it has no error of its own. It gets a <b>share</b> of the output's error: the error, times the weight on the unit's line to the output, times the slope of the tanh curve where the unit's sum lies. That slope is 1 − sent².</p>" +
+          "<p>For a line from a word to a hidden unit, the slope is the unit's share times the word's count. " + (act.length ? "For this review only the lines from " + list(act.map(function (i) { return q(VOCAB[i]); })) + " get a slope, because all other counts are 0." : "All counts are 0 for this review, so none of these lines gets a slope.") + "</p>" +
+          "<p>This is the chain rule from calculus, applied layer by layer from the back. Each layer reuses what the layer after it has already worked out.</p>"; },
+      card: function () { var p = P(), x = Xc(), g = gradOne(p, x, Yc()), u = U();
+        return '<span class="k">Each unit\'s share of the error</span><table class="t"><tr><th>Unit</th><th>error × weight × (1 − sent²)</th><th>Share</th></tr>' + order().map(function (h) {
+          return '<tr class="pick' + (h === u ? " on" : "") + '" data-act="unit" data-v="' + h + '"><td>' + un(h) + "</td><td>" + s2(g.d2) + " × " + sg(p.W2[h]) + " × " + (1 - g.f.a1[h] * g.f.a1[h]).toFixed(2) + '</td><td><span class="m">' + s2(g.d1[h]) + "</span></td></tr>"; }).join("") + "</table>" +
+          '<span class="k" style="margin-top:12px">The lines into unit ' + un(u) + '</span><table class="t"><tr><th>Line</th><th>share × count</th><th>Slope</th><th>Should go</th></tr>' +
+          (active().length ? active().map(function (i) { return "<tr><td>" + VOCAB[i] + " → " + un(u) + "</td><td>" + s2(g.d1[u]) + " × " + x[i] + '</td><td><span class="m">' + s2(g.gW1[u][i]) + '</span></td><td class="txt">' + updown(g.gW1[u][i]) + "</td></tr>"; }).join("") : '<tr class="dim"><td>no word of this review has an input unit</td><td></td><td></td><td></td></tr>') + "</table>"; },
+      cfg: function (at) { var g = gradOne(P(), Xc(), Yc()), u = U(), ph = reduced ? 1 : Math.min(1, .44 + at / 3.5), ht = {}; g.d1.forEach(function (d, h) { ht[h] = ["share " + s2(d), "m"]; });
+        return { input: true, reach: 2, grad: { g2: g.gW2, g1: g.gW1, ph: ph }, hidText: ht, outText: [["error " + s2(g.d2), "m"]],
+                 elabels: ph >= .9 ? active().map(function (i) { return { e: { k: "W1", h: u, i: i }, s: updown(g.gW1[u][i]), cls: "m", t: .62 }; }) : [] }; } },
+
+    { ch: 5, title: "All weights, all reviews", cam: camNet,
+      html: function () { return "<p>The same backward run is done for each of the twenty reviews, and the slopes are averaged. The result is one slope for every weight and every bias. Together these " + nWeights() + " slopes are the <b>gradient</b>.</p>" +
+        "<p>The amber lines show it. A thicker line has a steeper slope: changing that weight changes the average loss more than changing a thin one.</p>" +
+        "<p>One backward run costs about as much as one forward run. That is why networks with billions of weights can be trained at all.</p>"; },
+      card: function () { var p = P(), G = gradAvg(p), w = wsel(), pp = clone(p), v0 = wget(p, w), all = [], h, i;
+        wset(pp, w, v0 + .001); var up = avgLoss(pp); wset(pp, w, v0 - .001); var dn = avgLoss(pp);
+        for (h = 0; h < st.H; h++) { all.push({ k: "W2", h: h }); for (i = 0; i < NV; i++) all.push({ k: "W1", h: h, i: i }); }
+        all.sort(function (a, b) { return Math.abs(gget(G, b)) - Math.abs(gget(G, a)); });
+        return '<span class="k">A check on ' + wshort(w) + '</span><table class="t"><tr><td>Slope by backpropagation</td><td><span class="m">' + (gget(G, w) < 0 ? "−" : "+") + Math.abs(gget(G, w)).toFixed(4) + "</span></td></tr>" +
+          '<tr class="sum"><td>Slope by trying (weight ± 0.001)</td><td>' + ((up - dn) / .002 < 0 ? "−" : "+") + Math.abs((up - dn) / .002).toFixed(4) + "</td></tr></table>" +
+          '<span class="k" style="margin-top:12px">The six steepest slopes at epoch ' + st.ep + '</span><table class="t"><tr><th>Line</th><th>Weight</th><th>Slope</th><th>Should go</th></tr>' +
+          all.slice(0, 6).map(function (e) { return '<tr class="pick' + (same(e, w) ? " on" : "") + '" data-act="wsel" data-k="' + e.k + '" data-h="' + e.h + '" data-i="' + (e.i == null ? "" : e.i) + '"><td>' + wshort(e) + "</td><td>" + s2(wget(p, e)) + '</td><td><span class="m">' + s3(gget(G, e)) + '</span></td><td class="txt">' + updown(gget(G, e)) + "</td></tr>"; }).join("") +
+          "</table><small>Click a row, or a line in the drawing, to run the check on that weight.</small>"; },
+      cfg: function (at) { var G = gradAvg(P()); return { input: false, reach: 0, grad: { g2: G.gW2, g1: G.gW1, ph: reduced ? 1 : Math.min(1, at / 2.4) }, sel: st.wsel }; } },
+
+    { ch: 6, title: "The loss as a landscape", view: "surf", cam: camNet,
+      html: function () { var S = surface();
+        return "<p>Take two weights: " + wlong(S.pr[0]) + " and " + wlong(S.pr[1]) + ". For every pair of values, the twenty reviews give one average loss. Drawn over the two weights, the loss is a surface. It is high where the network fits the reviews badly and low where it fits them well.</p>" +
+          "<p>The amber marker is where the network stands at epoch " + st.ep + ": a loss of " + '<span class="m">' + S.here.toFixed(2) + "</span>. The lowest point on this patch has a loss of " + num(S.lo.toFixed(2)) + ".</p>" +
+          "<p>The surface is computed for this network, with its other " + (nWeights() - 2) + " numbers held where they are. The network itself never sees it. It knows the loss where it stands, and the slope there.</p>"; },
+      card: function () { var S = surface();
+        return '<table class="t"><tr><th>Weight</th><th>Now</th><th>Slope</th><th>Lowest at</th></tr>' + S.pr.map(function (w, k) { return "<tr><td>" + wshort(w) + "</td><td>" + s2(k ? S.cb : S.ca) + '</td><td><span class="m">' + s3(S.g[k]) + "</span></td><td>" + s2(S.lowAt[k]) + "</td></tr>"; }).join("") +
+          "</table><small>The patch reaches 3 to either side of the two current values. Drag the drawing to look at the surface from another side.</small>"; },
+      cfg: function () { return { input: true, reach: 2 }; } },
+
+    { ch: 6, title: "Downhill, one step at a time", view: "surf", cam: camNet,
+      html: function () { return "<p>The gradient points in the direction in which the loss rises fastest. <b>Gradient descent</b> takes a step the other way. Every weight changes by its slope times the <b>learning rate</b>, written η.</p>" +
+        '<div class="formula">new weight = weight − η × slope</div>' +
+        "<p>Then the slope is computed again at the new place, and the next step follows. Near the bottom of a valley the surface is flatter, so the steps get shorter while η stays the same.</p>" +
+        "<p>In this step only the two weights of the landscape move, " + WALK + " times, with the learning rate η = " + st.lr + " that is set for training.</p>"; },
+      card: function () { var S = surface(), p1 = S.path[1], pe = S.path[WALK];
+        return '<span class="k">The first step</span><table class="t"><tr><th>Weight</th><th>Now</th><th>− η × slope</th><th>New</th></tr>' + S.pr.map(function (w, k) { var v = k ? S.cb : S.ca;
+          return "<tr><td>" + wshort(w) + "</td><td>" + s2(v) + "</td><td>− " + st.lr + ' × <span class="m">' + s3(S.g[k]) + "</span></td><td>" + s2(p1[k]) + "</td></tr>"; }).join("") +
+          '<tr class="sum"><td>Average loss</td><td>' + f3(S.here) + "</td><td></td><td>" + (isFinite(p1[2]) ? f3(p1[2]) : "–") + "</td></tr></table>" +
+          '<div class="res">After ' + WALK + " steps the loss is <b>" + (isFinite(pe[2]) ? f3(pe[2]) : "not a number") + "</b>" + (inPatch(S, pe) ? "" : ", and the walk has left the patch that is drawn") + ". The lowest loss on the patch is " + f3(S.lo) + ".</div>" + replayBtn(); },
+      cfg: function () { return { input: true, reach: 2, walk: "one", arrows: false }; }, pre: true },
+
+    { ch: 6, title: "The learning rate", view: "surf", cam: camNet,
+      html: function () { return "<p>Three walks start from the same place and differ only in the learning rate.</p>" +
+        "<p>With a small η every step is safe and the walk is slow. With a large η a step can carry across the valley and land higher on the other side, so the walk swings from side to side or leaves the valley altogether.</p>" +
+        "<p>Nobody knows the right learning rate in advance. It is tried out, like the other settings of a model.</p>" +
+        "<p>The picture also hides something. Training moves all " + nWeights() + " numbers at once, and that landscape has " + nWeights() + " axes and cannot be drawn. Each time the other weights move, this patch changes its shape as well.</p>"; },
+      card: function () { var S = surface();
+        return '<table class="t"><tr><th>Learning rate</th><th>Start</th><th>10 steps</th><th>' + WALK + " steps</th></tr>" + S.races.map(function (r) { function show(pt) { return !isFinite(pt[2]) ? "–" : f3(pt[2]) + (inPatch(S, pt) ? "" : "*"); }
+          return '<tr><td><i class="sw" style="background:' + rgba(r.col, 1) + '"></i>η = ' + r.eta + "</td><td>" + f3(S.here) + "</td><td>" + show(r.path[10]) + "</td><td>" + show(r.path[WALK]) + "</td></tr>"; }).join("") +
+          "</table><small>The table gives the average loss. A star marks a walk that has left the patch that is drawn. The lowest loss on the patch is " + f3(S.lo) + ".</small>" + replayBtn(); },
+      cfg: function () { return { input: true, reach: 2, walk: "race" }; } },
+
+    { ch: 7, title: "One step for all weights", cam: camNet,
+      html: function () { var e0 = Math.min(st.ep, MAXEP - 1), a = HIST[e0], b = HIST[e0 + 1], x = Xc();
+        return "<p>Training takes the same kind of step with all " + nWeights() + " numbers at once. Each moves against its own slope, by η = " + st.lr + " times that slope.</p>" +
+          "<p>One run of all twenty reviews forward, one run backward and one step together are called an <b>epoch</b>. The table shows the step from epoch " + e0 + " to epoch " + (e0 + 1) + " for the lines you are following.</p>" +
+          "<p>For " + rv() + ", p(positive) goes from " + num(forward(a.params, x).out.toFixed(3)) + " to " + num(forward(b.params, x).out.toFixed(3)) + ". The average loss goes from " + num(f3(a.loss)) + " to " + num(f3(b.loss)) + ".</p>"; },
+      card: function () { var e0 = Math.min(st.ep, MAXEP - 1), a = HIST[e0].params, b = HIST[e0 + 1].params, G = gradAvg(a), u = U(), rows = active().map(function (i) { return { k: "W1", h: u, i: i }; }).concat([{ k: "W2", h: u }]), w = wsel();
+        if (!rows.some(function (r) { return same(r, w); })) rows.push(w);
+        return '<table class="t"><tr><th>Line</th><th>Weight</th><th>Slope</th><th>− η × slope</th><th>New</th></tr>' + rows.map(function (e) { var g = gget(G, e);
+          return "<tr><td>" + wshort(e) + "</td><td>" + f3(wget(a, e)) + '</td><td><span class="m">' + s3(g) + "</span></td><td>" + s3(-st.lr * g) + "</td><td>" + f3(wget(b, e)) + "</td></tr>"; }).join("") +
+          "</table><small>A single step changes each weight only a little. The next step of this tool repeats it up to " + MAXEP + " times.</small>" + replayBtn(); },
+      cfg: function (at) { var e0 = Math.min(st.ep, MAXEP - 1), a = HIST[e0].params, b = HIST[e0 + 1].params, k = reduced ? 1 : ease((at - .5) / 1.8), u = U(), p = lerpP(a, b, k), f = forward(p, Xc());
+        return { input: true, reach: 2, params: p, focusU: u, outText: [["p(positive) " + f.out.toFixed(3), f.out < .5 ? "n" : "p"]],
+                 elabels: active().map(function (i) { return { k: "W1", h: u, i: i }; }).concat([{ k: "W2", h: u }]).map(function (e) { return { e: e, s: f3(wget(a, e)) + " → " + f3(wget(b, e)), cls: wget(b, e) < 0 ? "n" : "p", t: e.k === "W1" ? .62 : .5 }; }) }; } },
+
+    { ch: 7, title: "Epoch after epoch", view: "both", cam: camNet,
+      html: function () { return "<p>Press <b>Train</b>. Every epoch repeats what the earlier steps showed: all reviews run forward, the error runs backward, and every weight takes a step.</p>" +
+        "<p>Watch the lines grow thicker as the weights move away from their random start, and the boxes under the chart turn green as reviews move to the right side of 0.5.</p>" +
+        "<p>" + (ALLRIGHT >= 0 ? "With these settings the network has all twenty reviews right from epoch " + num(ALLRIGHT) + " on." : "With these settings the network does not get all twenty reviews right within " + MAXEP + " epochs. After " + MAXEP + " epochs it has " + num(HIST[MAXEP].right + " of " + N) + ".") + "</p>"; },
+      card: function () { return '<div class="row"><button class="btn go" data-act="play" id="playBtn">' + (st.playing ? "❚❚ Pause" : "▶ Train") + '</button><button class="btn" data-act="ep1">+1 epoch</button><button class="btn" data-act="ep0">Back to epoch 0</button></div>' +
+        '<input type="range" id="scrub" min="0" max="' + MAXEP + '" step="1" value="' + st.ep + '" aria-label="Epoch"><div id="dyn">' + trainDyn() + "</div>" + viewRow() +
+        '</div><div class="card"><span class="k">Settings · changing one starts training again</span>' + chips("lr", [.05, .6, 3, 30], st.lr, "Learning rate") + chips("H", [1, 2, 4, 8], st.H, "Hidden units") +
+        '<div class="row" style="margin:0"><span class="k">Random start</span><button class="btn" data-act="seed">New random weights</button><span style="font-size:11.5px;color:var(--muted)">start no. ' + st.seed + "</span></div>" +
+        "<small>The lecture's run is 4 hidden units, a learning rate of 0.6 and start no. 1.</small>"; },
+      cfg: function () { var f = forward(P(), Xc()); return { input: true, reach: 2, outText: [["p(positive) " + f.out.toFixed(2), f.out < .5 ? "n" : "p"], ["epoch " + st.ep, "v"]] }; } },
+
+    { ch: 7, title: "What the hidden units learned", cam: camNet,
+      html: function () { var p = P(), a = forward(p, X[NG]), b = forward(p, X[NB]), best = 0, bv = -1, okA = a.out < .5, okB = b.out >= .5;
+        for (var h = 0; h < st.H; h++) { var d = Math.abs((a.a1[h] - b.a1[h]) * p.W2[h]); if (d > bv) { bv = d; best = h; } }
+        return "<p>" + q("Not good at all.") + " is negative and " + q("Not boring at all.") + " is positive. A word list gives " + q("not") + " one weight, and that weight has to serve both reviews.</p>" +
+          "<p>At epoch " + st.ep + " the network gives the first a p(positive) of " + sg(a.out - .5, a.out.toFixed(2)) + " and the second " + sg(b.out - .5, b.out.toFixed(2)) + ", so it has " + (okA && okB ? "both" : okA || okB ? "one of the two" : "neither") + " right. " +
+          "The unit whose signal to the output differs most between the two is " + '<span class="m">' + un(best) + "</span>: it sends " + sg(a.a1[best]) + " for the first and " + sg(b.a1[best]) + " for the second, over a weight of " + sg(p.W2[best]) + ".</p>" +
+          (st.ep < REFEP ? '<p>The network has not been trained far yet. <button class="btn" data-act="epset" data-v="' + REFEP + '">Go to epoch ' + REFEP + "</button></p>" :
+            "<p>Nobody told this unit to tell the two reviews apart. Its weights moved there because that made the loss smaller.</p>") +
+          "<p>Now type a review of your own at the top, for example <i>never boring</i> or <i>not dull</i>. The network has learned from twenty reviews only. Being right on those twenty says little about a review it has not seen.</p>"; },
+      card: function () { var p = P(), a = forward(p, X[NG]), b = forward(p, X[NB]);
+        return '<div class="row"><span class="k">Show</span><button class="btn" data-act="rev" data-v="' + NG + '" aria-pressed="' + (st.rev === NG) + '">Not good at all.</button><button class="btn" data-act="rev" data-v="' + NB + '" aria-pressed="' + (st.rev === NB) + '">Not boring at all.</button></div>' +
+          '<table class="t"><tr><th>Unit</th><th>Not good: sends</th><th>Not boring: sends</th><th>Weight to output</th></tr>' + order().map(function (h) {
+            return '<tr class="pick' + (h === U() ? " on" : "") + '" data-act="unit" data-v="' + h + '"><td>' + un(h) + "</td><td>" + sg(a.a1[h]) + "</td><td>" + sg(b.a1[h]) + "</td><td>" + sg(p.W2[h]) + "</td></tr>"; }).join("") +
+          '<tr class="sum"><td>p(positive)</td><td>' + a.out.toFixed(2) + "</td><td>" + b.out.toFixed(2) + "</td><td></td></tr></table>"; },
+      cfg: function () { var u = U(), f = forward(P(), Xc()), ht = {}; f.a1.forEach(function (a, h) { ht[h] = [s2(a), a < 0 ? "n" : "p"]; });
+        return { input: true, reach: 2, flow1: true, flow2: true, hidText: ht, outText: [["p(positive) " + f.out.toFixed(2), f.out < .5 ? "n" : "p"], ["human label: " + (Yc() ? "positive" : "negative"), "v"]] }; } },
+
+    { ch: 7, title: "From this network to a real one", cam: camNet,
+      html: function () { return "<p>The network that the lecture fits with <code>mlp()</code> is built in the same way and is larger. Three of its settings are the ones on the previous step: hidden units, epochs and learning rate.</p>" +
+        "<p>Some things are left out here to keep every number readable:</p>" +
+        "<p><b>Batches.</b> This tool computes the gradient from all twenty reviews before each step. With thousands of texts, a step is usually taken after a random part of them, a batch. The walk downhill is then less even and much cheaper.</p>" +
+        "<p><b>A penalty.</b> The lecture's network pays a small price for large weights, which keeps it from fitting the training set too closely.</p>" +
+        "<p><b>More layers.</b> A deep network has several hidden layers, each reading the numbers of the one before. Backpropagation goes back through all of them in the same way.</p>" +
+        "<p><b>A test set.</b> This network is judged on the same twenty reviews it was trained on. How good a classifier is can only be judged on texts it has not seen, which is why the data are split into a training set and a test set first.</p>"; },
+      card: function () { return '<table class="t"><tr><th></th><th>This tool</th><th>The lecture\'s <span style="text-transform:none">mlp()</span></th></tr>' +
+        '<tr><td>Inputs</td><td>' + NV + ' words</td><td>1,000 words</td></tr><tr><td>Hidden units</td><td>' + st.H + '</td><td>hidden_units = 16</td></tr><tr><td>Outputs</td><td>1</td><td>3 classes</td></tr>' +
+        '<tr><td>Learning rate</td><td>' + st.lr + '</td><td>learn_rate = 0.1</td></tr><tr><td>Epochs</td><td>up to ' + MAXEP + '</td><td>epochs = 100</td></tr><tr><td>Penalty</td><td>none</td><td>penalty = 0.01</td></tr>' +
+        '<tr class="sum"><td>Numbers to learn</td><td>' + nWeights() + "</td><td>about 16,000</td></tr></table>"; },
+      cfg: function () { var f = forward(P(), Xc()); return { input: true, reach: 2, flow1: true, flow2: true }; } }
+  ];
+
+  /* ---- one frame ------------------------------------------------------------------------------------- */
+  var lastT = 0, epAcc = 0;
+  function frame(now) {
+    requestAnimationFrame(frame);
+    if (document.hidden || !cam) return;
+    var dt = Math.min(60, now - lastT || 16); lastT = now;
+    tweenCam(now);
+    sway = reduced || userMoved || hov ? sway * .9 : .06 * Math.sin(now / 4200);
+    if (st.playing) { epAcc += dt; var adv = Math.floor(epAcc / 55); if (adv > 0) { epAcc -= adv * 55; setEp(Math.min(MAXEP, st.ep + adv), true); if (st.ep >= MAXEP) { st.playing = false; renderCard(); } } }
+    var S_ = STEPS[st.step], at = reduced ? 1e3 : (now - stepT0) / 1000, c = S_.cfg(at), wantS = onSurf() ? 1 : 0;
+    surfA = reduced ? wantS : surfA + (wantS - surfA) * .12; netA = reduced ? 1 : netA + (1 - netA) * .12;
+    LBL = []; ctx.clearRect(0, 0, Wd, Hd);
+    if (wantS || surfA > .02) { if (PR([SX, 0, 0]).z > PR([XH, 0, 0]).z) { drawSurf(c, at); drawNet(c, at); } else { drawNet(c, at); drawSurf(c, at); } }
+    else drawNet(c, at);
+    drawLabels();
+  }
+
+  /* ---- panel, top bar, navigation ----------------------------------------------------------------------- */
+  function renderCard() { var S_ = STEPS[st.step]; $("body").innerHTML = S_.html(); var c = S_.card ? S_.card() : ""; $("card").innerHTML = c ? '<div class="card">' + c + "</div>" : ""; }
+  function renderPanel(keep) { var S_ = STEPS[st.step], pn = $("panel"), top = pn.scrollTop; $("kick").textContent = CHAPTERS[S_.ch]; $("title").textContent = S_.title; renderCard(); pn.scrollTop = keep ? top : 0; renderTop(); }
+  function renderTop() {
+    var hs = HIST[st.ep];
+    $("rev").value = st.rev >= 0 ? String(st.rev) : "-1";
+    if (document.activeElement !== $("own")) $("own").value = st.rev < 0 ? st.own.text : "";
+    $("ownlab").classList.toggle("on", st.rev < 0);
+    [].forEach.call($("ownlab").querySelectorAll("[data-lab]"), function (b) { b.setAttribute("aria-pressed", String(+b.getAttribute("data-lab") === st.own.y)); });
+    $("status").innerHTML = "Epoch <b>" + st.ep + "</b> · average loss <b>" + hs.loss.toFixed(2) + "</b> · <b>" + hs.right + "</b> of " + N + " right";
+  }
+  function renderNav() {
+    var html = "";
+    CHAPTERS.forEach(function (name, c) { var on = STEPS[st.step].ch === c, first = -1, dots = "";
+      STEPS.forEach(function (S_, n) { if (S_.ch !== c) return; if (first < 0) first = n; dots += '<i data-go="' + n + '" class="' + (n === st.step ? "on" : n < st.step ? "done" : "") + '" title="' + S_.title + '"></i>'; });
+      html += '<button class="ch' + (on ? " on" : "") + '" data-go="' + first + '"><span>' + name + '</span><div class="dots">' + dots + "</div></button>"; });
+    $("rail").innerHTML = html; $("count").textContent = (st.step + 1) + " / " + STEPS.length;
+    $("prev").disabled = st.step === 0; $("next").disabled = st.step === STEPS.length - 1;
+  }
+  function go(n, snap) {
+    n = Math.max(0, Math.min(STEPS.length - 1, isNaN(n) ? 0 : n));
+    st.step = n; stepT0 = performance.now(); st.nudge = 0; st.playing = false; st.surf = false;
+    stepCam(snap); renderPanel(); renderNav();
+    try { history.replaceState(null, "", "#" + n); } catch (e) { /* file:// in some browsers */ }
+  }
+  function setEp(e, live) { st.ep = Math.max(0, Math.min(MAXEP, e));
+    if (live && $("dyn") && STEPS[st.step].view === "both") { $("dyn").innerHTML = trainDyn(); var sc = $("scrub"); if (sc && document.activeElement !== sc) sc.value = st.ep; renderTop(); } else renderPanel(true); }
+  function setRev(i) { st.rev = i; st.unit = null; st.wsel = null; st.nudge = 0; stepT0 = performance.now(); renderPanel(true); }
+  function setOwn(text, typed) { st.own.text = text; st.own.typed = typed; if (typed) st.own.x = featurise(text); if (st.rev >= 0) st.own.y = Y[st.rev]; st.rev = -1; st.unit = null; st.wsel = null; st.nudge = 0; renderPanel(true); }
+  function toggleWord(i) { var x = Xc().slice(); x[i] = x[i] > 0 ? 0 : 1; if (st.rev >= 0) st.own.y = Y[st.rev]; st.own.x = x; st.rev = -1;
+    setOwn(VOCAB.filter(function (w, k) { return x[k] > 0; }).map(function (w, k) { var n = x[VOCAB.indexOf(w)]; return n > 1 ? Array(n + 1).join(w + " ").trim() : w; }).join(" "), false); }
+  function reconfigure() { retrain(); stepT0 = performance.now(); renderPanel(true); if (!userMoved) stepCam(false); }
+
+  $("rev").innerHTML = REVIEWS.map(function (r, i) { return '<option value="' + i + '">' + r[0] + " (" + (r[1] ? "positive" : "negative") + ")</option>"; }).join("") + '<option value="-1">Your own review</option>';
+  $("rev").addEventListener("change", function () { var v = +this.value; if (v >= 0) setRev(v); else { setOwn(st.own.text, !!st.own.typed); $("own").focus(); } });
+  $("own").addEventListener("input", function () { setOwn(this.value, true); });
+  $("ownlab").addEventListener("click", function (e) { var b = e.target.closest("[data-lab]"); if (b) { st.own.y = +b.getAttribute("data-lab"); st.unit = null; renderPanel(true); } });
+  $("prev").addEventListener("click", function () { go(st.step - 1); });
+  $("next").addEventListener("click", function () { go(st.step + 1); });
+  $("rail").addEventListener("click", function (e) { var b = e.target.closest("[data-go]"); if (b) go(+b.getAttribute("data-go")); });
+  $("panel").addEventListener("click", function (e) {
+    var b = e.target.closest("[data-act]"); if (!b) return;
+    var act = b.getAttribute("data-act"), v = +b.getAttribute("data-v");
+    if (act === "rev") setRev(v);
+    else if (act === "unit") { st.unit = v; st.wsel = null; SURF = null; stepT0 = performance.now(); renderPanel(true); }
+    else if (act === "wsel") { st.wsel = { k: b.getAttribute("data-k"), h: +b.getAttribute("data-h") }; if (st.wsel.k === "W1") st.wsel.i = +b.getAttribute("data-i"); st.nudge = 0; renderPanel(true); }
+    else if (act === "replay") { stepT0 = performance.now(); }
+    else if (act === "play") { if (st.ep >= MAXEP) st.ep = 0; st.playing = !st.playing; epAcc = 0; renderPanel(true); }
+    else if (act === "ep1") { st.playing = false; setEp(st.ep + 1); }
+    else if (act === "ep0") { st.playing = false; setEp(0); }
+    else if (act === "epset") { st.playing = false; setEp(v); }
+    else if (act === "surf") { st.surf = !!v; stepCam(false); renderPanel(true); }
+    else if (act === "lr") { st.lr = v; reconfigure(); }
+    else if (act === "H") { st.H = v; reconfigure(); }
+    else if (act === "seed") { st.seed += 1; reconfigure(); }
+  });
+  $("panel").addEventListener("input", function (e) {
+    if (e.target.id === "nudge") { st.nudge = +e.target.value; $("nv").textContent = s2(st.nudge); $("dyn").innerHTML = nudgeDyn(); }
+    else if (e.target.id === "scrub") { st.playing = false; var pb = $("playBtn"); if (pb) pb.textContent = "▶ Train"; setEp(+e.target.value, true); }
+  });
+  document.addEventListener("keydown", function (e) {
+    if (e.metaKey || e.ctrlKey || e.altKey || /^(INPUT|SELECT|TEXTAREA)$/.test(e.target.tagName)) return;
+    if (e.key === "ArrowRight" || e.key === "PageDown") { e.preventDefault(); go(st.step + 1); }
+    else if (e.key === "ArrowLeft" || e.key === "PageUp") { e.preventDefault(); go(st.step - 1); }
+  });
+  window.addEventListener("hashchange", function () { var n = parseInt(location.hash.slice(1), 10); if (!isNaN(n) && n !== st.step) go(n); });
+
+  /* ---- the free camera: turn, move, zoom, read, pick --------------------------------------------------- */
+  function hit(x, y) {
+    if (onSurf()) return null;
+    for (var n = HITS.length - 1; n >= 0; n--) { var h = HITS[n]; if (Math.hypot(x - h.x, y - h.y) <= h.r + 2) return { n: h.n }; }
+    var best = null, bd = 5;
+    EHITS.forEach(function (E) { var dx = E.b.x - E.a.x, dy = E.b.y - E.a.y, t = clamp01(((x - E.a.x) * dx + (y - E.a.y) * dy) / (dx * dx + dy * dy || 1)), d = Math.hypot(x - E.a.x - t * dx, y - E.a.y - t * dy);
+      if (d < bd && t > .06 && t < .94) { bd = d; best = E.e; } });
+    return best ? { e: best } : null;
+  }
+  function tipFor(h) {
+    var p = P(), x = Xc(), f = forward(p, x);
+    if (h.n && h.n.kind === "in") return "<b>" + VOCAB[h.n.i] + "</b> occurs <span class=\"n\">" + x[h.n.i] + "</span> time" + (x[h.n.i] === 1 ? "" : "s") + " in this review. Click to switch the word " + (x[h.n.i] > 0 ? "off" : "on") + ".";
+    if (h.n && h.n.kind === "hid") return "<b>Unit " + un(h.n.i) + "</b> · sum <span class=\"n\">" + f2(f.z1[h.n.i]) + "</span> · sends <span class=\"n\">" + f2(f.a1[h.n.i]) + "</span> · bias " + f2(p.b1[h.n.i]) + ". Click to follow this unit.";
+    if (h.n) return "<b>Output</b> · sum <span class=\"n\">" + f2(f.z2) + "</span> · p(positive) <span class=\"n\">" + f.out.toFixed(2) + "</span> · bias " + f2(p.b2);
+    return "Weight on <b>" + wshort(h.e) + "</b>: <span class=\"n\">" + f2(wget(p, h.e)) + "</span> · slope " + s3(gget(gradAvg(p), h.e)) + ". Click to select this weight.";
+  }
+  function zoomAt(f, x, y) { f = Math.max(2 / cam.S, Math.min(120 / cam.S, f)); camFrom = null; userMoved = true; cam.S *= f; cam.cx = x - (x - cam.cx) * f; cam.cy = y - (y - cam.cy) * f; }
+  var ptrs = {}, drag = null, activeW = !framed, tip = $("tip");
+  function local(e) { var r = stage.getBoundingClientRect(); return { x: e.clientX - r.left, y: e.clientY - r.top }; }
+  stage.addEventListener("pointerdown", function (e) {
+    if (e.target.closest(".view")) return;
+    var p = local(e); ptrs[e.pointerId] = p; activeW = true; stage.setPointerCapture(e.pointerId);
+    var ids = Object.keys(ptrs);
+    if (ids.length === 2) { var a = ptrs[ids[0]], b = ptrs[ids[1]]; drag = { pinch: Math.hypot(a.x - b.x, a.y - b.y), mx: (a.x + b.x) / 2, my: (a.y + b.y) / 2, moved: 9 }; }
+    else drag = { x: p.x, y: p.y, pan: e.shiftKey || e.button === 2 || e.button === 1, moved: 0 };
+    tip.style.display = "none";
+  });
+  stage.addEventListener("pointermove", function (e) {
+    var p = local(e);
+    if (drag && ptrs[e.pointerId]) {
+      ptrs[e.pointerId] = p; var ids = Object.keys(ptrs);
+      if (drag.pinch && ids.length === 2) { var a = ptrs[ids[0]], b = ptrs[ids[1]], d = Math.hypot(a.x - b.x, a.y - b.y), mx = (a.x + b.x) / 2, my = (a.y + b.y) / 2;
+        zoomAt(d / drag.pinch, mx, my); cam.cx += mx - drag.mx; cam.cy += my - drag.my; drag.pinch = d; drag.mx = mx; drag.my = my; return; }
+      if (drag.pinch) return;
+      var dx = p.x - drag.x, dy = p.y - drag.y; drag.moved += Math.abs(dx) + Math.abs(dy); drag.x = p.x; drag.y = p.y;
+      if (drag.moved < 4) return;
+      camFrom = null; userMoved = true; stage.classList.add("drag");
+      if (drag.pan) { cam.cx += dx; cam.cy += dy; } else { cam.yaw -= dx * .006; cam.pitch = Math.max(-.2, Math.min(1.5, cam.pitch + dy * .005)); }
+      return;
+    }
+    if (e.pointerType === "touch") return;
+    hov = hit(p.x, p.y); stage.classList.toggle("pt", !!hov && !(hov.n && hov.n.kind === "out"));
+    if (hov) { tip.innerHTML = tipFor(hov); tip.style.display = "block";
+      var tw = tip.offsetWidth, th = tip.offsetHeight; tip.style.left = Math.max(4, Math.min(Wd - tw - 4, p.x + 14)) + "px"; tip.style.top = Math.max(4, p.y - th - 10) + "px"; }
+    else tip.style.display = "none";
+  });
+  function up(e) {
+    var p = local(e), was = drag; delete ptrs[e.pointerId]; if (!Object.keys(ptrs).length) drag = null; stage.classList.remove("drag");
+    if (!was || was.pinch || was.moved >= 4 || e.type !== "pointerup") return;
+    var h = hit(p.x, p.y); if (!h) return;
+    if (h.e) { st.wsel = h.e; st.nudge = 0; renderPanel(true); }
+    else if (h.n.kind === "in") toggleWord(h.n.i);
+    else if (h.n.kind === "hid") { st.unit = h.n.i; st.wsel = null; SURF = null; stepT0 = performance.now(); renderPanel(true); }
+  }
+  stage.addEventListener("pointerup", up); stage.addEventListener("pointercancel", up);
+  stage.addEventListener("pointerleave", function () { hov = null; tip.style.display = "none"; if (framed && !drag) activeW = false; });
+  stage.addEventListener("contextmenu", function (e) { e.preventDefault(); });
+  stage.addEventListener("wheel", function (e) {
+    /* inside a page, the wheel belongs to the page until the drawing has been clicked (or pinched) */
+    if (!activeW && !e.ctrlKey) { var h = $("hint"); h.textContent = "click the drawing first, then scroll to zoom"; h.classList.add("flash"); setTimeout(function () { h.classList.remove("flash"); }, 1200); return; }
+    e.preventDefault(); var p = local(e); zoomAt(Math.exp(-e.deltaY * (e.ctrlKey ? .012 : .0022)), p.x, p.y);
+  }, { passive: false });
+  $("zIn").addEventListener("click", function () { zoomAt(1.35, Wd / 2, Hd / 2); });
+  $("zOut").addEventListener("click", function () { zoomAt(1 / 1.35, Wd / 2, Hd / 2); });
+  $("zReset").addEventListener("click", function () { stepCam(false); });
+
+  /* ---- start ---------------------------------------------------------------------------------------------- */
+  retrain();
+  if (window.ResizeObserver) new ResizeObserver(resize).observe(stage); else window.addEventListener("resize", resize);
+  var r0 = stage.getBoundingClientRect(); Wd = r0.width || 800; Hd = r0.height || 600;
+  cv.width = Math.round(Wd * (window.devicePixelRatio || 1)); cv.height = Math.round(Hd * (window.devicePixelRatio || 1)); ctx.setTransform(window.devicePixelRatio || 1, 0, 0, window.devicePixelRatio || 1, 0, 0);
+  go(parseInt((location.hash || "").slice(1), 10) || 0, true);
+  if (reduced) stepT0 = -1e7;
+  requestAnimationFrame(frame);
+  window.__nn = { st: st, surface: surface, hist: function () { return HIST; }, U: U, un: un };       /* for the builder's checks; the page does not use it */
+})();
+</script>
+</body>
+</html>
